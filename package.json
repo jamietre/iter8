@@ -1,6 +1,6 @@
 {
   "name": "iter8",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "description": "Make JavaScript iterables fun! ",
   "main": "index.js",
   "scripts": {
@@ -16,8 +16,7 @@
   },
   "author": "James Treworgy",
   "license": "MIT",
-  "dependencies": {
-  },
+  "dependencies": {},
   "devDependencies": {
     "babel-core": "^6.17.0",
     "babel-eslint": "^7.0.0",
