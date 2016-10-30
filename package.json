@@ -2,7 +2,7 @@
   "name": "iter8",
   "version": "0.9.0",
   "description": "Make JavaScript iterables fun! ",
-  "main": "dist/index.js",
+  "main": "index.js",
   "scripts": {
     "lint": "eslint src test",
     "pretest": "npm run lint",

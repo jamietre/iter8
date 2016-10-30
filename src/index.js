@@ -1,256 +1,6 @@
 
 const _source = Symbol();
 
-function findHelper(cb, thisArg) {
-    let iterator = getIterator.call(this);
-    let cur;
-    let index = 0;
-    while (cur = iterator.next(), !cur.done) {
-        if (cb.call(thisArg, cur.value)) {
-            return [index, cur.value];
-        }
-        index++;
-    }
-    return [-1, undefined];
-}
-function orDefault(Def) {
-     if (Def === Error) {
-        throw new Error('The sequence has no elements')
-    } else {
-        return Def;
-    }
-}
-
-function makeIterable(iterator) {
-    return {
-        [Symbol.iterator]: iterator
-    }
-}
-
-function cast(Type) {
-    return function(e) {
-        return new Type(e);
-    }
-}
-
-function skipIterable(n) {
-    var that = this;
-    return function() {
-        let iterator = getIterator.call(that);
-        while (n-- > 0 && !iterator.next().done) ;
-        return iterator;
-    } 
-}
-
-function takeIterable(n) {
-    var that = this;
-    return function() {
-        let iterator = getIterator.call(that);
-        return {
-            next: function() {
-                if (n !== 0) {
-                    let cur = iterator.next();
-                    if (!cur.done) {
-                        n--;
-                        return {
-                            done: false,
-                            value: cur.value
-                        }
-                    }
-                }
-                return {
-                    done: true
-                }
-            }
-        }
-    } 
-}
-
-function makeConcatIterator(args) {
-    var that = this;
-    return function() {
-        const sources = [that];
-        Array.prototype.forEach.call(args, function(arg) {
-            sources.push(arg);
-        })
-
-        let index = 0;
-        let iterator;
-
-        return {
-            next: function() {
-                let value;
-                while (!value && index < sources.length) {
-                    if (!iterator) {
-                        const source = sources[index];
-                        if (!source[Symbol.iterator]) {
-                            value = source;
-                            index++;
-                            break;
-                        }
-                        iterator = source[Symbol.iterator]();  
-                    }
-
-                    let cur = iterator.next();
-                    if (cur.done) {
-                        iterator=null;
-                        index++;
-                    } else {
-                        value = cur.value;
-                    }
-                }
-
-                return iterResult(sources.length<=index, value)
-            }
-        }        
-    }
-}
-
-function makeUniqueIterator() {
-    var that = this;
-    return function() {
-        let used = new Set();
-        let iterator = getIterator.call(that);
-        let cur;
-        return {
-            next: function() {
-                while (cur = iterator.next(), !cur.done) {
-                    if (!used.has(cur.value)) {
-                        used.add(cur.value)
-                        return {
-                            done: false,
-                            value: cur.value
-                        }
-                    }
-                }
-                return {
-                    done: true
-                }
-            }
-        }
-        
-    }
-}
-
-
-function makeGroupByIterator(group) {
-    var that = this;
-    return function() {
-        const cb = typeof group === 'string' ?
-            function(e) {
-                return e[group]
-            } :
-            group;
-
-        let dict = new Map();
-        
-        let cur;
-        let iterator = getIterator.call(that);
-        while (cur = iterator.next(), !cur.done) {
-            let e = cur.value;
-            let key = cb(e);
-            if (dict.has(key)) {
-                dict.get(key).push(e);
-            } else {
-                dict.set(key, [e]);
-            }
-        }
-
-        return dict[Symbol.iterator]();
-    }
-}
-
-
-function makeFlattenIterator() {
-    var that =this;
-    return function() {
-        let sourceIter = getIterator.call(that);
-        let iter=sourceIter;
-
-        return {
-            next: ()=> {
-                let value = null;
-                while(!value) {
-                    const isSource = iter === sourceIter;
-                    let cur = iter.next();
-                    if (cur.done) {
-                        if (!isSource) {
-                            iter = sourceIter;
-                        } else {
-                            return {
-                                done: true
-                            }
-                        }
-                    } else {
-                        if (isSource && cur.value[Symbol.iterator]) {
-                            iter = cur.value[Symbol.iterator]();
-                        } else {
-                            value = cur.value;
-                        }
-                    }
-                }
-
-                return {
-                    done: false,
-                    value: value    
-                }
-            }
-        }
-    }
-}
-
-function makeFilterIterator(cb, thisArg) {
-    var that = this;
-    return function() {
-        let index = 0;
-        let sourceIter = getIterator.call(that);
-
-        return {
-            next: ()=> {
-                
-                let cur = sourceIter.next();
-                while (!cur.done && !cb.call(thisArg, cur.value, index++)) {
-                    cur = sourceIter.next();
-                }
-                return iterResult(cur.done, cur.value);
-            }
-        }
-    }
-}
-
-function makeMapIterator(cb, thisArg) {
-    var that = this;
-    return function() {
-        let index = 0;
-        let sourceIter = getIterator.call(that);
-
-        return {
-            next: ()=> {
-                let cur = sourceIter.next();
-                return iterResult(cur.done, !cur.done && cb.call(thisArg, cur.value, index++))
-            }
-        }
-    }
-}
-
-function iterResult(done, value) {
-    if (!done) {
-        return {
-            value: value,
-            done: false
-        }
-    } else {
-        return {
-            done: true
-        }
-    }
-}
-
-function getIterator() {
-    return this[_source][Symbol.iterator]();
-}
-
-
 function Iter(source) {
      if (!(this instanceof Iter)) {
         return new Iter(source)
@@ -488,5 +238,253 @@ Iter.prototype = {
         return new Iter(Array.prototype[method].apply(this.toArray(), arguments));
     }
 })
+
+
+function findHelper(cb, thisArg) {
+    let iterator = getIterator.call(this);
+    let cur;
+    let index = 0;
+    while (cur = iterator.next(), !cur.done) {
+        if (cb.call(thisArg, cur.value)) {
+            return [index, cur.value];
+        }
+        index++;
+    }
+    return [-1, undefined];
+}
+function orDefault(Def) {
+     if (Def === Error) {
+        throw new Error('The sequence has no elements')
+    } else {
+        return Def;
+    }
+}
+
+function makeIterable(iterator) {
+    return {
+        [Symbol.iterator]: iterator
+    }
+}
+
+function cast(Type) {
+    return function(e) {
+        return new Type(e);
+    }
+}
+
+function skipIterable(n) {
+    var that = this;
+    return function() {
+        let iterator = getIterator.call(that);
+        while (n-- > 0 && !iterator.next().done) ;
+        return iterator;
+    } 
+}
+
+function takeIterable(n) {
+    var that = this;
+    return function() {
+        let iterator = getIterator.call(that);
+        return {
+            next: function() {
+                if (n !== 0) {
+                    let cur = iterator.next();
+                    if (!cur.done) {
+                        n--;
+                        return {
+                            done: false,
+                            value: cur.value
+                        }
+                    }
+                }
+                return {
+                    done: true
+                }
+            }
+        }
+    } 
+}
+
+function makeConcatIterator(args) {
+    var that = this;
+    return function() {
+        const sources = [that];
+        Array.prototype.forEach.call(args, function(arg) {
+            sources.push(arg);
+        })
+
+        let index = 0;
+        let iterator;
+
+        return {
+            next: function() {
+                let value;
+                while (!value && index < sources.length) {
+                    if (!iterator) {
+                        const source = sources[index];
+                        if (!source[Symbol.iterator]) {
+                            value = source;
+                            index++;
+                            break;
+                        }
+                        iterator = source[Symbol.iterator]();  
+                    }
+
+                    let cur = iterator.next();
+                    if (cur.done) {
+                        iterator=null;
+                        index++;
+                    } else {
+                        value = cur.value;
+                    }
+                }
+
+                return iterResult(sources.length<=index, value)
+            }
+        }        
+    }
+}
+
+function makeUniqueIterator() {
+    var that = this;
+    return function() {
+        let used = new Set();
+        let iterator = getIterator.call(that);
+        let cur;
+        return {
+            next: function() {
+                while (cur = iterator.next(), !cur.done) {
+                    if (!used.has(cur.value)) {
+                        used.add(cur.value)
+                        return {
+                            done: false,
+                            value: cur.value
+                        }
+                    }
+                }
+                return {
+                    done: true
+                }
+            }
+        }
+        
+    }
+}
+
+function makeGroupByIterator(group) {
+    var that = this;
+    return function() {
+        const cb = typeof group === 'string' ?
+            function(e) {
+                return e[group]
+            } :
+            group;
+
+        let dict = new Map();
+        
+        let cur;
+        let iterator = getIterator.call(that);
+        while (cur = iterator.next(), !cur.done) {
+            let e = cur.value;
+            let key = cb(e);
+            if (dict.has(key)) {
+                dict.get(key).push(e);
+            } else {
+                dict.set(key, [e]);
+            }
+        }
+
+        return dict[Symbol.iterator]();
+    }
+}
+
+function makeFlattenIterator() {
+    var that =this;
+    return function() {
+        let sourceIter = getIterator.call(that);
+        let iter=sourceIter;
+
+        return {
+            next: ()=> {
+                let value = null;
+                while(!value) {
+                    const isSource = iter === sourceIter;
+                    let cur = iter.next();
+                    if (cur.done) {
+                        if (!isSource) {
+                            iter = sourceIter;
+                        } else {
+                            return {
+                                done: true
+                            }
+                        }
+                    } else {
+                        if (isSource && cur.value[Symbol.iterator]) {
+                            iter = cur.value[Symbol.iterator]();
+                        } else {
+                            value = cur.value;
+                        }
+                    }
+                }
+
+                return {
+                    done: false,
+                    value: value    
+                }
+            }
+        }
+    }
+}
+
+function makeFilterIterator(cb, thisArg) {
+    var that = this;
+    return function() {
+        let index = 0;
+        let sourceIter = getIterator.call(that);
+
+        return {
+            next: ()=> {
+                
+                let cur = sourceIter.next();
+                while (!cur.done && !cb.call(thisArg, cur.value, index++)) {
+                    cur = sourceIter.next();
+                }
+                return iterResult(cur.done, cur.value);
+            }
+        }
+    }
+}
+
+function makeMapIterator(cb, thisArg) {
+    var that = this;
+    return function() {
+        let index = 0;
+        let sourceIter = getIterator.call(that);
+
+        return {
+            next: ()=> {
+                let cur = sourceIter.next();
+                return iterResult(cur.done, !cur.done && cb.call(thisArg, cur.value, index++))
+            }
+        }
+    }
+}
+
+function iterResult(done, value) {
+    if (!done) {
+        return {
+            value: value,
+            done: false
+        }
+    } else {
+        return {
+            done: true
+        }
+    }
+}
+
+function getIterator() {
+    return this[_source][Symbol.iterator]();
+}
 
 export default Iter;
