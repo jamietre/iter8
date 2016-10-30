@@ -1,6 +1,6 @@
 {
   "name": "iter8",
-  "version": "0.9.4",
+  "version": "0.9.5",
   "description": "JavaScript iterable transformation library",
   "main": "index.js",
   "scripts": {
