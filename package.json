@@ -1,6 +1,6 @@
 {
   "name": "iter8",
-  "version": "0.9.2",
+  "version": "0.9.3",
   "description": "Make JavaScript iterables fun!",
   "main": "index.js",
   "scripts": {
