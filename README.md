@@ -68,7 +68,7 @@ Then you can use the API described below. Iter8 has two types of methods: *trans
 
 *Transformation* methods return a new instance of `Iter` with a new sequence that's the result of your operation. *value-producing* methods return an element from the sequence or some computed value.
 
-Execution of every query is deferred until a *value producing* method is called, which exports data outside the construct of an `Iter` object. If your query doens't need to iterate over the entire sequence, it won't. Each of these methods returns something other than an `Iter` object thus ending the chain and causing execution.
+Execution of every query is deferred until a *value producing* method is called, which exports data outside the construct of an `Iter` object. If your query doesn't need to iterate over the entire sequence, it won't. Each of these methods returns something other than an `Iter` object thus ending the chain and causing execution.
 
 In addtion to these methods, some `Array` prototype methods are also value producing.
 
@@ -81,7 +81,8 @@ Causes the query to be executed immediately, instead of waiting until a value-re
 ```Javascript
 const intermediate = iter(something)
     .groupBy('category')
-    .map([key, value]=>[key, iter(value.map(e=>e.amount).sum())]);
+    .map([key, value]=>[key, iter(value.map(e=>e.amount).sum())])
+    .execute();
 
 let group1 = intermediate.filter([category]=>category === 'category 1').as(Map)
 let group2 = intermediate.filter([category]=>category === 'category 2').as(Map)

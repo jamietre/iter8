@@ -1,7 +1,7 @@
 {
   "name": "iter8",
   "version": "0.9.4",
-  "description": "Make JavaScript iterables fun!",
+  "description": "JavaScript iterable transformation library",
   "main": "index.js",
   "scripts": {
     "lint": "eslint src test",
