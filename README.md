@@ -1,14 +1,12 @@
 # iter8
 
-Make JavaScript iterables fun! 
-
-Start with the familiar `Array` API, add a dash of linq, and finish with deferred execution. 
+A data transformation library that provides the familiar `Array` API plus extensions for use on JavaScript iterables.
 
 ## Why?
 
-Iterators are a powerful new feature of ES6. ES6 `Set` and `Map` offer some much needed support for basic data structures. But, interop with arrays is inconvenient, and they lack native support for the most of the familiar array iteration/transformation methods.
+Iterators are a powerful new feature of ES6. ES6 `Set` and `Map` types offer some much needed support for basic data structures that support iterables directly. But, interop with arrays is inconvenient, and they lack native support for the most of the familiar array transformation methods.
 
-`iter8` seeks to bridge the gap between arrays an iterables, leveraging native data structures and adding some useful new transformation functions. Internally, it handles everything as an immutable seqeunce, and defers all queries for non-value-producing operations. No work gets done until you ask for some specific output, and the sequence is only iterated as much as needed to perform your operations. 
+`iter8` seeks to bridge the gap between arrays and iterables, leveraging native data structures and adding some useful new transformation functions. Internally, it handles everything as an immutable seqeunce, and defers all queries for non-value-producing operations. No work gets done until you ask for some specific output, and the sequence is only iterated as much as needed to perform your operations. 
 
 ## Installation 
 
@@ -16,7 +14,7 @@ Iterators are a powerful new feature of ES6. ES6 `Set` and `Map` offer some much
     
 ## Usage
 
-Wrap any iterable object with `iter(..)` and then use familiar `Array` and linq methods. All evaluation is performed only when actual data is exposed via methods that return data, and it's all performed via iteration.  
+Wrap any iterable object with `iter(..)` and then use familiar `Array` methods for transformation. Some new transformation and traversal methods are also added, like `groupBy` and `flatten`. All evaluation is performed only when actual data is exposed via methods that return data, and it's all performed via iteration.
 
 ```Javascript
 // someArray = [{active, id}]
@@ -27,10 +25,10 @@ const lookup = iter(someArray).
     .toArray();
 
 const firstThree = lookup.take(3).toArray()  
-const fourth = lookup.get(4)    // 4th id
+const fourth = lookup.get(4)   // returns value of 4th id
 ```
 
-OK I can already do that with in array.... so do more interesting things:
+I can already do that with in array.... so let's do some more interesting things:
 
 ```Javascript
 // money = [{ category, amount }]
@@ -194,7 +192,7 @@ let x = iter(arr).groupBy('category').toArray()
 
 #### flatten()
 
-For each element in the seqeunce, if the element is an array, return each element in the array as a new element in the sequence. Note that this is *not* recursive.
+For each element in the sequence, if the element is an array, return each element in the array as a new element in the sequence. Note that this is *not* recursive. Therefore if an element of the seqeunce is a seqeunce, and it contains an element that is *also* a sequence, the inner sequence will not be projected but just passed as-is. 
 
 ```Javascript
 let x = iter([[1, [2,3], 4, [5,6,[7],8]]]).toArray()
@@ -297,6 +295,10 @@ Return only unique elements resulting from merging another sequnce
 #### except
 
 Exclude elements found in another seqeuence
+
+### Extensibility
+
+Add an extension point for adding methods.
 
 ### Equality comparison
 
