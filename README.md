@@ -1,6 +1,8 @@
 # iter8
 
-Make JavaScript iterables fun! Start with the familiar `Array` API, add a dash of linq, and finish with deferred execution. 
+Make JavaScript iterables fun! 
+
+Start with the familiar `Array` API, add a dash of linq, and finish with deferred execution. 
 
 ## Why?
 
