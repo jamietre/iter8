@@ -145,9 +145,9 @@ let x = iter(myMap).toObject();
 //}
 ``` 
 
-### Aggregation and transformation methods
+### Transformation methods
 
-These methods return a new sequence based on some transformation of the original one.
+These methods return a new sequence based on some transformation of the original one. These include aggregation, traversal, and set operations.
 
 #### groupBy(group)
 
@@ -203,7 +203,7 @@ let x = iter([1,2,3,4,5]]).except([3,5]).toArray()
 // x === [1,2,4]
 ```
 
-### intersect(iterable)
+#### intersect(iterable)
 
 Return only elements in found in both sequences
 
@@ -230,7 +230,6 @@ let x = iter([1,2,3,4,5]).skip(1).take(2).toArray()
 // x === [2,3]
 ```
 
-
 ### repeat(obj, n) 
 
 Create a sequence of `obj` repeated `n` times
@@ -240,8 +239,7 @@ let x = iter([1]).concat(2, 5).toArray()
 // x === [1,2,2,2,2,2]
 ```
  
-
-Since each step operates against a new sequence defined by the previous step, successive `take` operations might operate counterintunitively -- e.g. `x.take(3).take(2)` is *not* the same as `x.take(5)` -- rather it's the same as `x.take(2)`.
+ Since each step operates against a new sequence defined by the previous step, successive `take` operations might operate counterintunitively -- e.g. `x.take(3).take(2)` is *not* the same as `x.take(5)` -- rather it's the same as `x.take(2)`.
 
 #### cast(Type)
 
