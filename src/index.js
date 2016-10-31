@@ -296,13 +296,6 @@ function findHelper(cb, thisArg) {
     }
     return [-1, undefined];
 }
-function orDefault(Def) {
-     if (Def === Error) {
-        throw new Error('The sequence has no elements')
-    } else {
-        return Def;
-    }
-}
 
 function makeIterable(iterator) {
     return {
