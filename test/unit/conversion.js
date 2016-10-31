@@ -52,7 +52,7 @@ describe('iter - conversion', ()=> {
     it('fromObject - proto chain', ()=> {
         let obj = new Obj();
         obj.fizz = 'buzz';
-        let sut = iter(obj);
+        let sut = iter.fromObject(obj);
 
         assert.deepEqual(sut.toArray(), [['fizz','buzz'], ['superProp','super-prop']])
     })
@@ -75,11 +75,9 @@ describe('iter - conversion', ()=> {
         assert.deepEqual(sut.toArray(), [['fizz','buzz']])
     })
 
-
-
-    xit('fromObject - property getters - own', ()=> {
+    // it('fromObject - property getters - own', ()=> {
         
-    })
+    // })
 
     it('can use generators', ()=> {
         function* gen() {

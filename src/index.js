@@ -7,7 +7,7 @@ function Iter(source) {
     }
     if (source && !source[Symbol.iterator]) {
         if (typeof source === 'object') {
-            return Iter.fromObject(source);
+            return Iter.fromObjectOwn(source);
         }
         throw new Error('iter can only be sourced with an Iterable object or a regular Javascript object.');
     }

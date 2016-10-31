@@ -6,7 +6,7 @@ A data transformation library that provides the familiar `Array` API plus extens
 
 Iterators are a powerful new feature of ES6. ES6 `Set` and `Map` types offer some much needed support for basic data structures that support iterables directly. But, interop with arrays is inconvenient, and they lack native support for the most of the familiar array transformation methods.
 
-`iter8` seeks to bridge the gap between arrays and iterables, leveraging native data structures and adding some useful new transformation functions. Internally, it handles everything as an immutable seqeunce, and defers all queries for non-value-producing operations. No work gets done until you ask for some specific output, and the sequence is only iterated as much as needed to perform your operations. 
+`iter8` seeks to bridge the gap between arrays and iterables, leveraging native data structures and adding some useful new transformation functions. Internally, it handles everything as an immutable sequence, and defers all queries for non-value-producing operations. No work gets done until you ask for some specific output, and the sequence is only iterated as much as needed to perform your operations. 
 
 ## Installation 
 
@@ -66,11 +66,13 @@ let x = iter(someArray)
 
 Then you can use the API described below. Iter8 has two types of methods: *transformation* and *value-producing*.
 
-*Transformation* methods return a new instance of `Iter` with a new sequence that's the result of your operation. *value-producing* methods return a value.
+*Transformation* methods return a new instance of `Iter` with a new sequence that's the result of your operation. *Value-producing* methods return a value.
 
 Execution of every query is deferred until a *value producing* method is called, which exports data outside the construct of an `Iter` object. If your query doesn't need to iterate over the entire sequence, it won't. Each value-producing methods returns something other than an `Iter` object thus ending the chain and causing execution.
 
-In addition to its own API, `Iter` implements method for each `Array` prototype methods that don't mutate the array. Some of these are value-producing, such as `indexOf`, while some are transformation functions and produce a new `Iter`, such as `filter`.
+In addition to its own API, `Iter` implements method for all the `Array` prototype methods that don't mutate the array. Some of these are value-producing, such as `indexOf`, while some are transformation functions and produce a new sequence, such as `filter`.
+
+*Note about key-value pairs:* When describing an element as a *key-value pair*, this always means an array with two elements: `[key, value]`. This is the data structure used by JavaScript `Map` objects, and is also used for many other operations by `Iter` such as iterating over objects (property-value), and grouping (groupname-members).
 
 ## Creating Iter objects
 
@@ -88,9 +90,9 @@ let obj = iter({ foo: 'bar', fizz: 'buzz'}).toArray();
 // [['foo', 'bar'], ['fizz', 'buzz]]
 ```
 
-The default behavior is to enumerate own properties as well as the prototype chain. 
+The default behavior is to enumerate own properties as well as the prototype chain. `constructor` is always ignored.
 
-Key/value pairs make for easy interop with javascript `Map` objects, too:
+Key-value pairs make for easy interop with javascript `Map` objects, too:
 
 ```Javascript
 let obj = iter({ foo: 'bar', fizz: 'buzz'}).as(Map);
@@ -98,7 +100,7 @@ let obj = iter({ foo: 'bar', fizz: 'buzz'}).as(Map);
 ```
 ### Static methods
 
-In addition to the default construtor/factory function, you can call some specific construction methods:
+In addition to the default construtor/factory function, you can call some specific construction helpers:
 
 #### fromObject(obj, filter)
 
@@ -112,7 +114,7 @@ Create a new `Iter` of `[key,value]` pairs, ignoring the prototype chain. This a
 
 You can pass a callback `filter(prop)` to filter properties. Returning `false` from the callback will exclude the property.
 
-The default object creation behavior when passing an object directly to `iter` is the smae as `Iter.fromObjectOwn(obj)` with no filter.
+The default object creation behavior when passing an object directly to `iter` is the same as `Iter.fromObjectOwn(obj)` with no filter.
 
 #### fromIterator(iterator)
 
@@ -134,15 +136,15 @@ These methods all cause the query to execute and return some value or object.
 
 #### first()
 
-Return the first element in the sequence. Same as `get(0)`
+Return the first element in the sequence. Same as `get(0)`.
 
 #### last()
 
-Return the last element in the sequence
+Return the last element in the sequence.
 
 #### get(n)
 
-Return the nth (0-based) element in the sequence
+Return the nth (0-based) element in the sequence.
 
 #### count()
 
@@ -155,7 +157,7 @@ let x = iter([1,2,3,4,5]).count()
 
 #### min()
 
-Return the minimum of all values in the seqeunce
+Return the minimum of all values in the seqeunce:
 
 ```Javascript
 let x = iter([3,1,2,4]).min()
@@ -164,19 +166,19 @@ let x = iter([3,1,2,4]).min()
 
 #### max()
 
-Return the max of all values in the sequence
+Return the max of all values in the sequence.
 
 #### sum()
 
-Return the sum of all values in the sequence
+Return the sum of all values in the sequence.
 
 #### toArray()
 
-Return an array created by iterating the sequence completely. Same as `as(Array)`
+Return an array created by iterating the sequence completely. Same as `as(Array)`.
 
 #### toObject()
 
-Assuming the seqeunce contains *key-value pairs* and each key is unique, return an object with `{ property: value }` for each key-value pair.
+Assuming the seqeunce contains *key-value pairs* and each key is unique, return an object with `{property: value}` for each key-value pair.
 
 This method makes no effort to validate the elements in your sequence, rather, it just uses `value[0]` for each key and `value[1]` for each value. It is often useful in conjunction with `groupBy`, which returns a sequence of key/value pairs, or when `iter` is created from a `Map` object. 
 
@@ -184,6 +186,7 @@ This method makes no effort to validate the elements in your sequence, rather, i
 let myMap = new Map();
 myMap.set('foo', 'bar')
 myMap.set('fizz', 'buzz')
+
 let x = iter(myMap).toObject();
 
 // x === { 
@@ -209,7 +212,7 @@ These methods return a new sequence based on some transformation of the original
 
 #### groupBy(group)
 
-Return a sequence of `key-value pairs` (an array with two elements) where each key is a distinct group, and each value is an `Array` of all the elements from the original sequence in that group.
+Return a sequence of *key-value pairs* where each key is a distinct group, and each value is an `Array` of all the elements from the original sequence in that group.
 
 
 `group` can be a string, which will use the value of the given property on each element in the sequence, or a `callback` function that should return a value, in which case each distinct return value will be a group.
@@ -301,7 +304,7 @@ let x = iter([1,2,3,4,5]).skip(1).take(2).toArray()
  
 Since each step operates against a new sequence defined by the previous step, successive `take` operations might operate counterintunitively -- e.g. `x.take(3).take(2)` is *not* the same as `x.take(5)` -- rather it's the same as `x.take(2)`.
 
-### repeat(obj, n) 
+#### repeat(obj, n) 
 
 Create a sequence of `obj` repeated `n` times
 
@@ -440,7 +443,7 @@ Add an extension point for adding methods.
 
 Some complex set operations are much more useful if a notion of equality comparison other than simply reference equality (e.g. `===`) can be used when performing the operation. In C# think of `getHashCode` and `equals`. There's a vague notion of this with `valueOf` in Javascript, but it doesn't work for direct comparisons, only relative ones (`<` and `>`). 
 
-It would be nice to implement a convention such as `equals` which some operations will use to perform equality comparisons, if available.
+It would be nice to implement a convention such as `equals` which some operations will use to perform equality comparisons, if available.e
 
 ### Performance
 
