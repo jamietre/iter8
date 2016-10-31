@@ -131,7 +131,7 @@ Return an array created by iterating the sequence completely. Same as `as(Array)
 
 Assuming the seqeunce contains *key-value pairs* and each key is unique, return an object with `{ property: value }` for each key-value pair.
 
-This method makes no effort to validate the elemens in your sequence, rather, it just uses `value[0]` for each key and `value[1]` for each value. It is often useful in conjunction with `groupBy`, which returns a sequnce of key/value pairs, or when `iter` is created from a `Map` object. 
+This method makes no effort to validate the elements in your sequence, rather, it just uses `value[0]` for each key and `value[1]` for each value. It is often useful in conjunction with `groupBy`, which returns a sequence of key/value pairs, or when `iter` is created from a `Map` object. 
 
 ```Javascript
 let myMap = new Map();
@@ -217,8 +217,12 @@ let x = iter([1,2,3,4,5]]).except([3,5]).toArray()
 Skip `n` elements in the sequence
 
 ```Javascript
-let x = iter([1,2,3,4,5]).skip(2).value   
+let seq = iter([1,2,3,4,5])
+let x = seq.skip(2).value   
 // x === 3
+let x = seq.skip(2).toArray()
+// x === [3,4,5]
+
 ```
 
 #### take(n)
@@ -229,17 +233,17 @@ Subset the sequence to include only the next `n` elements.
 let x = iter([1,2,3,4,5]).skip(1).take(2).toArray() 
 // x === [2,3]
 ```
+ 
+Since each step operates against a new sequence defined by the previous step, successive `take` operations might operate counterintunitively -- e.g. `x.take(3).take(2)` is *not* the same as `x.take(5)` -- rather it's the same as `x.take(2)`.
 
 ### repeat(obj, n) 
 
 Create a sequence of `obj` repeated `n` times
 
 ```Javascript
-let x = iter([1]).concat(2, 5).toArray() 
+let x = iter([1]).repeat(2, 5).toArray() 
 // x === [1,2,2,2,2,2]
 ```
- 
- Since each step operates against a new sequence defined by the previous step, successive `take` operations might operate counterintunitively -- e.g. `x.take(3).take(2)` is *not* the same as `x.take(5)` -- rather it's the same as `x.take(2)`.
 
 #### cast(Type)
 
