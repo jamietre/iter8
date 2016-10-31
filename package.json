@@ -8,7 +8,7 @@
     "pretest": "npm run lint",
     "test": "mocha ./test/unit/",
     "build": "babel src --out-dir dist",
-    "prepublish": "in-publish && npm run test && npm run build || npm run build"
+    "prepublish": "in-publish && npm run test && npm run build || not-in-publish && npm run build"
   },
   "repository": {
     "type": "git",
