@@ -305,4 +305,17 @@ describe('iter', ()=> {
             "fizz": "buzz"
         })
     })
+    it('except', ()=> {
+        let source = [1,2,3,4,5]
+        assert.deepEqual(iter(source).except([3,4]).toArray(), [1,2,5])
+        assert.deepEqual(iter(source).except([1,5,6]).toArray(), [2,3,4])
+    })
+    it('intersect', ()=> {
+        let source = [1,2,3,4,5]
+        assert.deepEqual(iter(source).intersect([4,5,8,9]).toArray(), [4,5])
+        assert.deepEqual(iter(source).intersect([8,9,10]).toArray(), [])
+    })
+    it('repeat', ()=> {
+        assert.deepEqual(iter().repeat("foo",5).toArray(), ["foo","foo","foo","foo","foo"]);
+    })
 })

@@ -74,55 +74,6 @@ In addtion to these methods, some `Array` prototype methods are also value produ
 
 ### Value-returning methods
 
-#### execute()
-
-Causes the query to be executed immediately, instead of waiting until a value-returning method is run. This is useful in cases where you want to keep your data in an `Iter` object, but cache an intermediate result for later use with other computations.
-
-```Javascript
-const intermediate = iter(something)
-    .groupBy('category')
-    .map([key, value]=>[key, iter(value.map(e=>e.amount).sum())])
-    .execute();
-
-let group1 = intermediate.filter([category]=>category === 'category 1').as(Map)
-let group2 = intermediate.filter([category]=>category === 'category 2').as(Map)
-```
-
-Without uising "execute" here, the "groupBy" etc. would be run twice for both `group1` and `group2` since execution of the entire query is deferred until a value-producing result, in this case `as(Map)`.
-
-#### as(Type)
-
-Creates an instance of `Type` using the sequence as a single constructor argument. This works well with the ES6 `Map` and `Set` types. You can also use `Array`, which is a special case, even though constructing an Array with an iterable doesn't work directly. You can use any user-defined types that can accept an iterable as a single constructor argument.
-
-```Javascript
-// make a lookup table returning all elements of the source grouped by the
-// values of property `category`
-
-let map = iter(something).groupBy('category').as(Map)
-```
-
-#### toArray()
-
-Return an array created by iterating the sequence completely. Same as `as(Array)`
-
-#### toObject()
-
-Assuming the seqeunce contains *key-value pairs* and each key is unique, return an object with `{ property: value }` for each key-value pair.
-
-This method makes no effort to validate the elemens in your sequence, rather, it just uses `value[0]` for each key and `value[1]` for each value. It is often useful in conjunction with `groupBy`, which returns a sequnce of key/value pairs, or when `iter` is created from a `Map` object. 
-
-```Javascript
-let myMap = new Map();
-myMap.set('foo', 'bar')
-myMap.set('fizz', 'buzz')
-let x = iter(myMap).toObject();
-
-// x === { 
-//    "foo": "bar",
-//    "fizz": "buzz"
-//}
-``` 
-
 #### first()
 
 Return the first element in the sequence. Same as `get(0)`
@@ -160,6 +111,39 @@ Return the max of all values in the sequence
 #### sum()
 
 Return the sum of all values in the sequence
+
+#### as(Type)
+
+Creates an instance of `Type` using the sequence as a single constructor argument. This works well with the ES6 `Map` and `Set` types. You can also use `Array`, which is a special case, even though constructing an Array with an iterable doesn't work directly. You can use any user-defined types that can accept an iterable as a single constructor argument.
+
+```Javascript
+// make a lookup table returning all elements of the source grouped by the
+// values of property `category`
+
+let map = iter(something).groupBy('category').as(Map)
+```
+
+#### toArray()
+
+Return an array created by iterating the sequence completely. Same as `as(Array)`
+
+#### toObject()
+
+Assuming the seqeunce contains *key-value pairs* and each key is unique, return an object with `{ property: value }` for each key-value pair.
+
+This method makes no effort to validate the elemens in your sequence, rather, it just uses `value[0]` for each key and `value[1]` for each value. It is often useful in conjunction with `groupBy`, which returns a sequnce of key/value pairs, or when `iter` is created from a `Map` object. 
+
+```Javascript
+let myMap = new Map();
+myMap.set('foo', 'bar')
+myMap.set('fizz', 'buzz')
+let x = iter(myMap).toObject();
+
+// x === { 
+//    "foo": "bar",
+//    "fizz": "buzz"
+//}
+``` 
 
 ### Aggregation and transformation methods
 
@@ -205,6 +189,29 @@ let x = iter([[1, [2,3], 4, [5,6,[7],8]]]).toArray()
 
 Return a sequence containing only one element for each distinct value in the sequence
 
+```Javascript
+let x = iter([1,2,3,3,4,4,5,4,5]]).unique().toArray()
+// x === [1,2,3,4,5]
+```
+
+#### except(iterable)
+
+Return only elements in the first sequence not found in the 2nd
+
+```Javascript
+let x = iter([1,2,3,4,5]]).except([3,5]).toArray()
+// x === [1,2,4]
+```
+
+### intersect(iterable)
+
+Return only elements in found in both sequences
+
+```Javascript
+let x = iter([1,2,3,4,5]]).except([3,5]).toArray()
+// x === [1,2,4]
+```
+
 #### skip(n)
 
 Skip `n` elements in the sequence
@@ -223,11 +230,38 @@ let x = iter([1,2,3,4,5]).skip(1).take(2).toArray()
 // x === [2,3]
 ```
 
+
+### repeat(obj, n) 
+
+Create a sequence of `obj` repeated `n` times
+
+```Javascript
+let x = iter([1]).concat(2, 5).toArray() 
+// x === [1,2,2,2,2,2]
+```
+ 
+
 Since each step operates against a new sequence defined by the previous step, successive `take` operations might operate counterintunitively -- e.g. `x.take(3).take(2)` is *not* the same as `x.take(5)` -- rather it's the same as `x.take(2)`.
 
 #### cast(Type)
 
 Convert each element to in instance of `Type`. `Type` must be a constructor, and is invoked with the element as a single constructor argument for each element in the sequence.
+
+#### execute()
+
+Though this is not a value-produducing method, it causes the query to be executed immediately, instead of waiting until a value-returning method is run. This is useful in cases where you want to keep your data in an `Iter` object, but cache an intermediate result for later use with other computations.
+
+```Javascript
+const intermediate = iter(something)
+    .groupBy('category')
+    .map([key, value]=>[key, iter(value.map(e=>e.amount).sum())])
+    .execute();
+
+let group1 = intermediate.filter([category]=>category === 'category 1').as(Map)
+let group2 = intermediate.filter([category]=>category === 'category 2').as(Map)
+```
+
+Without uising "execute" here, the "groupBy" etc. would be run twice for both `group1` and `group2` since execution of the entire query is deferred until a value-producing result, in this case `as(Map)`.
 
 
 ### All non-destructive Array.prototype members
@@ -289,11 +323,22 @@ Take elements as long as `callback(value)` is true
 
 ditto
 
-#### union
+#### union(other)
 
 Return only unique elements resulting from merging another sequnce
 
-#### except
+#### sequenceEqual(other)
+
+Determine if two sequences are equal
+
+#### zip(other, fn)
+
+Apply a function to the corresponding elements of two sequences; return the output of the function for each element.
+
+#### other enhancements
+
+* Add a "map" callback as an optional argument for sum, min, max methods (most common use case: sum values of a property)
+* Update documentation to discuss "undefined" as return value for value-producing methods that have empty seqeuences as input
 
 Exclude elements found in another seqeuence
 

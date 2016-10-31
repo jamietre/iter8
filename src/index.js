@@ -5,10 +5,10 @@ function Iter(source) {
      if (!(this instanceof Iter)) {
         return new Iter(source)
     }
-    if (!source[Symbol.iterator]) {
+    if (source && !source[Symbol.iterator]) {
         throw new Error('iter can only be sourced with an Iterable object');
     }
-    this[_source]=source;
+    this[_source]=source || [];
 }
 Iter.prototype = {
     constructor: Iter,
@@ -47,15 +47,15 @@ Iter.prototype = {
     skip: function(n) {
         return new Iter(makeIterable(skipIterable.call(this, n)));
     },
-    skipWhile: function(/*cb*/) {
-        throw new Error('not implemented')
-    },
+    // skipWhile: function(/*cb*/) {
+    //     throw new Error('not implemented')
+    // },
     take: function(n) {
         return new Iter(makeIterable(takeIterable.call(this, n)));
     },
-    takeWhile: function(/*cb*/) {
-        throw new Error('not implemented')
-    },
+    // takeWhile: function(/*cb*/) {
+    //     throw new Error('not implemented')
+    // },
     cast: function(Type) {
         return new Iter(makeIterable(makeMapIterator.call(this, cast(Type))));
     },
@@ -83,6 +83,15 @@ Iter.prototype = {
     // todo: equality comparitor callback.
     unique: function() {
         return new Iter(makeIterable(makeUniqueIterator.call(this)));
+    },
+    except: function(sequence) {
+        return new Iter(makeIterable(makeExceptIterator.call(this, sequence)));
+    },
+    intersect(sequence) {
+        return new Iter(makeIterable(makeIntersectIterator.call(this, sequence)));
+    },
+    repeat(obj, times) {
+        return new Iter(makeIterable(makeRepeatIterator.call(this, obj, times)));
     },
     concat: function() {
         return new Iter(makeIterable(makeConcatIterator.call(this, arguments)));
@@ -123,9 +132,9 @@ Iter.prototype = {
      * When implemented, this method should return a single sequence with only unique values.
      * This can be done with concat().unique()
      */
-    union: function(/*sequence*/) {
-        throw new Error('not implemented');
-    },
+    // union: function(/*sequence*/) {
+    //     throw new Error('not implemented');
+    // },
     indexOf(el) {
         let iterator = getIterator.call(this);
         let cur;
@@ -214,19 +223,23 @@ Iter.prototype = {
     execute() {
         return new Iter(this.toArray());
     },
-    min: function() {
+    min() {
         return Math.min.apply(null, this.toArray());
     },
-    max: function() {
+    max() {
         return Math.max.apply(null, this.toArray());
     },
-    sum: function() {
+    sum() {
         let iterator = getIterator.call(this);
         let cur;
         let total = 0;
         while (cur = iterator.next(), !cur.done) total+=cur.value;
         return total;
     },
+    // average: function() {
+    // throw new error('not implemented')    
+    // },
+
     [Symbol.iterator]: function() {
         return this[_source][Symbol.iterator]();
     }
@@ -303,6 +316,47 @@ function takeIterable(n) {
             }
         }
     } 
+}
+
+function getNext(condition) {
+    let sourceIter = getIterator.call(this);
+    return {    
+        next: ()=> {
+            
+            let cur = sourceIter.next();
+            while (!cur.done && !condition(cur)) {
+                cur = sourceIter.next();
+            }
+            return iterResult(cur.done, cur.value);
+        }
+    }
+
+}
+
+function makeExceptIterator(other) {
+    var that = this;
+    return function() {
+        let except = new Set(other);        
+        return getNext.call(that, (cur)=> !except.has(cur.value))
+    }
+}
+
+function makeIntersectIterator(other) {
+    var that = this;
+    return function() {
+        let intersect = new Set(other);
+        return getNext.call(that, (cur)=> intersect.has(cur.value))
+    }
+}
+
+function makeRepeatIterator(obj, times) {
+    return function() {
+        return {
+            next: function() {
+                return iterResult(times--<=0, obj)
+            }
+        } 
+    }
 }
 
 function makeConcatIterator(args) {
