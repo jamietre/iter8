@@ -325,6 +325,20 @@ Negative values for "begin" not currently supported (todo for api compatibility)
 
 ## Roadmap
 
+### Construct from object
+
+We should be able to construct from an object. Need to think of API for object key iteration techniques. The issue is the variety of ways to determine which keys to use:
+
+-- own keys
+-- all prototype chain (except constructor)
+-- probably want to iterate property getters optionally 
+
+    iter(obj) 
+    iter.fromObject(obj) -- include proto - same as "for in"
+    iter.fromObject(obj, true) -- include property getters
+    iter.fromObjectOwn(obj) -- just own properties, same as Object.keys
+    ?
+
 ### Missing methods
 
 There are a few more interesting methods I'd like to implement that are pretty easy and will be in the next release:
