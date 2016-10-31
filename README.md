@@ -194,7 +194,7 @@ let x = iter([1,2,3,3,4,4,5,4,5]]).unique().toArray()
 // x === [1,2,3,4,5]
 ```
 
-#### except(iterable)
+#### except(sequence)
 
 Return only elements in the first sequence not found in the 2nd
 
@@ -203,7 +203,7 @@ let x = iter([1,2,3,4,5]]).except([3,5]).toArray()
 // x === [1,2,4]
 ```
 
-#### intersect(iterable)
+#### intersect(sequence)
 
 Return only elements in found in both sequences
 
@@ -251,7 +251,7 @@ Convert each element to in instance of `Type`. `Type` must be a constructor, and
 
 #### execute()
 
-Though this is not a value-produducing method, it causes the query to be executed immediately, instead of waiting until a value-returning method is run. This is useful in cases where you want to keep your data in an `Iter` object, but cache an intermediate result for later use with other computations.
+Though this is not a value-producing method, it causes the query to be executed immediately, instead of waiting until a value-returning method is run. This is useful in cases where you want to keep your data in an `Iter` object, but cache an intermediate result for later use with other computations.
 
 ```Javascript
 const intermediate = iter(something)
@@ -263,8 +263,7 @@ let group1 = intermediate.filter([category]=>category === 'category 1').as(Map)
 let group2 = intermediate.filter([category]=>category === 'category 2').as(Map)
 ```
 
-Without uising "execute" here, the "groupBy" etc. would be run twice for both `group1` and `group2` since execution of the entire query is deferred until a value-producing result, in this case `as(Map)`.
-
+Without using "execute" here, the "groupBy" etc. would be run twice for both `group1` and `group2` since execution of the entire query is deferred until a value-producing result, in this case `as(Map)`.
 
 ### All non-destructive Array.prototype members
 
@@ -272,13 +271,13 @@ Every `Array` method that doesn't mutate the array is supported, and execution i
 
 `length` is also explicitly not implemented. Instead see `count`, above. Since obtaining the number of elements in a sequence necessarily requires iterating the sequence, this is a method rather than a property.
 
-#### forEach(callback, thisArg)
+#### forEach(callback(e, i), thisArg)
 
-Unlike the native array `forEach`, this method has a return value of the sequence itself. It returns *the original sequence* -- not a new instance of `Iter`. This is because `forEach` cannot be used to transform values, but rather is used to cause side effects. So you can chain from `forEach`.
+Unlike the native array `forEach`, this method returns a seqeuence, and therefore can be chained. It is the same as map, but always returning the original element. The return value from `forEach` is ignored.
 
-#### map(callback, thisArg)
+#### map(callback(e, i), thisArg)
 
-#### filter(callback, thisArg)
+#### filter(callback(e, i), thisArg)
 
 #### concat(sequence, sequence, ...)
 
@@ -286,29 +285,31 @@ If non-iterable arguments are passed, they will be appended to the sequence as w
 
 #### slice(begin, end)
 
-#### sort(callback)
+Negative values for "begin" not currently supported (todo for api compatibility)
+
+#### sort(callback(a, b))
 
 #### reverse()
 
 #### join(separator) *value-producing*
 
-#### some(callback, thisArg) *value-producing*
+#### some(callback(e, i), thisArg) *value-producing*
 
-#### every(callback, thisArg) *value-producing*
+#### every(callback(e, i), thisArg) *value-producing*
 
-#### includes(callback, thisarg) *value-producing*
+#### includes(value) *value-producing*
 
 #### indexOf(value) *value-producing*
 
 #### lastIndexOf(value) *value-producing*
 
-#### findIndex(callback, thisArg) *value-producing*
+#### findIndex(callback(e, i), thisArg) *value-producing*
 
-#### find(callback, thisArg) *value-producing*
+#### find(callback(e, i), thisArg) *value-producing*
 
-#### reduce(callback, initial) *value-producing*
+#### reduce(callback(last, current, i), initial) *value-producing*
 
-#### reduceRight(callback, initial) *value-producing*
+#### reduceRight(callback(last, current, i), initial) *value-producing*
 
 
 ## Roadmap
@@ -327,7 +328,7 @@ ditto
 
 #### union(other)
 
-Return only unique elements resulting from merging another sequnce
+Return only unique elements resulting from merging another sequence
 
 #### sequenceEqual(other)
 
@@ -337,10 +338,11 @@ Determine if two sequences are equal
 
 Apply a function to the corresponding elements of two sequences; return the output of the function for each element.
 
-#### other enhancements
+#### other method enhancements
 
 * Add a "map" callback as an optional argument for sum, min, max methods (most common use case: sum values of a property)
 * Update documentation to discuss "undefined" as return value for value-producing methods that have empty seqeuences as input
+* Add an `n` argument for `first`, `last` to return first `n` items
 
 Exclude elements found in another seqeuence
 

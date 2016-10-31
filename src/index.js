@@ -19,15 +19,7 @@ Iter.prototype = {
      * @returns {Iter} the same iterator 
      */
     forEach: function(cb, thisArg) {
-        let iterator = getIterator.call(this);
-        let cur;
-        let index=0;
-        while (cur = iterator.next(), !cur.done) {
-            if (cb.call(thisArg, cur.value, index++) === false) {
-                return;
-            }
-        }
-        return this;
+        return new Iter(makeIterable(makeForEachIterator.call(this,cb, thisArg)));
     },
     map: function(cb, thisArg) {
         return new Iter(makeIterable(makeMapIterator.call(this,cb, thisArg)));
@@ -320,17 +312,32 @@ function takeIterable(n) {
 
 function getNext(condition) {
     let sourceIter = getIterator.call(this);
+    let index = 0;
     return {    
-        next: ()=> {
-            
+        next: function() {
             let cur = sourceIter.next();
-            while (!cur.done && !condition(cur)) {
+            while (!cur.done && !condition(cur, index++)) {
                 cur = sourceIter.next();
             }
             return iterResult(cur.done, cur.value);
         }
     }
+}
 
+function makeForEachIterator(cb, thisArg) {
+    var that = this;
+    return function() {
+        let index = 0;
+        let sourceIter = getIterator.call(that);
+
+        return {
+            next: ()=> {
+                let cur = sourceIter.next();
+                return iterResult(cur.done, !cur.done && 
+                    (cb.call(thisArg, cur.value, index++)), cur.value)
+            }
+        }
+    }
 }
 
 function makeExceptIterator(other) {
@@ -518,7 +525,8 @@ function makeMapIterator(cb, thisArg) {
         return {
             next: ()=> {
                 let cur = sourceIter.next();
-                return iterResult(cur.done, !cur.done && cb.call(thisArg, cur.value, index++))
+                return iterResult(cur.done, !cur.done && 
+                    cb.call(thisArg, cur.value, index++))
             }
         }
     }

@@ -222,26 +222,16 @@ describe('iter', ()=> {
     it('forEach', ()=> {
         let sut = iter([1,2,3,4,5])
         let done = false;
-        let newIter = sut.forEach((e, i)=> {
+        sut.forEach((e, i)=> {
             assert.equal(e, i+1);
             if (e === 5) { 
                 done=true 
             }
-        })
+        }).execute();
+
         assert.ok(done);
-        assert.equal(newIter, sut, 'forEach returns the original iterator');
     })
-    it('forEach w/ break', ()=> {
-        let sut = iter([1,2,3,4,5])
-        let results = [];
-        sut.forEach((e)=> {
-            results.push(e);
-            if (e === 3) { 
-                return false; 
-            }
-        })
-        assert.deepEqual(results, [1,2,3]);
-    })
+
     it('reduce', ()=> {
         assert.equal(iter([1,2,3]).reduce((last, cur)=> { 
             last += cur; 
