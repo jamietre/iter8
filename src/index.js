@@ -6,10 +6,22 @@ function Iter(source) {
         return new Iter(source)
     }
     if (source && !source[Symbol.iterator]) {
-        throw new Error('iter can only be sourced with an Iterable object');
+        if (typeof source === 'object') {
+            return Iter.fromObject(source);
+        }
+        throw new Error('iter can only be sourced with an Iterable object or a regular Javascript object.');
     }
     this[_source]=source || [];
 }
+Object.assign(Iter, {
+    fromIterator:  function(iterator) {
+        return new Iter(makeIterable(iterator));
+    },
+    fromObject: function(obj/*, opts*/) {
+          return new Iter(makeIterable(makeObjectIterator.call(this, obj)));
+    }
+});
+
 Iter.prototype = {
     constructor: Iter,
     /**
@@ -324,6 +336,27 @@ function getNext(condition) {
                 cur = sourceIter.next();
             }
             return iterResult(cur.done, cur.value);
+        }
+    }
+}
+
+function makeObjectIterator(obj, ownPropsOnly/*, includeGetters*/) {
+    return function() {
+        let props;
+        if (!ownPropsOnly) {
+            props = [];
+            for (var prop in obj) {
+                props.push(prop);
+            }
+        } else {
+            props = Object.keys(obj);
+        }
+        let sourceIter = props[Symbol.iterator]();
+        return {
+            next: ()=> {
+                let cur = sourceIter.next();
+                return iterResult(cur.done, !cur.done && [cur.value, obj[cur.value]])
+            }
         }
     }
 }

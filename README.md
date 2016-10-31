@@ -72,6 +72,32 @@ Execution of every query is deferred until a *value producing* method is called,
 
 In addtion to these methods, some `Array` prototype methods are also value producing.
 
+## Creating Iter objects
+
+To create a new `Iter` from any iterable or plain JavaScript object, just:
+
+```Javascript
+let obj = iter([1,2,3]).filter(e=>e<3).toArray()
+// [2,3]
+
+```
+JavaScript objects become sequences of `[key, value]` pairs:
+
+```Javascript
+let obj = iter({ foo: 'bar', fizz: 'buzz'}).toArray();
+// [['foo', 'bar'], ['fizz', 'buzz]]
+```
+
+The default behavior is to enumerate own properties as well as the prototype chain. 
+
+Key/value pairs make for easy interop with javascript `Map` objects, too:
+
+```Javascript
+let obj = iter({ foo: 'bar', fizz: 'buzz'}).as(Map);
+// Map { 'foo' => 'bar', 'fizz' => 'buzz' }
+```
+
+ 
 ### Value-returning methods
 
 #### first()
