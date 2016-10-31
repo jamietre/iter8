@@ -275,6 +275,17 @@ Every `Array` method that doesn't mutate the array is supported, and execution i
 
 Unlike the native array `forEach`, this method returns a seqeuence, and therefore can be chained. It is the same as map, but always returning the original element. The return value from `forEach` is ignored.
 
+```Javascript
+// log 'message' for all but the first 3 elements in the sequence
+iter(arr).skip(3).forEach((e)=> {
+    console.log(e.message)
+}).execute();
+```
+
+Note the `execute` at the end of this example. Because we are only interested in side effects, and there's no other value-producing method, we must do this to cause the iteration to take place. Without the `execute` in this example, *nothing would happen*.
+
+In `Iter` a `forEach` is the same as any other transform - it defers its action until the sequence is iterated.
+
 #### map(callback(e, i), thisArg)
 
 #### filter(callback(e, i), thisArg)

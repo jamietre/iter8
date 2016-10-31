@@ -213,6 +213,10 @@ Iter.prototype = {
      * @returns {Iter} a new Iter object
      */
     execute() {
+        // todo: spit this into 'iterate' (whcih returns a sequence) and
+        // 'execute' which does not? (e.g. if we just want side effects, no 
+        // need to return an array)
+
         return new Iter(this.toArray());
     },
     min() {
