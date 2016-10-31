@@ -57,7 +57,7 @@ let foodSales = money.get('food');
 
 ## API
 
-Iter exports a single function/constructor. To use iter8, create a new instance:
+Iter exports a single function. This is a constructor, so it can be used for `instanceof` tests, but you can also simply invoke it rather than using `new`. To use iter8, create a new instance from an iterable object:
 
 ```JavaScript
 import iter from `iter8`
@@ -66,11 +66,11 @@ let x = iter(someArray)
 
 Then you can use the API described below. Iter8 has two types of methods: *transformation* and *value-producing*.
 
-*Transformation* methods return a new instance of `Iter` with a new sequence that's the result of your operation. *value-producing* methods return an element from the sequence or some computed value.
+*Transformation* methods return a new instance of `Iter` with a new sequence that's the result of your operation. *value-producing* methods return a value.
 
-Execution of every query is deferred until a *value producing* method is called, which exports data outside the construct of an `Iter` object. If your query doesn't need to iterate over the entire sequence, it won't. Each of these methods returns something other than an `Iter` object thus ending the chain and causing execution.
+Execution of every query is deferred until a *value producing* method is called, which exports data outside the construct of an `Iter` object. If your query doesn't need to iterate over the entire sequence, it won't. Each value-producing methods returns something other than an `Iter` object thus ending the chain and causing execution.
 
-In addtion to these methods, some `Array` prototype methods are also value producing.
+In addition to its own API, `Iter` implements method for each `Array` prototype methods that don't mutate the array. Some of these are value-producing, such as `indexOf`, while some are transformation functions and produce a new `Iter`, such as `filter`.
 
 ## Creating Iter objects
 
@@ -96,9 +96,41 @@ Key/value pairs make for easy interop with javascript `Map` objects, too:
 let obj = iter({ foo: 'bar', fizz: 'buzz'}).as(Map);
 // Map { 'foo' => 'bar', 'fizz' => 'buzz' }
 ```
+### Static methods
 
- 
+In addition to the default construtor/factory function, you can call some specific construction methods:
+
+#### fromObject(obj, filter)
+
+Create a new `Iter` of `[key, value]` pairs by enumerating properties on `obj` and its prototype chain. This accesses the same properties as `for ... in`, except ignores `constructor`.
+
+You can pass a callback `filter(prop)` to filter properties. Returning `false` from the callback will exclude the property.
+
+#### fromObjectOwn(obj, filter)
+
+Create a new `Iter` of `[key,value]` pairs, ignoring the prototype chain. This accesses the same properties as `Object.keys`.  
+
+You can pass a callback `filter(prop)` to filter properties. Returning `false` from the callback will exclude the property.
+
+The default object creation behavior when passing an object directly to `iter` is the smae as `Iter.fromObjectOwn(obj)` with no filter.
+
+#### fromIterator(iterator)
+
+You can create an `Iter` directly from an iterator or generator function:
+
+```Javascript
+function* gen() {
+    yield 1;
+    yield 2;
+    yield 3;
+}
+let x = iter.fromIterator(gen).toArray()
+/// x === [1,2,3]
+```
+
 ### Value-returning methods
+
+These methods all cause the query to execute and return some value or object.
 
 #### first()
 
@@ -138,17 +170,6 @@ Return the max of all values in the sequence
 
 Return the sum of all values in the sequence
 
-#### as(Type)
-
-Creates an instance of `Type` using the sequence as a single constructor argument. This works well with the ES6 `Map` and `Set` types. You can also use `Array`, which is a special case, even though constructing an Array with an iterable doesn't work directly. You can use any user-defined types that can accept an iterable as a single constructor argument.
-
-```Javascript
-// make a lookup table returning all elements of the source grouped by the
-// values of property `category`
-
-let map = iter(something).groupBy('category').as(Map)
-```
-
 #### toArray()
 
 Return an array created by iterating the sequence completely. Same as `as(Array)`
@@ -171,9 +192,20 @@ let x = iter(myMap).toObject();
 //}
 ``` 
 
+#### as(Type)
+
+Creates an instance of `Type` using the sequence as a single constructor argument. This works well with the ES6 `Map` and `Set` types. You can also use `Array`, which is a special case, even though constructing an `Array` with an iterable doesn't work in plain JavaScript. You can use any user-defined types that can accept an iterable as a single constructor argument.
+
+```Javascript
+// make a lookup table returning all elements of the source grouped by the
+// values of property `category`
+
+let map = iter(something).groupBy('category').as(Map)
+```
+
 ### Transformation methods
 
-These methods return a new sequence based on some transformation of the original one. These include aggregation, traversal, and set operations.
+These methods return a new sequence based on some transformation of the original one. These include aggregation, traversal, and set operations. These are all chainable, and execution is always deferred. The seqeuence will only be iterated as much as necessary to perform a given transformation. Some methods will by nature always iterate over the entire sequence, such as set operations.
 
 #### groupBy(group)
 
@@ -238,6 +270,14 @@ let x = iter([1,2,3,4,5]]).except([3,5]).toArray()
 // x === [1,2,4]
 ```
 
+
+#### do(callback, thisArg)
+
+`do` is similar to `forEach` in that it simply invokes a callback for each element in the seqeunce. Unlike `forEach`, `do` ignores the return value, and so cannot be canceled. The output sequence is always identical to the input sequence.
+
+`do` operates asynchronously, like every non-value-producing method, and so should not be used to immediately cause side effects like `forEach`. 
+
+
 #### skip(n)
 
 Skip `n` elements in the sequence
@@ -248,7 +288,6 @@ let x = seq.skip(2).value
 // x === 3
 let x = seq.skip(2).toArray()
 // x === [3,4,5]
-
 ```
 
 #### take(n)
@@ -273,7 +312,7 @@ let x = iter([1]).repeat(2, 5).toArray()
 
 #### cast(Type)
 
-Convert each element to in instance of `Type`. `Type` must be a constructor, and is invoked with the element as a single constructor argument for each element in the sequence.
+Convert each element to an instance of `Type`. `Type` must be a constructor, and is invoked with the element as a single constructor argument for each element in the sequence.
 
 #### execute()
 
@@ -295,38 +334,44 @@ Without using "execute" here, the "groupBy" etc. would be run twice for both `gr
 
 Every `Array` method that doesn't mutate the array is supported, and execution is deferred until the query is executed. The signatures are the same as the native versions, except arguments which pass the array itself to a callback are not implemented.
 
-`length` is also explicitly not implemented. Instead see `count`, above. Since obtaining the number of elements in a sequence necessarily requires iterating the sequence, this is a method rather than a property.
+The `length` property of arrays is also explicitly not implemented. Instead see `count`, above. Since obtaining the number of elements in a sequence necessarily requires iterating over the entire sequence, this is a method rather than a property.
 
-#### forEach(callback(e, i), thisArg)
+#### forEach(callback(e, i), thisArg) 
 
-Unlike the native array `forEach`, this method returns a seqeuence, and therefore can be chained. It is the same as map, but always returning the original element. The return value from `forEach` is ignored.
+`forEach` executes the query immediately, and always returns `undefined`. If you want to cause side effects during normal sequence processing, use `do` instead.
+
+`forEach` can be aborted by returning `false` from the callback. Any other return values are ignored. If `false` is returned, the rest of the sequence will not be iterated.
 
 ```Javascript
 // log 'message' for all but the first 3 elements in the sequence
 iter(arr).skip(3).forEach((e)=> {
     console.log(e.message)
-}).execute();
+});
 ```
-
-Note the `execute` at the end of this example. Because we are only interested in side effects, and there's no other value-producing method, we must do this to cause the iteration to take place. Without the `execute` in this example, *nothing would happen*.
-
-In `Iter` a `forEach` is the same as any other transform - it defers its action until the sequence is iterated.
 
 #### map(callback(e, i), thisArg)
 
+Transform each element.
+
 #### filter(callback(e, i), thisArg)
+
+Filter elements.
 
 #### concat(sequence, sequence, ...)
 
-If non-iterable arguments are passed, they will be appended to the sequence as well.
+Return a new sequence composed of the original sequence, followed by each element it the other sequences passed as arguments. If non-iterable arguments are passed, they will be appended to the sequence as well.
 
 #### slice(begin, end)
 
-Negative values for "begin" not currently supported (todo for api compatibility)
+Return a subset of the original sequence. `skip` and `take` will do the same thing, and may be more expressive, but `slice` is supported fo completeness. Negative values for "begin" not currently supported (todo for api compatibility)
 
 #### sort(callback(a, b))
 
+Sort the sequence. 
+
 #### reverse()
+
+Reverse the order of the seqeuence
 
 #### join(separator) *value-producing*
 
@@ -351,19 +396,9 @@ Negative values for "begin" not currently supported (todo for api compatibility)
 
 ## Roadmap
 
-### Construct from object
+### Construct from object enhancements
 
-We should be able to construct from an object. Need to think of API for object key iteration techniques. The issue is the variety of ways to determine which keys to use:
-
--- own keys
--- all prototype chain (except constructor)
--- probably want to iterate property getters optionally 
-
-    iter(obj) 
-    iter.fromObject(obj) -- include proto - same as "for in"
-    iter.fromObject(obj, true) -- include property getters
-    iter.fromObjectOwn(obj) -- just own properties, same as Object.keys
-    ?
+Right now property getters are never enumerated, need to add this option. 
 
 ### Missing methods
 
@@ -393,9 +428,9 @@ Apply a function to the corresponding elements of two sequences; return the outp
 
 * Add a "map" callback as an optional argument for sum, min, max methods (most common use case: sum values of a property)
 * Update documentation to discuss "undefined" as return value for value-producing methods that have empty seqeuences as input
-* Add an `n` argument for `first`, `last` to return first `n` items
+* firstOrDefault, lastOrDefault
 
-Exclude elements found in another seqeuence
+Exclude elements found in another sequence
 
 ### Extensibility
 

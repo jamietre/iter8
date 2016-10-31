@@ -3,9 +3,45 @@ import iter from '../../src/index'
 import "babel-polyfill";
 
 describe('iter - conversion', ()=> {
-    it('fromObject', ()=> {
+    function SuperObj() {
+    }
 
-        let sut = iter({
+    SuperObj.prototype.superProp = 'super-prop'
+
+    Object.defineProperties(SuperObj.prototype, {
+        superFoobar: {
+            get: function() {
+                return 'super-fubar'
+            }
+        }
+    })
+
+    function Obj() {
+        SuperObj.call(this);
+    }
+    Obj.prototype = Object.create(SuperObj.prototype);
+    Obj.prototype.constructor = Obj;
+
+
+    Object.defineProperties(Obj.prototype, {
+        foobar: {
+            get: function() {
+                return 'fubar'
+            }
+        }
+    })
+
+    it('fromObject', ()=> {
+        let sut = new iter({
+            'foo': 'bar',
+            'fizz': 'buzz'
+        })
+
+        assert.deepEqual(sut.toArray(), [['foo','bar'],['fizz','buzz']])
+    })
+
+    it('fromObject', ()=> {
+        let sut = new iter({
             'foo': 'bar',
             'fizz': 'buzz'
         })
@@ -14,17 +50,34 @@ describe('iter - conversion', ()=> {
     })
 
     it('fromObject - proto chain', ()=> {
-        function MyObj() {
-            this.foo = 'bar'
-        }
-        let obj = new MyObj();
+        let obj = new Obj();
         obj.fizz = 'buzz';
         let sut = iter(obj);
 
-        assert.deepEqual(sut.toArray(), [['foo','bar'],['fizz','buzz']])
+        assert.deepEqual(sut.toArray(), [['fizz','buzz'], ['superProp','super-prop']])
     })
 
-    xit('fromObject - property getters', ()=> {
+    
+    it('fromObject - proto chain + filter', ()=> {
+        let obj = new Obj();
+        obj.fizz = 'buzz';
+        obj.foo = 'bar'
+        let sut = iter.fromObject(obj, ((prop)=>prop!=='fizz'));
+
+        assert.deepEqual(sut.toArray(), [['foo','bar'], ['superProp','super-prop']])
+    })
+
+    it('fromObjectOwn - proto chain', ()=> {
+        let obj = new Obj();
+        obj.fizz = 'buzz';
+        let sut = iter.fromObjectOwn(obj);
+
+        assert.deepEqual(sut.toArray(), [['fizz','buzz']])
+    })
+
+
+
+    xit('fromObject - property getters - own', ()=> {
         
     })
 

@@ -17,22 +17,45 @@ Object.assign(Iter, {
     fromIterator:  function(iterator) {
         return new Iter(makeIterable(iterator));
     },
-    fromObject: function(obj/*, opts*/) {
-          return new Iter(makeIterable(makeObjectIterator.call(this, obj)));
+    fromObject: function(obj, filter) {
+          return new Iter(makeIterable(makeObjectIterator.call(this, obj, filter, false)));
+    },
+    fromObjectOwn: function(obj, filter) {
+          return new Iter(makeIterable(makeObjectIterator.call(this, obj, filter, true)));
     }
 });
 
 Iter.prototype = {
     constructor: Iter,
     /**
-     * forEach iterates through each item on the list. Returning "false" from the callback will stop iterating.
+     * forEach is the same as do(), but executes the query immediately.
+     * 
      * @param {function} cb The callback(element, index)
      * @param {any} thisArg The "this" context applied to the callback
-     * @returns {Iter} the same iterator 
+     * @returns {void} 
      */
     forEach: function(cb, thisArg) {
-        return new Iter(makeIterable(makeForEachIterator.call(this,cb, thisArg)));
+        new Iter(makeIterable(makeForEachIterator.call(this,cb, thisArg))).execute()
     },
+    /**
+     * Execute a callback for each element in the seqeunce, and return the same
+     * element. 
+     * 
+     * @param {function} cb The callback(element, index)
+     * @param {any} thisArg The "this" context applied to the callback
+     * @returns {Iter} a seqeunce identical to the input sequence 
+     */
+    do: function(cb, thisArg) {
+        return new Iter(makeIterable(makeDoIterator.call(this,cb, thisArg)));
+    },
+    /**
+     * Return a single element that is the return value of a function invoked for 
+     * each element in the input sequence 
+     * 
+     * @param {function} cb The callback(element, index)
+     * @param {any} thisArg The "this" context applied to the callback
+     * @returns {Iter} A transformed sequence 
+     */    
     map: function(cb, thisArg) {
         return new Iter(makeIterable(makeMapIterator.call(this,cb, thisArg)));
     },
@@ -63,15 +86,15 @@ Iter.prototype = {
     cast: function(Type) {
         return new Iter(makeIterable(makeMapIterator.call(this, cast(Type))));
     },
-    first: function(Def) {
+    first: function() {
         let cur = getIterator.call(this).next()
-        return cur.done ? orDefault(Def) : cur.value;
+        return cur.done ? undefined : cur.value;
     },
-    last: function(Def) {
+    last: function() {
         let iterator = getIterator.call(this);
         let cur = iterator.next()
         if (cur.done) {
-            return orDefault(Def);
+            return undefined;
         } else {
             let last;
             while (cur = iterator.next(), !cur.done) {
@@ -340,7 +363,7 @@ function getNext(condition) {
     }
 }
 
-function makeObjectIterator(obj, ownPropsOnly/*, includeGetters*/) {
+function makeObjectIterator(obj, filter, ownPropsOnly/*, includeGetters*/) {
     return function() {
         let props;
         if (!ownPropsOnly) {
@@ -352,10 +375,31 @@ function makeObjectIterator(obj, ownPropsOnly/*, includeGetters*/) {
             props = Object.keys(obj);
         }
         let sourceIter = props[Symbol.iterator]();
+
         return {
             next: ()=> {
                 let cur = sourceIter.next();
+                while (!cur.done && (cur.value === 'constructor' || 
+                    (filter && !filter(cur.value)))) {
+                    cur = sourceIter.next();
+                } 
                 return iterResult(cur.done, !cur.done && [cur.value, obj[cur.value]])
+            }
+        }
+    }
+}
+
+function makeDoIterator(cb, thisArg) {
+    var that = this;
+    return function() {
+        let index = 0;
+        let sourceIter = getIterator.call(that);
+
+        return {
+            next: ()=> {
+                let cur = sourceIter.next();
+                return iterResult(cur.done, !cur.done && 
+                    (cb.call(thisArg, cur.value, index++), cur.value))
             }
         }
     }
@@ -366,12 +410,13 @@ function makeForEachIterator(cb, thisArg) {
     return function() {
         let index = 0;
         let sourceIter = getIterator.call(that);
-
+        let finished = false;
         return {
             next: ()=> {
                 let cur = sourceIter.next();
-                return iterResult(cur.done, !cur.done && 
-                    (cb.call(thisArg, cur.value, index++)), cur.value)
+                finished |= cur.done;
+                return iterResult(finished, !finished && 
+                    (finished = cb.call(thisArg, cur.value, index++)===false, cur.value))
             }
         }
     }

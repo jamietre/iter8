@@ -219,19 +219,37 @@ describe('iter', ()=> {
         assert.ok(sut.includes(3));
         assert.ok(!sut.includes(4));
     })
+    it('do', ()=> {
+        let sut = iter([1,2,3,4,5])
+
+        let arr = [];
+        let out = sut.do((e, i)=> {
+            arr.push([e,i])
+            return e < 3 ? 9 : false;
+        }).toArray();
+        
+        assert.deepEqual(out, [1,2,3,4,5], 'do returns input seqeuence, ignores return value');
+        assert.deepEqual(arr, [[1,0], [2,1], [3,2], [4,3], [5,4]], 'do executes method');
+    })
     it('forEach', ()=> {
         let sut = iter([1,2,3,4,5])
-        let done = false;
-        sut.forEach((e, i)=> {
-            assert.equal(e, i+1);
-            if (e === 5) { 
-                done=true 
-            }
-        }).execute();
-
-        assert.ok(done);
+        let arr = []
+        sut.forEach((e,i)=> {
+            arr.push([e, i])
+        });
+        assert.deepEqual(arr, [[1,0], [2,1], [3,2], [4,3], [5,4]])
     })
-
+    it('forEach - cancel action', ()=> {
+        let sut = iter([1,2,3,4,5])
+        let arr = [];
+        sut.forEach((e, i)=> {
+            arr.push([e,i]);
+            if (e === 3) { 
+                return false; 
+            }
+        });
+        assert.deepEqual(arr, [[1,0], [2,1], [3,2]])
+    })
     it('reduce', ()=> {
         assert.equal(iter([1,2,3]).reduce((last, cur)=> { 
             last += cur; 
