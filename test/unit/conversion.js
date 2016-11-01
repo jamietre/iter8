@@ -87,5 +87,12 @@ describe('iter - conversion', ()=> {
         }
         assert.deepEqual(iter.fromIterator(gen).toArray(), [1,2,3]);
     });
+
+    it('repeat', ()=> {
+        assert.deepEqual(iter.repeat("foo",5)
+            .concat('bar')
+            .toArray(), ["foo","foo","foo","foo","foo","bar"])
+    })
+
     
 })

@@ -123,12 +123,19 @@ describe('iter', ()=> {
         });
     })
 
-    it('flatten', ()=> {
-        let obj = iter([[1,2,3], 4, [5,['a','b']],6, [7]]);
-        let sut = iter(obj).flatten().toArray()
-        assert.deepEqual(sut, [1,2,3,4,5,['a','b'],6,7])
-    })
-    
+    describe('flatten', ()=> {
+        it('basic', ()=> {
+            let obj = iter(['foo',[1,2,3], 4, [5,['a','b']],6, [7]]);
+            let sut = iter(obj).flatten().toArray()
+            assert.deepEqual(sut, ['foo',1,2,3,4,5,['a','b'],6,7])
+        })
+        it('recurse', ()=> {
+            let obj = iter(['foo',[1,2,3],['bar', ['fizz',['buzz','baz']]]]);
+            let sut = iter(obj).flatten(true).toArray()
+            assert.deepEqual(sut, ['foo',1,2,3,'bar','fizz','buzz','baz']);
+        });
+    });
+
     it('as', ()=> {
         let obj = iter([1,2,3,4,5]);
         let set = obj.skip(2).as(Set);
@@ -193,19 +200,38 @@ describe('iter', ()=> {
         assert.deepEqual(items3, [1,2,5,3,4]);
     })
 
-    it('sum', ()=> {
-        let sut = iter([1,5,3,20]);
-        assert.equal(sut.sum(), 29);
+    describe('sum', ()=> {
+        it('basic', ()=> {
+            let sut = iter([1,5,3,20]);
+            assert.equal(sut.sum(), 29);
+        })
+        it('map', ()=> {
+            let sut = iter([{ foo: 1}, {foo: 4}, {foo: 10}]);
+            assert.equal(sut.sum((e)=>e.foo), 15);
+        })
     })
-
-    it('min', ()=> {
-        let sut = iter([2,5,3,20]);
-        assert.equal(sut.min(), 2);
+    
+    describe('min', ()=> {
+        it('basic', ()=> {
+            let sut = iter([2,5,3,20]);
+            assert.equal(sut.min(), 2);
+        })
+        it('map', ()=> {
+            let sut = iter([{ foo: 1}, {foo: 4}, {foo: 10}]);
+            assert.equal(sut.min((e)=>e.foo), 1);
+        })
     })
-    it('max', ()=> {
-        let sut = iter([1,5,3,20]);
-        assert.equal(sut.max(), 20);
+    describe('max', ()=> {
+        it('basic', ()=> {
+            let sut = iter([1,5,3,20]);
+            assert.equal(sut.max(), 20);
+        })
+        it('map', ()=> {
+            let sut = iter([{ foo: 1}, {foo: 4}, {foo: 10}]);
+            assert.equal(sut.max((e)=>e.foo), 10);
+        })
     })
+    
     it('as', ()=> {
         let sut = iter([[1,'foo'], [2, 'bar']])
         let dict = sut.as(Map)
@@ -230,9 +256,9 @@ describe('iter', ()=> {
         assert.deepEqual(sut.reverse().toArray(), [9,2,1,5])
     })
     it('concat', ()=> {
-        let sut = iter([1,2,3]).concat([4,5],6,7,[8,9,['a','b']]);
+        let sut = iter([1,2,3]).concat([4,5],6,"seven",[8,9,['a','b']]);
 
-        assert.deepEqual(sut.toArray(), [1,2,3,4,5,6,7,8,9,['a','b']])
+        assert.deepEqual(sut.toArray(), [1,2,3,4,5,6,"seven",8,9,['a','b']])
     })
     it('some', ()=> {
         let sut = iter([1,2,3,5,10])
@@ -369,12 +395,10 @@ describe('iter', ()=> {
         assert.deepEqual(sut.intersect([4,5,8,9]).toArray(), [4,5])
         assert.deepEqual(sut.intersect([8,9,10]).toArray(), [])
     })
+    
     it('union', ()=> {
         let sut = iter([1,2,3,4,5])
         assert.deepEqual(sut.union([4,5,6,7,8]).toArray(), [1,2,3,4,5,6,7,8])
-    })
-    it('repeat', ()=> {
-        assert.deepEqual(iter().repeat("foo",5).toArray(), ["foo","foo","foo","foo","foo"])
     })
 
     describe('orderBy', ()=> {
@@ -433,6 +457,33 @@ describe('iter', ()=> {
             assert.ok(!sut.sequenceEqual([1,2,3,4,5,6]), 'not equal even though same n elements match')
             assert.ok(!sut.sequenceEqual([1,2,3,4]), 'not equal even though same n elements match (shorter)')
             assert.ok(!sut.sequenceEqual([1,2,3,5,4]), 'not equal even though same same length & same elements')
+        })
+        describe('leftJoin', ()=> {
+            let left = [[0,'foo'], [1,'bar'], [1,'baz'], [2, 'fizz']] 
+            let right = [[1,'FOO'], [2,'BAR'], [2,'BARRE'], [3,'NOPE']]
+
+            it('basic', ()=> {
+                let sut = iter(left).leftJoin(right, (left, right='', key)=> {
+                    return `${key}:${left}:${right}`;
+                });
+
+                // because key/value pair sequences must have unique IDs, 2,BAR gets tossed 
+                assert.deepEqual(sut.toArray(), [
+                    [0,'0:foo:'], [1,'1:bar:FOO'], [1,'1:baz:FOO'], [2,'2:fizz:BARRE']
+                ])
+            })
+
+            it('joinOn', ()=> {
+                let sut = iter(left).leftJoin(right, (left, right, key)=> {
+                    left = left[1];
+                    right = right ? right[1] : '';
+                    return `${key}:${left}:${right}`;
+                }).joinOn((left)=>left[0], (right)=>right[0]);
+
+                assert.deepEqual(sut.toArray(), [
+                    [0,'0:foo:'], [1,'1:bar:FOO'], [1,'1:baz:FOO'], [2, '2:fizz:BAR'],[2,'2:fizz:BARRE']
+                ]) 
+            })
         })
     })
 })

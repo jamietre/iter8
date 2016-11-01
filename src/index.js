@@ -1,8 +1,8 @@
 
-const _iterator = Symbol();
 const _orders = Symbol();
 const _root = Symbol();
-const _si = Symbol.iterator;
+const _join = Symbol();
+const _iterator = Symbol.iterator;
 const arrProto = Array.prototype;
 const doneIter = {
     done: true
@@ -19,7 +19,7 @@ function Iter(source, iter) {
         return new Iter(source)
     }
 
-    const iterator = source && source[_si];
+    const iterator = source && source[_iterator];
     if (source && !iterator) {
         if (typeof source === 'object') {
             return Iter.fromObjectOwn(source);
@@ -38,7 +38,16 @@ Object.assign(Iter, {
     },
     fromObjectOwn: function(obj, filter) {
           return new Iter(_iterator, makeObjectIterator.call(this, obj, filter, true));
-    }
+    },
+    repeat(obj, times) {
+        return new Iter(_iterator, function() {
+            return {
+                next() {
+                    return iterResult(times--<=0, obj)
+                }
+            } 
+        });
+    },
 });
 
 Iter.prototype = {
@@ -63,20 +72,6 @@ Iter.prototype = {
      */
     do(cb, thisArg) {
         return new Iter(_iterator, makeDoIterator.call(this,cb, thisArg));
-    },
-    /**
-     * Return a single element that is the return value of a function invoked for 
-     * each element in the input sequence 
-     * 
-     * @param {function} cb The callback(element, index)
-     * @param {any} thisArg The "this" context applied to the callback
-     * @returns {Iter} A transformed sequence 
-     */    
-    map(cb, thisArg) {
-        return new Iter(_iterator, makeMapIterator.call(this, cb, thisArg));
-    },
-    filter(cb, thisArg) {
-        return new Iter(_iterator, makeFilterIterator.call(this, cb, thisArg));
     },
     groupBy(group) {
         return new Iter(_iterator, makeGroupByIterator.call(this, group))
@@ -133,9 +128,8 @@ Iter.prototype = {
             return last;
         }
     },
-    // todo: add recurse option
-    flatten() {
-        return new Iter(_iterator, makeFlattenIterator.call(this));
+    flatten(recurse) {
+        return new Iter(_iterator, makeFlattenIterator.call(this, recurse));
     },
     // todo: equality comparitor callback.
     unique() {
@@ -151,8 +145,15 @@ Iter.prototype = {
         let extra = new Iter(sequence).except(this);
         return this.concat(extra);
     },
-    repeat(obj, times) {
-        return new Iter(_iterator, makeRepeatIterator.call(this, obj, times));
+    leftJoin(sequence, mergeCallback) {
+        let iter =  new Iter(_iterator, makeLeftJoinIterator.call(this, sequence, mergeCallback));
+        iter[_join] = arguments;
+        iter[_root] = this;
+        return iter;
+    },
+    joinOn(mapLeft, mapRight) {
+        if (!this[_join]) throw new Error(`"on" doesn't make sense without a join`)
+        return new Iter(_iterator, makeLeftJoinIterator.call(this[_root], this[_join][0], this[_join][1], mapLeft, mapRight));
     },
     sequenceEqual(sequence) {
         let iter = this[_iterator]();
@@ -168,6 +169,21 @@ Iter.prototype = {
     concat() {
         return new Iter(_iterator, makeConcatIterator.call(this, arguments));
     },
+    /**
+     * Return a single element that is the return value of a function invoked for 
+     * each element in the input sequence 
+     * 
+     * @param {function} cb The callback(element, index)
+     * @param {any} thisArg The "this" context applied to the callback
+     * @returns {Iter} A transformed sequence 
+     */    
+    map(cb, thisArg) {
+        return new Iter(_iterator, makeMapIterator.call(this, cb, thisArg));
+    },
+    filter(cb, thisArg) {
+        return new Iter(_iterator, makeFilterIterator.call(this, cb, thisArg));
+    },
+
     some(cb, thisArg) {
         let iterator = this[_iterator]()
         let cur;
@@ -288,7 +304,7 @@ Iter.prototype = {
             return this.toArray();
         }
         return new Cotr({
-            [_si]: this[_iterator]
+            [_iterator]: this[_iterator]
         });
     },
     /**
@@ -298,31 +314,38 @@ Iter.prototype = {
      * @returns {Iter} a new Iter object
      */
     execute() {
-        // todo: spit this into 'iterate' (whcih returns a sequence) and
-        // 'execute' which does not? (e.g. if we just want side effects, no 
-        // need to return an array)
-
         return new Iter(this.toArray());
     },
-    min() {
-        return Math.min.apply(null, this.toArray());
+    /**
+     * Return the minimum value in the sequence
+     * 
+     * @param {function} mapCallback An optional callback invoked on each element that returns the value to sum
+     * @returns {any} The minimum value 
+     */
+    min(mapCallback) {
+        return Math.min.apply(null, (mapCallback ? this.map(mapCallback) : this).toArray());
     },
-    max() {
-        return Math.max.apply(null, this.toArray());
+    /**
+     * Return the maximum value in the sequence
+     * 
+     * @param {function} mapCallback An optional callback invoked on each element that returns the value to sum
+     * @returns {any} The maximum value 
+     */
+    max(mapCallback) {
+        return Math.max.apply(null, (mapCallback ? this.map(mapCallback) : this).toArray());
     },
-    sum() {
+    /**
+     * Return the sum of all elements in the sequence
+     * 
+     * @param {any} mapCallback An optional callback invoked on each element that returns the value to sum
+     * @returns {any} The sum of all elements in the sequence (using the + operator)
+     */
+    sum(mapCallback) {
         let iterator = this[_iterator]()
         let cur;
         let total = 0;
-        while (cur = iterator.next(), !cur.done) total+=cur.value;
+        while (cur = iterator.next(), !cur.done) total+=mapCallback ? mapCallback(cur.value) : cur.value;
         return total;
-    },
-    // average: function() {
-    // throw new error('not implemented')    
-    // },
-
-    [_si]() {
-        return this[_iterator]();
     }
 };
 
@@ -333,7 +356,7 @@ Iter.prototype = {
         var args = arguments;
         return new Iter(_iterator, function() {
             let arr = that.toArray(); 
-            return arrProto[method].apply(arr,args)[_si]();
+            return arrProto[method].apply(arr,args)[_iterator]();
         });
     }
 })
@@ -355,6 +378,73 @@ function orderByHelper(root, orders, desc) {
     seq[_orders] = orders;
     seq[_root] = root
     return seq;
+}
+
+function makeOrderByIterator(orders, desc){
+    var that = this;
+    return function() {
+        
+        let sorted = that.toArray().sort(function(a, b) {
+            let val=0;
+            for (let i=0; val===0 && i<orders.length; i++) {
+                var fn = orders[i];
+                var va = fn(desc?b:a);
+                var vb = fn(desc?a:b);
+                if (va<vb) val=-1
+                else if (vb<va) val=1
+            }
+            return val;
+        });
+        
+        return sorted[_iterator]();
+    }
+}
+
+/**
+ * Create a left-join iterator. Fully iterates the sequence on the right.
+ * 
+ * @param {iterable} The right side seqeunce
+ * @param {any} onMap [fn, fn] array of functions to generate keys for the join
+ * @returns {iterable} A new sequence
+ */
+function makeLeftJoinIterator(sequence, mergeFn, mapLeft, mapRight) {
+    var that = this;
+    return function() {
+        let iterator = that[_iterator]();
+        let other = new Map(mapRight ? new Iter(sequence).groupBy(e=>mapRight(e)) : sequence)
+        let matches;
+        let leftValue;
+        let id;
+
+        return {
+            next() {
+                /*eslint no-constant-condition:0 */
+                while (true) {
+                    if (!matches) {
+                        let left = iterator.next()
+
+                        if (left.done) return doneIter
+                        id = mapLeft ? mapLeft(left.value) : left.value[0]
+                        leftValue = mapLeft ? left.value : left.value[1];
+                        let match = other.get(id)
+                        if (!match || !match[_iterator] || typeof match === 'string') {
+                            return { done: false, value: [id, mergeFn(leftValue, match, id)] }
+                        }
+                        matches = match[_iterator]() 
+                    } 
+
+                    // being here means the right is iterable
+                    
+                    let right = matches.next();
+                    if (!right.done) {
+                        return { done: false, value: [id, mergeFn(leftValue, mapRight ? right.value : right.value[1], id)] }
+                    } else {
+                        matches = null;
+                    }
+                }
+            }
+        }        
+    }
 }
 
 function skipIterable(n) {
@@ -402,25 +492,6 @@ function getNext(condition) {
     }
 }
 
-function makeOrderByIterator(orders, desc){
-    var that = this;
-    return function() {
-        
-        let sorted = that.toArray().sort(function(a, b) {
-            let val=0;
-            for (let i=0; val===0 && i<orders.length; i++) {
-                var fn = orders[i];
-                var va = fn(desc?b:a);
-                var vb = fn(desc?a:b);
-                if (va<vb) val=-1
-                else if (vb<va) val=1
-            }
-            return val;
-        });
-        
-        return sorted[_si]();
-    }
-}
 
 function makeObjectIterator(obj, filter, ownPropsOnly/*, includeGetters*/) {
     return function() {
@@ -433,7 +504,7 @@ function makeObjectIterator(obj, filter, ownPropsOnly/*, includeGetters*/) {
         } else {
             props = Object.keys(obj);
         }
-        let sourceIter = props[_si]();
+        let sourceIter = props[_iterator]();
 
         return {
             next: ()=> {
@@ -497,57 +568,22 @@ function makeIntersectIterator(other) {
     }
 }
 
-function makeRepeatIterator(obj, times) {
-    return function() {
-        return {
-            next() {
-                return iterResult(times--<=0, obj)
-            }
-        } 
+
+/**
+ * Make a single element iterable
+ * 
+ * @param {any} e Any object
+ * @returns {function} An iterator
+
+ */
+function asIterator(e) {
+    let done = false;
+    return { 
+        next() {
+            return done ? doneIter : (done=true, { done: false, value: e })
+        }
     }
 }
-
-function makeConcatIterator(args) {
-    var that = this;
-    return function() {
-        const sources = [that];
-        arrProto.forEach.call(args, function(arg) {
-            sources.push(arg);
-        })
-
-        let index = 0;
-        let iterator;
-
-        return {
-            next() {
-                let value;
-                while (!value && index < sources.length) {
-                    if (!iterator) {
-                        const source = sources[index];
-                        if (!source[_si]) {
-                            value = source;
-                            index++;
-                            break;
-                        }
-                        iterator = source[_si]();  
-                    }
-
-                    let cur = iterator.next();
-                    if (cur.done) {
-                        iterator=null;
-                        index++;
-                    } else {
-                        value = cur.value;
-                    }
-                }
-
-                return iterResult(sources.length<=index, value)
-            }
-        }        
-    }
-}
-
-
 
 function makeUniqueIterator() {
     var that = this;
@@ -591,44 +627,109 @@ function makeGroupByIterator(group) {
             }
         }
 
-        return dict[_si]();
+        return dict[_iterator]();
     }
 }
 
-function makeFlattenIterator() {
-    var that =this;
+
+function makeConcatIterator(args) {
+    var that = this;
     return function() {
-        let sourceIter = that[_iterator]()
-        let iter=sourceIter;
+        const sources = [that];
+        arrProto.forEach.call(args, function(arg) {
+            sources.push(arg);
+        })
+        
+        let index = 0;
+        let iterator;
 
         return {
-            next: ()=> {
-                let value = null;
-                while(!value) {
-                    const isSource = iter === sourceIter;
-                    let cur = iter.next();
-                    if (cur.done) {
-                        if (!isSource) {
-                            iter = sourceIter;
-                        } else {
-                            return doneIter
-                        }
+            next() {
+                while (index < sources.length) {
+                    
+                    if (!iterator) {
+                        const nextSource = sources[index]
+                        iterator = typeof nextSource !== 'string' && nextSource[_iterator] ? 
+                            nextSource[_iterator]() : 
+                            asIterator(nextSource);
+                    } 
+                    
+                    let cur = iterator.next();
+                    if (!cur.done) {
+                        return {
+                            done: false,
+                            value: cur.value
+                        }                                        
                     } else {
-                        if (isSource && cur.value[_si]) {
-                            iter = cur.value[_si]();
+                        iterator = null;
+                        index++;
+                    }
+                }
+                return doneIter;                
+            }
+        }        
+    }
+}
+
+function makeFlattenIterator(recurse) {
+    var that = this;
+    return function() {
+        let iterators = [that[_iterator]()];
+        let iterator;
+        return {
+            next() {
+                while (iterator || iterators.length > 0) {
+                    if (!iterator) iterator = iterators.pop();
+                    let cur = iterator.next();
+                    if (cur.value && cur.value[_iterator] && typeof cur.value !== 'string' && (recurse || iterators.length === 0)) {
+                        iterators.push(iterator);
+                        iterator = cur.value[_iterator]();
+                    } else {
+                        if (!cur.done) {
+                            return { done: false, value: cur.value }
                         } else {
-                            value = cur.value;
+                            iterator = undefined;
                         }
                     }
                 }
-
-                return {
-                    done: false,
-                    value: value    
-                }
+                return doneIter;
             }
         }
     }
+
+    // var that =this;
+    // return function() {
+    //     let sourceIter = that[_iterator]()
+    //     let iter=sourceIter;
+
+    //     return {
+    //         next: ()=> {
+    //             let value = null;
+    //             while(!value) {
+    //                 const isSource = iter === sourceIter;
+    //                 let cur = iter.next();
+    //                 if (cur.done) {
+    //                     if (!isSource) {
+    //                         iter = sourceIter;
+    //                     } else {
+    //                         return doneIter
+    //                     }
+    //                 } else {
+    //                     if (isSource && cur.value[_iterator]) {
+    //                         iter = cur.value[_iterator]();
+    //                     } else {
+    //                         value = cur.value;
+    //                     }
+    //                 }
+    //             }
+
+    //             return {
+    //                 done: false,
+    //                 value: value    
+    //             }
+    //         }
+    //     }
+    // }
 }
 
 function makeFilterIterator(cb, thisArg) {
