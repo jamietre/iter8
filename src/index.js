@@ -2,7 +2,7 @@
 const _iterator = Symbol();
 const _orders = Symbol();
 const _root = Symbol();
-
+const _si = Symbol.iterator;
 const arrProto = Array.prototype;
 const doneIter = {
     done: true
@@ -19,7 +19,7 @@ function Iter(source, iter) {
         return new Iter(source)
     }
 
-    const iterator = source && source[Symbol.iterator];
+    const iterator = source && source[_si];
     if (source && !iterator) {
         if (typeof source === 'object') {
             return Iter.fromObjectOwn(source);
@@ -73,10 +73,10 @@ Iter.prototype = {
      * @returns {Iter} A transformed sequence 
      */    
     map(cb, thisArg) {
-        return new Iter(_iterator, makeMapIterator.call(this,cb, thisArg));
+        return new Iter(_iterator, makeMapIterator.call(this, cb, thisArg));
     },
     filter(cb, thisArg) {
-        return new Iter(_iterator, makeFilterIterator.call(this,cb, thisArg));
+        return new Iter(_iterator, makeFilterIterator.call(this, cb, thisArg));
     },
     groupBy(group) {
         return new Iter(_iterator, makeGroupByIterator.call(this, group))
@@ -95,7 +95,7 @@ Iter.prototype = {
     },
     count() {
         let count=0;
-        let iterator =  getIterator.call(this);
+        let iterator = this[_iterator]()
         while (!iterator.next().done) count++;
         return count;
     },
@@ -112,17 +112,19 @@ Iter.prototype = {
     //     throw new Error('not implemented')
     // },
     cast(Type) {
-        return new Iter(_iterator, makeMapIterator.call(this, cast(Type)));
+        return new Iter(_iterator, makeMapIterator.call(this, function(e) {
+            return new Type(e);
+        }));
     },
-    first() {
-        let cur = getIterator.call(this).next()
-        return cur.done ? undefined : cur.value;
+    first(def) {
+        let cur = this[_iterator]().next()
+        return cur.done ? def : cur.value;
     },
-    last() {
-        let iterator = getIterator.call(this);
+    last(def) {
+        let iterator = this[_iterator]()
         let cur = iterator.next()
         if (cur.done) {
-            return undefined;
+            return def;
         } else {
             let last;
             while (cur = iterator.next(), !cur.done) {
@@ -145,14 +147,29 @@ Iter.prototype = {
     intersect(sequence) {
         return new Iter(_iterator, makeIntersectIterator.call(this, sequence));
     },
+    union(sequence) {
+        let extra = new Iter(sequence).except(this);
+        return this.concat(extra);
+    },
     repeat(obj, times) {
         return new Iter(_iterator, makeRepeatIterator.call(this, obj, times));
+    },
+    sequenceEqual(sequence) {
+        let iter = this[_iterator]();
+        let cur;
+        for (var other of sequence) {
+            cur = iter.next();
+            if (cur.done || other !== cur.value) return false; 
+        }
+
+        if (!iter.next().done) return false;
+        return true;
     },
     concat() {
         return new Iter(_iterator, makeConcatIterator.call(this, arguments));
     },
     some(cb, thisArg) {
-        let iterator = getIterator.call(this);
+        let iterator = this[_iterator]()
         let cur;
         let index=0;
         while (cur = iterator.next(), !cur.done) {
@@ -163,7 +180,7 @@ Iter.prototype = {
         return false;
     },
     every(cb, thisArg) {
-        let iterator = getIterator.call(this);
+        let iterator = this[_iterator]()
         let cur;
         let index =0;
         while (cur = iterator.next(), !cur.done) {
@@ -174,7 +191,7 @@ Iter.prototype = {
         return true;
     },
     includes(el) {
-        let iterator = getIterator.call(this);
+        let iterator = this[_iterator]()
         let cur;
         while (cur = iterator.next(), !cur.done) {
             if (cur.value===el) {
@@ -191,7 +208,7 @@ Iter.prototype = {
     //     throw new Error('not implemented');
     // },
     indexOf(el) {
-        let iterator = getIterator.call(this);
+        let iterator = this[_iterator]()
         let cur;
         let index = 0;
         while (cur = iterator.next(), !cur.done) {
@@ -203,7 +220,7 @@ Iter.prototype = {
         return -1;
     },
     lastIndexOf(el) {
-        let iterator = getIterator.call(this);
+        let iterator = this[_iterator]()
         let cur;
         let index = 0;
         let lastIndex = -1;
@@ -218,16 +235,16 @@ Iter.prototype = {
     findIndex(cb, thisArg) {
         return findHelper.call(this, cb, thisArg)[0];
     },
-    find(cb, thisArg) {
-        return findHelper.call(this, cb, thisArg)[1];
+    find(cb, thisArg, def) {
+        return findHelper.call(this, cb, thisArg, def)[1];
     },
-    get(getIndex) {
-        let iterator = getIterator.call(this);
+    get(getIndex, def) {
+        let iterator = this[_iterator]()
         let cur;
         let index = 0;
         while (cur = iterator.next(), !cur.done && index < getIndex)  index++;
         
-        return cur.done ? undefined : cur.value; 
+        return cur.done ? def : cur.value; 
     },
     value() {
         return this.get(0)
@@ -250,7 +267,7 @@ Iter.prototype = {
     },
     toObject() {
         let obj={};
-        let iterator = getIterator.call(this);
+        let iterator = this[_iterator]()
         let cur;
         while (cur = iterator.next(), !cur.done) {
             obj[cur.value[0]]=cur.value[1]
@@ -271,7 +288,7 @@ Iter.prototype = {
             return this.toArray();
         }
         return new Cotr({
-            [Symbol.iterator]: this[_iterator]
+            [_si]: this[_iterator]
         });
     },
     /**
@@ -294,7 +311,7 @@ Iter.prototype = {
         return Math.max.apply(null, this.toArray());
     },
     sum() {
-        let iterator = getIterator.call(this);
+        let iterator = this[_iterator]()
         let cur;
         let total = 0;
         while (cur = iterator.next(), !cur.done) total+=cur.value;
@@ -304,7 +321,7 @@ Iter.prototype = {
     // throw new error('not implemented')    
     // },
 
-    [Symbol.iterator]() {
+    [_si]() {
         return this[_iterator]();
     }
 };
@@ -316,7 +333,7 @@ Iter.prototype = {
         var args = arguments;
         return new Iter(_iterator, function() {
             let arr = that.toArray(); 
-            return arrProto[method].apply(arr,args)[Symbol.iterator]();
+            return arrProto[method].apply(arr,args)[_si]();
         });
     }
 })
@@ -343,7 +360,7 @@ function orderByHelper(root, orders, desc) {
 function skipIterable(n) {
     var that = this;
     return function() {
-        let iterator = getIterator.call(that);
+        let iterator = that[_iterator]()
         while (n-- > 0 && !iterator.next().done) ;
         return iterator;
     } 
@@ -352,9 +369,9 @@ function skipIterable(n) {
 function takeIterable(n) {
     var that = this;
     return function() {
-        let iterator = getIterator.call(that);
+        let iterator = that[_iterator]()
         return {
-            next: function() {
+            next() {
                 if (n !== 0) {
                     let cur = iterator.next();
                     if (!cur.done) {
@@ -372,7 +389,7 @@ function takeIterable(n) {
 }
 
 function getNext(condition) {
-    let sourceIter = getIterator.call(this);
+    let sourceIter = this[_iterator]()
     let index = 0;
     return {    
         next: function() {
@@ -401,7 +418,7 @@ function makeOrderByIterator(orders, desc){
             return val;
         });
         
-        return sorted[Symbol.iterator]();
+        return sorted[_si]();
     }
 }
 
@@ -416,7 +433,7 @@ function makeObjectIterator(obj, filter, ownPropsOnly/*, includeGetters*/) {
         } else {
             props = Object.keys(obj);
         }
-        let sourceIter = props[Symbol.iterator]();
+        let sourceIter = props[_si]();
 
         return {
             next: ()=> {
@@ -435,7 +452,7 @@ function makeDoIterator(cb, thisArg) {
     var that = this;
     return function() {
         let index = 0;
-        let sourceIter = getIterator.call(that);
+        let sourceIter = that[_iterator]()
 
         return {
             next: ()=> {
@@ -451,7 +468,7 @@ function makeForEachIterator(cb, thisArg) {
     var that = this;
     return function() {
         let index = 0;
-        let sourceIter = getIterator.call(that);
+        let sourceIter = that[_iterator]()
         let finished = false;
         return {
             next: ()=> {
@@ -507,12 +524,12 @@ function makeConcatIterator(args) {
                 while (!value && index < sources.length) {
                     if (!iterator) {
                         const source = sources[index];
-                        if (!source[Symbol.iterator]) {
+                        if (!source[_si]) {
                             value = source;
                             index++;
                             break;
                         }
-                        iterator = source[Symbol.iterator]();  
+                        iterator = source[_si]();  
                     }
 
                     let cur = iterator.next();
@@ -530,11 +547,13 @@ function makeConcatIterator(args) {
     }
 }
 
+
+
 function makeUniqueIterator() {
     var that = this;
     return function() {
         let used = new Set();
-        let iterator = getIterator.call(that);
+        let iterator = that[_iterator]()
         let cur;
         return {
             next: function() {
@@ -561,7 +580,7 @@ function makeGroupByIterator(group) {
         let dict = new Map();
         
         let cur;
-        let iterator = getIterator.call(that);
+        let iterator = that[_iterator]()
         while (cur = iterator.next(), !cur.done) {
             let e = cur.value;
             let key = cb(e);
@@ -572,14 +591,14 @@ function makeGroupByIterator(group) {
             }
         }
 
-        return dict[Symbol.iterator]();
+        return dict[_si]();
     }
 }
 
 function makeFlattenIterator() {
     var that =this;
     return function() {
-        let sourceIter = getIterator.call(that);
+        let sourceIter = that[_iterator]()
         let iter=sourceIter;
 
         return {
@@ -595,8 +614,8 @@ function makeFlattenIterator() {
                             return doneIter
                         }
                     } else {
-                        if (isSource && cur.value[Symbol.iterator]) {
-                            iter = cur.value[Symbol.iterator]();
+                        if (isSource && cur.value[_si]) {
+                            iter = cur.value[_si]();
                         } else {
                             value = cur.value;
                         }
@@ -616,7 +635,7 @@ function makeFilterIterator(cb, thisArg) {
     var that = this;
     return function() {
         let index = 0;
-        let sourceIter = getIterator.call(that);
+        let sourceIter = that[_iterator]()
 
         return {
             next: ()=> {
@@ -665,34 +684,23 @@ function iterResult(done, value) {
         return doneIter
     }
 }
-function findHelper(cb, thisArg) {
-    let iterator = getIterator.call(this);
+function findHelper(cb, thisArg, def) {
+    let iterator = this[_iterator]()
     let cur;
     let index = 0;
     while (cur = iterator.next(), !cur.done) {
-        if (cb.call(thisArg, cur.value)) {
+        if (cb.call(thisArg, cur.value, index)) {
             return [index, cur.value];
         }
         index++;
     }
-    return [-1, undefined];
+    return [-1, def];
 }
 
 function emptyIterator() {
     return function() {
         return doneIter
     }
-}
-
-function cast(Type) {
-    return function(e) {
-        return new Type(e);
-    }
-}
-
-
-function getIterator() {
-    return this[_iterator]();
 }
 
 export default Iter;

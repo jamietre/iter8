@@ -49,18 +49,28 @@ describe('iter', ()=> {
     })
     it('map', ()=> {
         let obj = iter([1,2,3]);
-        let sut = obj.map((e)=> {
+        let thisArg = {};
+
+        let sut = obj.map(function(e, i) {
+            assert.ok(this===thisArg)
+            assert.equal(i, e-1)
             return e*2;
-        });
+        }, thisArg);
 
         let arr = sut.toArray();
         assert.deepEqual(arr, [2,4,6]);
     })
+
     it('filter', ()=> {
         let obj = iter([1,2,3,4,5]);
-        let sut = obj.map((e)=> {
+        let thisArg = {};
+
+        let sut = obj.map(function(e,i) {
+            assert.equal(i,e-1)
+            assert.ok(this === thisArg)
             return e*2;
-        }).filter((e)=> {
+        }, thisArg).filter((e)=> {
+            assert.ok(this === undefined)
             return e>4;
         })
 
@@ -80,18 +90,38 @@ describe('iter', ()=> {
 
     });
 
-    it('first', ()=> {
-        let obj = iter([1,2,3,4,5]);
-        assert.equal(obj.first(), 1)
-        assert.equal(obj.skip(2).first(),3)
-    });
-    
-    
-    it('last', ()=> {
-        let obj = iter([1,2,3,4,5]);
-        assert.equal(obj.last(), 5)
-        assert.equal(obj.skip(2).last(),5)
-    });
+    describe('first', ()=> {
+        it('basic', ()=> {
+            let obj = iter([1,2,3,4,5]);
+            assert.equal(obj.first(), 1)
+            assert.equal(obj.skip(2).first(),3)
+        });
+        
+        it('not found', ()=> {
+            let obj = iter([]);
+            assert.ok(obj.first() === undefined)
+        });
+
+        it('not found - default', ()=> {
+            let obj = iter([]);
+            assert.ok(obj.first(null) ===null)
+        });
+    })
+    describe('first', ()=> {
+        it('basic', ()=> {
+            let obj = iter([1,2,3,4,5]);
+            assert.equal(obj.last(), 5)
+            assert.equal(obj.skip(2).last(),5)
+        });
+        it('not found', ()=> {
+            let obj = iter([]);
+            assert.ok(obj.last() === undefined)
+        });
+        it('not found - default`', ()=> {
+            let obj = iter([]);
+            assert.ok(obj.last(null) === null)
+        });
+    })
 
     it('flatten', ()=> {
         let obj = iter([[1,2,3], 4, [5,['a','b']],6, [7]]);
@@ -278,11 +308,26 @@ describe('iter', ()=> {
         assert.equal(sut.findIndex((e)=>e === 3), 2);
         assert.equal(sut.findIndex((e)=>e === 99), -1);
     })
-    it('find', ()=> {
-        let sut = iter([1,2,3,4,5])
-        assert.equal(sut.find((e)=>e === 3), 3);
-        assert.equal(sut.find((e)=>e === 99), undefined);
+    describe('find', ()=> {
+        it('basic', ()=> {
+            let sut = iter([1,2,3,4,5])
+            let thisArg = {};
+            assert.equal(sut.find(function(e, i) {
+                assert.ok(this === thisArg, 'thisArg was passed')
+                assert.ok(i === e-1)
+                return e === 3
+            }, thisArg), 3);
+        })
+        it('not found', ()=> {
+            let sut = iter([])
+            assert.equal(sut.find((e)=>e === 3), undefined);
+        })
+        it('not found -- default', ()=> {
+            let sut = iter([])
+            assert.equal(sut.find((e)=>e === 3, null, -2), -2);
+        })
     })
+    
     it('take', ()=> {
         let sut = iter([1,2,3,4,5,6,7,8])
         assert.deepEqual(sut.skip(2).take(3).toArray(), [3,4,5]);
@@ -296,7 +341,8 @@ describe('iter', ()=> {
     it('get', ()=> {
         let sut = iter([1,2,3,4,5,6,7,8])
         assert.equal(sut.get(3), 4);
-        assert.equal(sut.get(20),undefined)
+        assert.equal(sut.get(20),undefined, "undefined is returned for index out of range")
+        assert.equal(sut.get(20, null),null, "default value is returned for index out of range")
     });
     it('value', ()=> {
         let sut = iter([1,2,3,4,5])
@@ -314,17 +360,21 @@ describe('iter', ()=> {
         })
     })
     it('except', ()=> {
-        let source = [1,2,3,4,5]
-        assert.deepEqual(iter(source).except([3,4]).toArray(), [1,2,5])
-        assert.deepEqual(iter(source).except([1,5,6]).toArray(), [2,3,4])
+        let sut = iter([1,2,3,4,5])
+        assert.deepEqual(sut.except([3,4]).toArray(), [1,2,5])
+        assert.deepEqual(sut.except([1,5,6]).toArray(), [2,3,4])
     })
     it('intersect', ()=> {
-        let source = [1,2,3,4,5]
-        assert.deepEqual(iter(source).intersect([4,5,8,9]).toArray(), [4,5])
-        assert.deepEqual(iter(source).intersect([8,9,10]).toArray(), [])
+        let sut = iter([1,2,3,4,5])
+        assert.deepEqual(sut.intersect([4,5,8,9]).toArray(), [4,5])
+        assert.deepEqual(sut.intersect([8,9,10]).toArray(), [])
+    })
+    it('union', ()=> {
+        let sut = iter([1,2,3,4,5])
+        assert.deepEqual(sut.union([4,5,6,7,8]).toArray(), [1,2,3,4,5,6,7,8])
     })
     it('repeat', ()=> {
-        assert.deepEqual(iter().repeat("foo",5).toArray(), ["foo","foo","foo","foo","foo"]);
+        assert.deepEqual(iter().repeat("foo",5).toArray(), ["foo","foo","foo","foo","foo"])
     })
 
     describe('orderBy', ()=> {
@@ -377,7 +427,12 @@ describe('iter', ()=> {
 
             assert.deepEqual(sut.toArray(), [1,5,3,6,7,2,4]);
         })
-        
+        it('sequenceEqual', ()=> {
+            let sut = iter([1,2,3,4,5])
+            assert.ok(sut.sequenceEqual([1,2,3,4,5]), 'same are equal')
+            assert.ok(!sut.sequenceEqual([1,2,3,4,5,6]), 'not equal even though same n elements match')
+            assert.ok(!sut.sequenceEqual([1,2,3,4]), 'not equal even though same n elements match (shorter)')
+            assert.ok(!sut.sequenceEqual([1,2,3,5,4]), 'not equal even though same same length & same elements')
+        })
     })
-    
 })

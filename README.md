@@ -74,6 +74,16 @@ In addition to its own API, `Iter` implements method for all the `Array` prototy
 
 *Note about key-value pairs:* When describing an element as a *key-value pair*, this always means an array with two elements: `[key, value]`. This is the data structure used by JavaScript `Map` objects, and is also used for many other operations by `Iter` such as iterating over objects (property-value), and grouping (groupname-members).
 
+*Note about use of undefined*: 
+
+JavaScript arrays can be sparse, meaning certain indicies are not defined, and can also contain `undefined` elements. There is no notion of a sparse sequence, and `undefined` is a perfectly valid value.
+
+Some methods like `first` could have no value to return, e.g. when called on a zero-length sequence. In JavaScript tradition, `iter8` doesn't throw too many errors, but rather returns `undefined` in situations like this. This can result in indeterminate situations... was there no element, or was the result `undefined`?
+
+To resolve this, methods like `first` include an argument that allows you to provide a default value to use other than `undefined`. However, your life will probably be easier if you avoid using `undefined` in seqeunces, so you can test for it conclusively, and use `null` instead to represent missing data.
+
+
+
 ## Creating Iter objects
 
 To create a new `Iter` from any iterable or plain JavaScript object, just:
@@ -134,15 +144,15 @@ let x = iter.fromIterator(gen).toArray()
 
 These methods all cause the query to execute and return some value or object.
 
-#### first()
+#### first(default)
 
-Return the first element in the sequence. Same as `get(0)`.
+Return the first element in the sequence. Same as `get(0)`. If the seqeunce has no elements, return `undefined`, or the `default` if provided.
 
-#### last()
+#### last(default)
 
-Return the last element in the sequence.
+Return the last element in the sequence. If the sequence has no elements, return `undefined` or `default`, if provided.
 
-#### get(n)
+#### get(n, default)
 
 Return the nth (0-based) element in the sequence.
 
@@ -171,6 +181,10 @@ Return the max of all values in the sequence.
 #### sum()
 
 Return the sum of all values in the sequence.
+
+#### sequenceEqual(sequence)
+
+Test whether the two seqeunces are equal by comparing each element sequentially. Returns `true` only if the sequences contain the same number of elements, and each element is equal.
 
 #### toArray()
 
@@ -437,12 +451,13 @@ Reverse the order of the seqeuence
 
 #### findIndex(callback(e, i), thisArg) *value-producing*
 
-#### find(callback(e, i), thisArg) *value-producing*
+#### find(callback(e, i), thisArg, default) *value-producing*
+
+Attempt to locate an element in the sequence by using a `callback`, which should return true when the element has been located. If the condition is never satisfied, return `undefined` or `default`, if provided.
 
 #### reduce(callback(last, current, i), initial) *value-producing*
 
 #### reduceRight(callback(last, current, i), initial) *value-producing*
-
 
 ## Roadmap
 
@@ -454,21 +469,13 @@ Right now property getters are never enumerated, need to add this option.
 
 There are a few more interesting methods I'd like to implement that are pretty easy and will be in the next release:
 
-#### takeWhile(callback)
+#### take(callback)
 
 Take elements as long as `callback(value)` is true
 
-#### skipWhile
+#### skip
 
 ditto
-
-#### union(other)
-
-Return only unique elements resulting from merging another sequence
-
-#### sequenceEqual(other)
-
-Determine if two sequences are equal
 
 #### zip(other, fn)
 
