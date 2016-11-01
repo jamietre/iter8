@@ -144,7 +144,7 @@ let obj = iter({ foo: 'bar', fizz: 'buzz'}).as(Map);
 
 In addition to the default construtor/factory function, you can call some specific construction helpers:
 
-#### fromObject(obj, [filter])
+#### fromObject (obj, [filter])
 
 Create a new `Iter` of `[key, value]` pairs by enumerating properties on `obj` and its prototype chain. This accesses the same properties as `for ... in`, except ignores `constructor`.
 
