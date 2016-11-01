@@ -1,27 +1,43 @@
 
-const _source = Symbol();
+const _iterator = Symbol();
+const _orders = Symbol();
+const _root = Symbol();
 
-function Iter(source) {
-     if (!(this instanceof Iter)) {
+const arrProto = Array.prototype;
+const doneIter = {
+    done: true
+}
+Object.freeze(doneIter)
+
+function Iter(source, iter) {
+    if (source === _iterator) {
+        this[_iterator] = iter;
+        return;
+    }
+    
+    if (!(this instanceof Iter)) {
         return new Iter(source)
     }
-    if (source && !source[Symbol.iterator]) {
+
+    const iterator = source && source[Symbol.iterator];
+    if (source && !iterator) {
         if (typeof source === 'object') {
             return Iter.fromObjectOwn(source);
         }
         throw new Error('iter can only be sourced with an Iterable object or a regular Javascript object.');
-    }
-    this[_source]=source || [];
+    } 
+    this[_iterator]=iterator ? iterator.bind(source) : emptyIterator;
 }
+
 Object.assign(Iter, {
     fromIterator:  function(iterator) {
-        return new Iter(makeIterable(iterator));
+        return new Iter(_iterator, iterator);
     },
     fromObject: function(obj, filter) {
-          return new Iter(makeIterable(makeObjectIterator.call(this, obj, filter, false)));
+          return new Iter(_iterator, makeObjectIterator.call(this, obj, filter, false));
     },
     fromObjectOwn: function(obj, filter) {
-          return new Iter(makeIterable(makeObjectIterator.call(this, obj, filter, true)));
+          return new Iter(_iterator, makeObjectIterator.call(this, obj, filter, true));
     }
 });
 
@@ -34,8 +50,8 @@ Iter.prototype = {
      * @param {any} thisArg The "this" context applied to the callback
      * @returns {void} 
      */
-    forEach: function(cb, thisArg) {
-        new Iter(makeIterable(makeForEachIterator.call(this,cb, thisArg))).execute()
+    forEach(cb, thisArg) {
+        new Iter(_iterator, makeForEachIterator.call(this,cb, thisArg)).execute()
     },
     /**
      * Execute a callback for each element in the seqeunce, and return the same
@@ -45,8 +61,8 @@ Iter.prototype = {
      * @param {any} thisArg The "this" context applied to the callback
      * @returns {Iter} a seqeunce identical to the input sequence 
      */
-    do: function(cb, thisArg) {
-        return new Iter(makeIterable(makeDoIterator.call(this,cb, thisArg)));
+    do(cb, thisArg) {
+        return new Iter(_iterator, makeDoIterator.call(this,cb, thisArg));
     },
     /**
      * Return a single element that is the return value of a function invoked for 
@@ -56,41 +72,53 @@ Iter.prototype = {
      * @param {any} thisArg The "this" context applied to the callback
      * @returns {Iter} A transformed sequence 
      */    
-    map: function(cb, thisArg) {
-        return new Iter(makeIterable(makeMapIterator.call(this,cb, thisArg)));
+    map(cb, thisArg) {
+        return new Iter(_iterator, makeMapIterator.call(this,cb, thisArg));
     },
-    filter: function(cb, thisArg) {
-        return new Iter(makeIterable(makeFilterIterator.call(this,cb, thisArg)));
+    filter(cb, thisArg) {
+        return new Iter(_iterator, makeFilterIterator.call(this,cb, thisArg));
     },
-    groupBy: function(group) {
-        return new Iter(makeIterable(makeGroupByIterator.call(this, group)))
+    groupBy(group) {
+        return new Iter(_iterator, makeGroupByIterator.call(this, group))
     },
-    count: function() {
+    orderBy(order) {
+        return orderBy.call(this, order)
+    },
+    orderDesc(order) {
+        return orderBy.call(this, order, true)
+    },
+    thenBy(order) {
+        return thenBy.call(this, order)
+    },
+    thenDesc(order, desc) {
+        return thenBy.call(this, order, desc)
+    },
+    count() {
         let count=0;
         let iterator =  getIterator.call(this);
         while (!iterator.next().done) count++;
         return count;
     },
-    skip: function(n) {
-        return new Iter(makeIterable(skipIterable.call(this, n)));
+    skip(n) {
+        return new Iter(_iterator, skipIterable.call(this, n));
     },
     // skipWhile: function(/*cb*/) {
     //     throw new Error('not implemented')
     // },
-    take: function(n) {
-        return new Iter(makeIterable(takeIterable.call(this, n)));
+    take(n) {
+        return new Iter(_iterator, takeIterable.call(this, n));
     },
     // takeWhile: function(/*cb*/) {
     //     throw new Error('not implemented')
     // },
-    cast: function(Type) {
-        return new Iter(makeIterable(makeMapIterator.call(this, cast(Type))));
+    cast(Type) {
+        return new Iter(_iterator, makeMapIterator.call(this, cast(Type)));
     },
-    first: function() {
+    first() {
         let cur = getIterator.call(this).next()
         return cur.done ? undefined : cur.value;
     },
-    last: function() {
+    last() {
         let iterator = getIterator.call(this);
         let cur = iterator.next()
         if (cur.done) {
@@ -104,26 +132,26 @@ Iter.prototype = {
         }
     },
     // todo: add recurse option
-    flatten: function() {
-        return new Iter(makeIterable(makeFlattenIterator.call(this)));
+    flatten() {
+        return new Iter(_iterator, makeFlattenIterator.call(this));
     },
     // todo: equality comparitor callback.
-    unique: function() {
-        return new Iter(makeIterable(makeUniqueIterator.call(this)));
+    unique() {
+        return new Iter(_iterator, makeUniqueIterator.call(this));
     },
-    except: function(sequence) {
-        return new Iter(makeIterable(makeExceptIterator.call(this, sequence)));
+    except(sequence) {
+        return new Iter(_iterator, makeExceptIterator.call(this, sequence));
     },
     intersect(sequence) {
-        return new Iter(makeIterable(makeIntersectIterator.call(this, sequence)));
+        return new Iter(_iterator, makeIntersectIterator.call(this, sequence));
     },
     repeat(obj, times) {
-        return new Iter(makeIterable(makeRepeatIterator.call(this, obj, times)));
+        return new Iter(_iterator, makeRepeatIterator.call(this, obj, times));
     },
-    concat: function() {
-        return new Iter(makeIterable(makeConcatIterator.call(this, arguments)));
+    concat() {
+        return new Iter(_iterator, makeConcatIterator.call(this, arguments));
     },
-    some: function(cb, thisArg) {
+    some(cb, thisArg) {
         let iterator = getIterator.call(this);
         let cur;
         let index=0;
@@ -134,7 +162,7 @@ Iter.prototype = {
         }
         return false;
     },
-    every: function(cb, thisArg) {
+    every(cb, thisArg) {
         let iterator = getIterator.call(this);
         let cur;
         let index =0;
@@ -145,7 +173,7 @@ Iter.prototype = {
         }
         return true;
     },
-    includes: function(el) {
+    includes(el) {
         let iterator = getIterator.call(this);
         let cur;
         while (cur = iterator.next(), !cur.done) {
@@ -207,15 +235,18 @@ Iter.prototype = {
     slice(begin, end) {
         return this.skip(begin).take(end-begin+1);
     },
-    reduce: function(callback, initial) {
+    reduce(callback, initial) {
         // Entire array must be traversed, but this might be optimized if we 
         // implement it ourselves to avoid two loops through the array
         return this.toArray().reduce(callback, initial);
     },
-    reduceRight: function(callback, initial) {
+    reduceRight(callback, initial) {
         // Entire array must be traversed, but this might be optimized if we 
         // implement it ourselves to avoid two loops through the array
         return this.toArray().reduceRight(callback, initial);
+    },
+    join(separator) {
+        return this.toArray().join(separator);
     },
     toObject() {
         let obj={};
@@ -226,9 +257,9 @@ Iter.prototype = {
         }
         return obj;
     },
-    toArray: function() {
+    toArray() {
         let arr = [];
-        let iterator = getIterator.call(this);
+        let iterator = this[_iterator]()
         let cur;
         while (cur = iterator.next(), !cur.done) {
             arr.push(cur.value);
@@ -239,7 +270,9 @@ Iter.prototype = {
         if (Cotr === Array) {
             return this.toArray();
         }
-        return new Cotr(this[_source]);
+        return new Cotr({
+            [Symbol.iterator]: this[_iterator]
+        });
     },
     /**
      * Force execution of the deferred query. Useful if you want to finalize a set of operations, but still keep the result
@@ -271,42 +304,40 @@ Iter.prototype = {
     // throw new error('not implemented')    
     // },
 
-    [Symbol.iterator]: function() {
-        return this[_source][Symbol.iterator]();
+    [Symbol.iterator]() {
+        return this[_iterator]();
     }
 };
 
 // These methods require traversing the entire array so just make them into an array
-['sort', 'reverse', 'join'].forEach((method)=> {
+['sort', 'reverse'].forEach((method)=> {
     Iter.prototype[method]=function() {
-        return new Iter(Array.prototype[method].apply(this.toArray(), arguments));
+        var that = this;
+        var args = arguments;
+        return new Iter(_iterator, function() {
+            let arr = that.toArray(); 
+            return arrProto[method].apply(arr,args)[Symbol.iterator]();
+        });
     }
 })
 
-
-function findHelper(cb, thisArg) {
-    let iterator = getIterator.call(this);
-    let cur;
-    let index = 0;
-    while (cur = iterator.next(), !cur.done) {
-        if (cb.call(thisArg, cur.value)) {
-            return [index, cur.value];
-        }
-        index++;
-    }
-    return [-1, undefined];
+function orderBy(order, desc) {
+    let orders=[orProp(order)];
+    return orderByHelper.call(this, this, orders, desc)
 }
 
-function makeIterable(iterator) {
-    return {
-        [Symbol.iterator]: iterator
-    }
+function thenBy(order, desc) {
+    if (!this[_orders]) throw new Error("thenBy only makes sense after orderBy")
+    let orders = this[_orders].slice(0);
+    orders.push(orProp(order))
+    return orderByHelper.call(this, this[_root], orders, desc)
 }
 
-function cast(Type) {
-    return function(e) {
-        return new Type(e);
-    }
+function orderByHelper(root, orders, desc) {
+    let seq =  new Iter(_iterator, makeOrderByIterator.call(this, orders, desc));
+    seq[_orders] = orders;
+    seq[_root] = root
+    return seq;
 }
 
 function skipIterable(n) {
@@ -334,9 +365,7 @@ function takeIterable(n) {
                         }
                     }
                 }
-                return {
-                    done: true
-                }
+                return doneIter
             }
         }
     } 
@@ -353,6 +382,26 @@ function getNext(condition) {
             }
             return iterResult(cur.done, cur.value);
         }
+    }
+}
+
+function makeOrderByIterator(orders, desc){
+    var that = this;
+    return function() {
+        
+        let sorted = that.toArray().sort(function(a, b) {
+            let val=0;
+            for (let i=0; val===0 && i<orders.length; i++) {
+                var fn = orders[i];
+                var va = fn(desc?b:a);
+                var vb = fn(desc?a:b);
+                if (va<vb) val=-1
+                else if (vb<va) val=1
+            }
+            return val;
+        });
+        
+        return sorted[Symbol.iterator]();
     }
 }
 
@@ -434,7 +483,7 @@ function makeIntersectIterator(other) {
 function makeRepeatIterator(obj, times) {
     return function() {
         return {
-            next: function() {
+            next() {
                 return iterResult(times--<=0, obj)
             }
         } 
@@ -445,7 +494,7 @@ function makeConcatIterator(args) {
     var that = this;
     return function() {
         const sources = [that];
-        Array.prototype.forEach.call(args, function(arg) {
+        arrProto.forEach.call(args, function(arg) {
             sources.push(arg);
         })
 
@@ -453,7 +502,7 @@ function makeConcatIterator(args) {
         let iterator;
 
         return {
-            next: function() {
+            next() {
                 let value;
                 while (!value && index < sources.length) {
                     if (!iterator) {
@@ -498,9 +547,7 @@ function makeUniqueIterator() {
                         }
                     }
                 }
-                return {
-                    done: true
-                }
+                return doneIter
             }
         }
         
@@ -510,12 +557,7 @@ function makeUniqueIterator() {
 function makeGroupByIterator(group) {
     var that = this;
     return function() {
-        const cb = typeof group === 'string' ?
-            function(e) {
-                return e[group]
-            } :
-            group;
-
+        const cb = orProp(group);
         let dict = new Map();
         
         let cur;
@@ -550,9 +592,7 @@ function makeFlattenIterator() {
                         if (!isSource) {
                             iter = sourceIter;
                         } else {
-                            return {
-                                done: true
-                            }
+                            return doneIter
                         }
                     } else {
                         if (isSource && cur.value[Symbol.iterator]) {
@@ -595,7 +635,7 @@ function makeMapIterator(cb, thisArg) {
     var that = this;
     return function() {
         let index = 0;
-        let sourceIter = getIterator.call(that);
+        let sourceIter = that[_iterator]();
 
         return {
             next: ()=> {
@@ -607,6 +647,14 @@ function makeMapIterator(cb, thisArg) {
     }
 }
 
+function orProp(obj) {
+    return typeof obj === 'function' ? 
+        obj :
+        function(e) {
+            return e[obj];
+        }
+}
+
 function iterResult(done, value) {
     if (!done) {
         return {
@@ -614,14 +662,37 @@ function iterResult(done, value) {
             done: false
         }
     } else {
-        return {
-            done: true
+        return doneIter
+    }
+}
+function findHelper(cb, thisArg) {
+    let iterator = getIterator.call(this);
+    let cur;
+    let index = 0;
+    while (cur = iterator.next(), !cur.done) {
+        if (cb.call(thisArg, cur.value)) {
+            return [index, cur.value];
         }
+        index++;
+    }
+    return [-1, undefined];
+}
+
+function emptyIterator() {
+    return function() {
+        return doneIter
     }
 }
 
+function cast(Type) {
+    return function(e) {
+        return new Type(e);
+    }
+}
+
+
 function getIterator() {
-    return this[_source][Symbol.iterator]();
+    return this[_iterator]();
 }
 
 export default Iter;

@@ -280,7 +280,6 @@ let x = iter([1,2,3,4,5]]).except([3,5]).toArray()
 
 `do` operates asynchronously, like every non-value-producing method, and so should not be used to immediately cause side effects like `forEach`. 
 
-
 #### skip(n)
 
 Skip `n` elements in the sequence
@@ -303,6 +302,54 @@ let x = iter([1,2,3,4,5]).skip(1).take(2).toArray()
 ```
  
 Since each step operates against a new sequence defined by the previous step, successive `take` operations might operate counterintunitively -- e.g. `x.take(3).take(2)` is *not* the same as `x.take(5)` -- rather it's the same as `x.take(2)`.
+
+#### orderBy(order)
+
+Sort a sequence. `order` can be a string, which will use the named property of each object in the sequence, or a `function(e)`, which is invoked with each element in the sequence, and should return the value to use for the comparison during sorting. 
+
+```Javascript
+let seq = [
+    { foo: 2, id: 1}, 
+    { foo: 1, id: 2}, 
+    { foo: 3, id: 3}
+]
+
+let x = iter(seq).orderBy('foo').map((e)=>e.id).toArray();
+// x = [2,1,3]
+
+let x = iter(seq).orderBy(e=>e.foo).map((e)=>e.id).toArray();
+// x = [2,1,3]
+```
+
+#### orderDesc(order)
+
+Same as `orderBy`, but sorts in descending order.
+
+#### thenBy(order)
+
+Chain a secondary (or n-ary) sort to an `orderBy` clause, which sorts orders which are equal during the primary sort.
+
+```Javascript
+let seq = [
+    { foo: 2, bar: 2, id: 1}, 
+    { foo: 1, id: 2}, 
+    { foo: 3, id: 3},
+    { foo: 2, bar: 1, id: 4}
+]
+
+let x = iter(seq)
+    .orderBy('foo')
+    .thenBy('bar')
+    .map((e)=>e.id).toArray();
+
+// x = [2,4,1,3]
+```
+
+If you attempt to use a `thenBy` clause anywhere than directly after another sorting clause, an error will be thrown.
+
+#### thenDesc(order)
+
+Same as `thenBy`, but sorts in descending order.
 
 #### repeat(obj, n) 
 
