@@ -74,14 +74,16 @@ let foodSales = money.get('food');
 
 ## API
 
+
+
 #### static methods
 
 These are used to create `Iter` instances. 
-
-* [fromObject(obj, [filter])](#fromobjectobj-filter)
-* [fromObjectOwn(obj, [filter])](#fromobjectownobj-filter)
-* [fromIterator(iterator)](#fromiteratoriterator)
-* [repeat(obj, n)](#repeatobj-n)
+* [iter(ob)](#iterobj)
+* [iter.fromObject(obj, [filter])](#iterfromobjectobj-filter)
+* [iter.fromObjectOwn(obj, [filter])](#iterfromobjectownobj-filter)
+* [iter.fromIterator(iterator)](#iterfromiteratoriterator)
+* [iter.repeat(obj, n)](#iterrepeatobj-n)
 
 #### instance methods
 
@@ -95,7 +97,7 @@ Iter8 objects have two types of methods: *transformation* and *value-producing*.
 
 * [first([default])](#firstdefault)
 * [last([default])](#lastdefault) 
-* [get(n, [default])](#getn-default)
+* [get(n, [default])](#user-content-getn-default)
 
 *Aggregation/Analysis*
 
@@ -115,7 +117,7 @@ Iter8 objects have two types of methods: *transformation* and *value-producing*.
 
 *Comparison* 
 
-* [sequenceEqual(sequence)](#sequenceequalsequence), 
+* [sequenceEqual(sequence)](#sequenceequalsequence)
 
 *Export* 
 
@@ -668,12 +670,6 @@ let group2 = intermediate.filter([category]=>category === 'category 2').as(Map)
 ```
 
 Without using "execute" here, the "groupBy" etc. would be run twice for both `group1` and `group2` since execution of the entire query is deferred until a value-producing result, in this case `as(Map)`.
-
-### All non-destructive Array.prototype members
-
-Every `Array` method that doesn't mutate the array is supported, and execution is deferred until the query is executed. The signatures are the same as the native versions, except arguments which pass the array itself to a callback are not implemented.
-
-The `length` property of arrays is also explicitly not implemented. Instead see `count`, above. Since obtaining the number of elements in a sequence necessarily requires iterating over the entire sequence, this is a method rather than a property.
 
 #### forEach(callback(e, i), thisArg) 
 
