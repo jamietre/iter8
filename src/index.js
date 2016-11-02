@@ -34,10 +34,10 @@ Object.assign(Iter, {
         return new Iter(_iterator, iterator);
     },
     fromObject: function(obj, filter) {
-          return new Iter(_iterator, makeObjectIterator.call(this, obj, filter, false));
+          return new Iter(_iterator, makeObjectIterator.call(null, obj, filter, false));
     },
     fromObjectOwn: function(obj, filter) {
-          return new Iter(_iterator, makeObjectIterator.call(this, obj, filter, true));
+          return new Iter(_iterator, makeObjectIterator.call(null, obj, filter, true));
     },
     repeat(obj, times) {
         return new Iter(_iterator, function() {
@@ -569,22 +569,6 @@ function makeIntersectIterator(other) {
 }
 
 
-/**
- * Make a single element iterable
- * 
- * @param {any} e Any object
- * @returns {function} An iterator
-
- */
-function asIterator(e) {
-    let done = false;
-    return { 
-        next() {
-            return done ? doneIter : (done=true, { done: false, value: e })
-        }
-    }
-}
-
 function makeUniqueIterator() {
     var that = this;
     return function() {
@@ -651,7 +635,7 @@ function makeConcatIterator(args) {
                         const nextSource = sources[index]
                         iterator = typeof nextSource !== 'string' && nextSource[_iterator] ? 
                             nextSource[_iterator]() : 
-                            asIterator(nextSource);
+                            objectAsIterator(nextSource);
                     } 
                     
                     let cur = iterator.next();
@@ -798,9 +782,30 @@ function findHelper(cb, thisArg, def) {
     return [-1, def];
 }
 
+return 
 function emptyIterator() {
     return function() {
-        return doneIter
+        return {
+            next() {
+                return doneIter
+            }
+        }
+    }
+}
+
+/**
+ * Make a single element iterable
+ * 
+ * @param {any} e Any object
+ * @returns {function} An iterator
+
+ */
+function objectAsIterator(e) {
+    let done = false;
+    return { 
+        next() {
+            return done ? doneIter : (done=true, { done: false, value: e })
+        }
     }
 }
 

@@ -42,11 +42,17 @@ function testSimpleData(sut) {
 }
 
 describe('iter', ()=> {
-    it('Invoke constructor', ()=> {
-        let sut = iter([1,2,3])
-        assert.ok(sut instanceof iter);
-        assert.ok(sut.count() === 3);
-    })
+    describe('constructor', ()=> {
+        it('Invoke constructor', ()=> {
+            let sut = iter([1,2,3])
+            assert.ok(sut instanceof iter);
+            assert.ok(sut.count() === 3);
+        })
+        it('empty', ()=> {
+            let sut = iter()
+            assert.deepEqual(sut, []);
+        })
+    });
     it('map', ()=> {
         let obj = iter([1,2,3]);
         let thisArg = {};
