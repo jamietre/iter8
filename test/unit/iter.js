@@ -331,9 +331,16 @@ describe('iter', ()=> {
         assert.equal(sut.lastIndexOf(3), 5);
         assert.equal(sut.indexOf(99), -1);
     })
-    it('slice', ()=> {
-        let sut = iter([1,2,3,4,5])
-        assert.deepEqual(sut.slice(2,3).toArray(), [3,4]);
+    describe('slice', ()=> {
+        it('two args', ()=> {
+            let sut = iter([1,2,3,4,5])
+            assert.deepEqual(sut.slice(2,3).toArray(), [3,4]);
+        })
+
+        it('one arg', ()=> {
+            let sut = iter([1,2,3,4,5])
+            assert.deepEqual(sut.slice(3).toArray(), [4,5]);
+        })
     })
     it('findIndex', ()=> {
         let sut = iter([1,2,3,4,5])

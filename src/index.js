@@ -265,6 +265,7 @@ Iter.prototype = {
         return cur.done ? def : cur.value; 
     },
     slice(begin, end) {
+        // when end is missing, take gets NaN as an arg, and takes everything
         return this.skip(begin).take(end-begin+1);
     },
     reduce(callback, initial) {

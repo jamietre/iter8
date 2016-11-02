@@ -100,8 +100,8 @@ Iter8 objects have two types of methods: *transformation* and *value-producing*.
 * [unique()](#unique)
 * [groupBy(group)](#groupbygroup)
 * [cast(Type)](#casttype)
-* [map(callback(e, i), [thisArg])](#mapcallbacke-i-thisarg)*
-* [filter(callback(e, i), [thisArg])](#filtercallbacke-i-thisarg)*
+* [map(callback, [thisArg])](#mapcallbacke-i-thisarg)*
+* [filter(callback, [thisArg])](#filtercallbacke-i-thisarg)*
 * [slice(begin, [end])](#slicebegin-end)*
 
 *Merging/Set Operations*
@@ -109,7 +109,7 @@ Iter8 objects have two types of methods: *transformation* and *value-producing*.
 * [except(sequence)](#exceptsequence)
 * [intersect(sequence)](#intersectsequence)
 * [union(sequence)](#unionsequence)
-* [leftJoin(sequence, mergeCallback(leftItem, rightItem))](#leftjoinsequence-mergecallbackleftitem-rightitem)
+* [leftJoin(sequence, callback)](#leftjoinsequence-mergecallbackleftitem-rightitem)
 * [joinOn(leftKeyCallback, rightKeyCallback)](#joinonleftkeycallback-rightkeycallback)
 * [concat(obj, [obj, ...])](#concatobj-obj-)*
 
@@ -119,7 +119,7 @@ Iter8 objects have two types of methods: *transformation* and *value-producing*.
 * [orderDesc(order)](#orderdescorder)
 * [thenBy(order)](#thenbyorder)
 * [thenDesc(order)](#thendescorder)
-* [sort([callback(a, b)])](#sortcallbacka-b)*
+* [sort([callback])](#sortcallbacka-b)*
 * [reverse()](#reverse)*
 
 
@@ -713,6 +713,11 @@ Join all methods using the `separator` as a string. If the contents of the seque
 ### Construct from object enhancements
 
 Right now property getters are never enumerated, need to add this option. 
+
+### Edge cases
+
+Little arg validation is done - in some cases this produces unexpected behavior. Need to 
+validate particularly numeric args like `take`
 
 ### A few more features
 
