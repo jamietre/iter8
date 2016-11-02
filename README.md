@@ -91,6 +91,48 @@ These methods are available on all `Iter` instances. Methods identified with an 
 
 Iter8 objects have two types of methods: *transformation* and *value-producing*. Transformation methods return another `Iter` instance and can be chained.
 
+##### transformation methods
+
+*Mapping/Filtering/Grouping* 
+
+* [flatten([recurse])](#flattenrecurse)
+* [unique()](#unique)
+* [groupBy(group)](#groupbygroup)
+* [cast(Type)](#casttype)
+* [map(callback(e, i), [thisArg])](#mapcallbacke-i-thisarg)*
+* [filter(callback(e, i), [thisArg])](#filtercallbacke-i-thisarg)*
+* [slice(begin, [end])](#slicebegin-end)*
+
+*Merging/Set Operations*
+
+* [except(sequence)](#exceptsequence)
+* [intersect(sequence)](#intersectsequence)
+* [union(sequence)](#unionsequence)
+* [leftJoin(sequence, mergeCallback(leftItem, rightItem))](#leftjoinsequence-mergecallbackleftitem-rightitem)
+* [joinOn(leftKeyCallback, rightKeyCallback)](#joinonleftkeycallback-rightkeycallback)
+* [concat(obj, [obj, ...])](#concatobj-obj-)*
+
+*Ordering*
+
+* [orderBy(order)](#orderbyorder)
+* [orderDesc(order)](#orderdescorder)
+* [thenBy(order)](#thenbyorder)
+* [thenDesc(order)](#thendescorder)
+* [sort([callback(a, b)])](#sortcallbacka-b)*
+* [reverse()](#reverse)*
+
+
+*Traversal*
+
+* [skip(n)](#skipn)
+* [take(n)](#taken)
+
+*Special*
+
+* [do(callback, [thisArg])](#docallback-thisarg)
+* [execute()](#execute)
+* [forEach(callback(e, i), thisArg)](#foreachcallbacke-i-thisarg)*
+
 ##### value-producing methods 
 
 *Element selection*
@@ -126,47 +168,7 @@ Iter8 objects have two types of methods: *transformation* and *value-producing*.
 * [as(Type)](#astype) 
 * [join(separator)](#joinseparator-value-producing)* 
 
-##### transformation methods
 
-*Transormation* 
-
-* [flatten([recurse])](#flattenrecurse)
-* [unique()](#unique)
-* [groupBy(group)](#groupbygroup)
-* [cast(Type)](#casttype)
-* [map(callback(e, i), [thisArg])](#mapcallbacke-i-thisarg)*
-* [filter(callback(e, i), [thisArg])](#filtercallbacke-i-thisarg)*
-* [slice(begin, [end])](#slicebegin-end)*
-
-
-*Ordering*
-
-* [orderBy(order)](#orderbyorder)
-* [orderDesc(order)](#orderdescorder)
-* [thenBy(order)](#thenbyorder)
-* [thenDesc(order)](#thendescorder)
-* [sort([callback(a, b)])](#sortcallbacka-b)*
-* [reverse()](#reverse)*
-
-*Merging/Set Operations*
-
-* [except(sequence)](#exceptsequence)
-* [intersect(sequence)](#intersectsequence)
-* [union(sequence)](#unionsequence)
-* [leftJoin(sequence, mergeCallback(leftItem, rightItem))](#leftjoinsequence-mergecallbackleftitem-rightitem)
-* [joinOn(leftKeyCallback, rightKeyCallback)](#joinonleftkeycallback-rightkeycallback)
-* [concat(obj, [obj, ...])](#concatobj-obj-)*
-
-*Traversal*
-
-* [skip(n)](#skipn)
-* [take(n)](#taken)
-
-*Special*
-
-* [do(callback, [thisArg])](#docallback-thisarg)
-* [execute()](#execute)
-* [forEach(callback(e, i), thisArg)](#foreachcallbacke-i-thisarg)*
 
 ### Usage Details
 
@@ -286,147 +288,7 @@ let x = iter.generate((i)=>i*2, 3).toArray()
 
 All the methods below are available on any `Iter` instance. 
 
-### Value-returning methods
 
-These methods all cause the query to execute and return some value or object.
-
-#### first([default])
-
-Return the first element in the sequence. Same as `get(0)`. If the sequence has no elements, return `undefined`, or the `default` if provided.
-
-#### last([default])
-
-Return the last element in the sequence. If the sequence has no elements, return `undefined` or `default`, if provided.
-
-#### get(n, [default])
-
-Return the nth (0-based) element in the sequence.
-
-
-### Aggregation/Analysis methods
-
-#### count()
-
-Return the number of elements in the sequence.
-
-```Javascript
-let x = iter([1,2,3,4,5]).count()
-// x === 5
-```
-
-#### min([mapCallback])
-
-Return the minimum of all values in the sequence: If an optional `mapCallback` function is provided, the function will be invoked for each element, and the return value used as the value to compare.
-
-```Javascript
-let x = iter([3,1,2,4]).min()
-// x===1
-```
-
-#### max([mapCallback])
-
-Return the max of all values in the sequence. If an optional `mapCallback` function is provided, the function will be invoked for each element, and the return value used as the value to compare.
-
-#### sum([mapCallback])
-
-Return the sum of all values in the sequence. If an optional `mapCallback` function is provided, the function will be invoked for each element, and the return value used in the sum.
-
-#### some(callback(e, i), [thisArg])
-
-Test whether some elements in the sequence meet the criteria.
-
-#### every(callback(e, i), [thisArg])
-
-Test whether every element in the sequence meet the criteria.
-
-#### includes(value)
-
-Test whether `value` is in the sequence
-
-#### indexOf(value)
-
-Locate `value` in the sequence and return it's ordinal position from 0, or `-1` if not found.
-
-#### lastIndexOf(value)
-
-Locate the last occurrence `value` in the sequence and return it's ordinal position from 0, or `-1` if not found.
-
-#### findIndex(callback(e, i), [thisArg])
-
-Locate the element that satisfies the condition, and return it's ordinal position from 0. If the condition is never satisfied, return `-1`
-
-#### find(callback(e, i), [thisArg], [default])
-
-Attempt to locate an element in the sequence by using a `callback`, which should return true when the element has been located. If the condition is never satisfied, return `undefined` or `default`, if provided.
-
-#### reduce(callback(last, current, i), [initial])
-
-(todo - Array.reduce)
-
-#### reduceRight(callback(last, current, i), [initial]) *value-producing*
-
-(todo - Array.reduceRight)
-
-#### sequenceEqual(sequence)
-
-Test whether the two sequences are equal by comparing each element sequentially. Returns `true` only if the sequences contain the same number of elements, and each element is equal.
-
-### Export methods
-
-These methods export the sequence to some other data structure.
-
-#### toArray()
-
-Return an array created by iterating the sequence completely. Same as `as(Array)`.
-
-#### toObject()
-
-Assuming the sequence contains *key-value pairs* and each key is unique, return an object with `{property: value}` for each key-value pair.
-
-This method makes no effort to validate the elements in your sequence, rather, it just uses `value[0]` for each key and `value[1]` for each value. It is often useful in conjunction with `groupBy`, which returns a sequence of key/value pairs, or when `iter` is created from a `Map` object. 
-
-```Javascript
-let myMap = new Map();
-myMap.set('foo', 'bar')
-myMap.set('fizz', 'buzz')
-
-let x = iter(myMap).toObject();
-
-// x === { 
-//    "foo": "bar",
-//    "fizz": "buzz"
-//}
-``` 
-
-#### as(Type)
-
-Creates an instance of `Type` using the sequence as a single constructor argument. This works well with the ES6 `Map` and `Set` types. You can also use `Array`, which is a special case, even though constructing an `Array` with an iterable doesn't work in plain JavaScript. You can use any user-defined types that can accept an iterable as a single constructor argument.
-
-```Javascript
-// make a lookup table returning all elements of the source grouped by the
-// values of property `category`
-
-let map = iter(something).groupBy('category').as(Map)
-```
-
-#### join([separator=',']) *value-producing*
-
-Join all methods using the `separator` as a string. If the contents of the sequence aren't strings, `toString()` will be invoked on each element. 
-
-### Transformation methods
-
-These methods return a new sequence based on some transformation of the original one. These include aggregation, traversal, and set operations. These are all chainable, and execution is always deferred. The sequence will only be iterated as much as necessary to perform a given transformation. Some methods will by nature always iterate over the entire sequence, such as set operations.
-
-#### flatten([recurse])
-
-For each element in the sequence, if the element is an array, return each element in the array as a new element in the sequence.
-
-When `recurse` is truthy, elements within each element that are also iterable, will continue to be flattened.
-
-Like `concat`, strings are a special case, and are not iterated over.
-
-```Javascript
-let x = iter([[1,2], "foo", [3,4,[5]]]).toArray()
 // x === [1,2,"foo",3,4,[5]]
 ```
 
@@ -589,11 +451,10 @@ There will be one row for each matching key in the right sequence. If keys are r
 let seq1 = [[0,'foo'], [1,'bar'], [1,'baz'], [2, 'fizz']] 
 let seq2 = [[1,'FOO'], [2,'BAR'], [3,'NOPE']]
 
-let merged = iter(seq1).leftJoin(seq2, (left, right='')=> {
-    return `${left}:${right}`
-});
+let merged = iter(seq1)
+.leftJoin(seq2, (left, right='') => `${left}:${right}`);
 
-/// merged =  ['foo:', 'bar:FOO', 'baz:FOO'], 'fizz:BAR']
+/// merged.toArray() =  ['foo:', 'bar:FOO', 'baz:FOO', 'fizz:BAR']
 ```
 
 #### joinOn(leftKeyCallback, rightKeyCallback)
@@ -606,21 +467,22 @@ let seq1 = [
     { group: 1, value: 'foo', },
     { group: 2, value: 'fizz' },
     { group: 3, value: 'buzz' }
-];
+]
 let seq2 = [
     { group: 1, value: 'a'},
     { group: 3, value: 'b'},
-    { group: 3, value: 'c'}
+    { group: 3, value: 'c'},
+    { group: 4, value: 'd'},
 ]
 
-let merged = iter(seq1).leftJoin(seq2, (left, right='', key)=> {
-    return `${left.value}:${right.value}`
-});
+let merged = iter(seq1)
+    .leftJoin(seq2, (left, right={}, key)=> `${key}:${left.value},${right.value || ''}`)    
+    .joinOn(left => left.group, right => right.group)
 
-/// merged = ["bar:a", "foo:a", "buzz:b", "buzz:c"]
+// merged.toArray() ===["1:bar,a", "1:foo,a", "2:fizz,", "3:buzz,b", "3:buzz,c"]
 ```
 
-Of note here is that the values from the *left* sequence group 3 are repeated, because there were multiple matches in the right group.
+Of note here is that the values from the *left* sequence group 3 are repeated, because there were multiple matches in the right group. The value for group 4 doesn't appear because it has no match from the left. Finally, we have to handle cases where `right` is missing in the merge callback, because there may be keys that appear only in the left sequence.
 
 #### concat(obj, [obj, ...])
 
@@ -704,7 +566,147 @@ iter(arr).skip(3).forEach((e)=> {
 });
 ```
 
-## Roadmap
+### Value-returning methods
+
+These methods all cause the query to execute and return some value or object.
+
+#### first([default])
+
+Return the first element in the sequence. Same as `get(0)`. If the sequence has no elements, return `undefined`, or the `default` if provided.
+
+#### last([default])
+
+Return the last element in the sequence. If the sequence has no elements, return `undefined` or `default`, if provided.
+
+#### get(n, [default])
+
+Return the nth (0-based) element in the sequence.
+
+
+### Aggregation/Analysis methods
+
+#### count()
+
+Return the number of elements in the sequence.
+
+```Javascript
+let x = iter([1,2,3,4,5]).count()
+// x === 5
+```
+
+#### min([mapCallback])
+
+Return the minimum of all values in the sequence: If an optional `mapCallback` function is provided, the function will be invoked for each element, and the return value used as the value to compare.
+
+```Javascript
+let x = iter([3,1,2,4]).min()
+// x===1
+```
+
+#### max([mapCallback])
+
+Return the max of all values in the sequence. If an optional `mapCallback` function is provided, the function will be invoked for each element, and the return value used as the value to compare.
+
+#### sum([mapCallback])
+
+Return the sum of all values in the sequence. If an optional `mapCallback` function is provided, the function will be invoked for each element, and the return value used in the sum.
+
+#### some(callback(e, i), [thisArg])
+
+Test whether some elements in the sequence meet the criteria.
+
+#### every(callback(e, i), [thisArg])
+
+Test whether every element in the sequence meet the criteria.
+
+#### includes(value)
+
+Test whether `value` is in the sequence
+
+#### indexOf(value)
+
+Locate `value` in the sequence and return it's ordinal position from 0, or `-1` if not found.
+
+#### lastIndexOf(value)
+
+Locate the last occurrence `value` in the sequence and return it's ordinal position from 0, or `-1` if not found.
+
+#### findIndex(callback(e, i), [thisArg])
+
+Locate the element that satisfies the condition, and return it's ordinal position from 0. If the condition is never satisfied, return `-1`
+
+#### find(callback(e, i), [thisArg], [default])
+
+Attempt to locate an element in the sequence by using a `callback`, which should return true when the element has been located. If the condition is never satisfied, return `undefined` or `default`, if provided.
+
+#### reduce(callback(last, current, i), [initial])
+
+(todo - Array.reduce)
+
+#### reduceRight(callback(last, current, i), [initial]) *value-producing*
+
+(todo - Array.reduceRight)
+
+#### sequenceEqual(sequence)
+
+Test whether the two sequences are equal by comparing each element sequentially. Returns `true` only if the sequences contain the same number of elements, and each element is equal.
+
+### Export methods
+
+These methods export the sequence to some other data structure.
+
+#### toArray()
+
+Return an array created by iterating the sequence completely. Same as `as(Array)`.
+
+#### toObject()
+
+Assuming the sequence contains *key-value pairs* and each key is unique, return an object with `{property: value}` for each key-value pair.
+
+This method makes no effort to validate the elements in your sequence, rather, it just uses `value[0]` for each key and `value[1]` for each value. It is often useful in conjunction with `groupBy`, which returns a sequence of key/value pairs, or when `iter` is created from a `Map` object. 
+
+```Javascript
+let myMap = new Map();
+myMap.set('foo', 'bar')
+myMap.set('fizz', 'buzz')
+
+let x = iter(myMap).toObject();
+
+// x === { 
+//    "foo": "bar",
+//    "fizz": "buzz"
+//}
+``` 
+
+#### as(Type)
+
+Creates an instance of `Type` using the sequence as a single constructor argument. This works well with the ES6 `Map` and `Set` types. You can also use `Array`, which is a special case, even though constructing an `Array` with an iterable doesn't work in plain JavaScript. You can use any user-defined types that can accept an iterable as a single constructor argument.
+
+```Javascript
+// make a lookup table returning all elements of the source grouped by the
+// values of property `category`
+
+let map = iter(something).groupBy('category').as(Map)
+```
+
+#### join([separator=',']) *value-producing*
+
+Join all methods using the `separator` as a string. If the contents of the sequence aren't strings, `toString()` will be invoked on each element. 
+
+### Transformation methods
+
+These methods return a new sequence based on some transformation of the original one. These include aggregation, traversal, and set operations. These are all chainable, and execution is always deferred. The sequence will only be iterated as much as necessary to perform a given transformation. Some methods will by nature always iterate over the entire sequence, such as set operations.
+
+#### flatten([recurse])
+
+For each element in the sequence, if the element is an array, return each element in the array as a new element in the sequence.
+
+When `recurse` is truthy, elements within each element that are also iterable, will continue to be flattened.
+
+Like `concat`, strings are a special case, and are not iterated over.
+
+```Javascript
+let x = iter([[1,2], "foo", [3,4,[5]]]).toArray()## Roadmap
 
 ### Construct from object enhancements
 

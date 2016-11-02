@@ -476,15 +476,26 @@ describe('iter', ()=> {
             })
 
             it('joinOn', ()=> {
-                let sut = iter(left).leftJoin(right, (left, right, key)=> {
-                    left = left[1];
-                    right = right ? right[1] : '';
-                    return `${key}:${left}:${right}`;
-                }).joinOn((left)=>left[0], (right)=>right[0]);
+                let seq1 = [
+                    { group: 1, value: 'bar' }, 
+                    { group: 1, value: 'foo', },
+                    { group: 2, value: 'fizz' },
+                    { group: 3, value: 'buzz' }
+                ];
+                let seq2 = [
+                    { group: 1, value: 'a'},
+                    { group: 3, value: 'b'},
+                    { group: 3, value: 'c'},
+                    { group: 4, value: 'd'},
+                ]
 
-                assert.deepEqual(sut.toArray(), [
-                    '0:foo:', '1:bar:FOO', '1:baz:FOO', '2:fizz:BAR', '2:fizz:BARRE'
-                ]) 
+                let merged = iter(seq1)
+                    .leftJoin(seq2, (left, right={}, key)=> `${key}:${left.value},${right.value||''}`)    
+                    .joinOn(left => left.group, right => right.group)
+
+                assert.deepEqual(merged.toArray(), [
+                    "1:bar,a", "1:foo,a", "2:fizz,", "3:buzz,b", "3:buzz,c"])
+                
             })
         })
     })
