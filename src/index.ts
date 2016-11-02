@@ -14,10 +14,13 @@ function iter(source: any): Iter {
     return new Iter(source);
 }
 namespace iter {
-    export let fromIterator= function(iterator) {
-        return new Iter(_iterator, iterator);
+    /**
+     * Create an Iter from an Iterator (a function returning { next() })
+     */
+    export let fromGenerator = function(generator: ()=>Iterator<any>) {
+        return new Iter(_iterator, generator);
     }
-    export let fromObject = function(obj, filter): Iter {
+    export let fromObject = function(obj, filter?: (prop: string, index: number)=>boolean): Iter {
           return new Iter(_iterator, makeObjectIterator.call(null, obj, filter, false));
     }
     export let fromObjectOwn = function(obj: any, filter?: (prop: string, index: number)=>boolean): Iter {
