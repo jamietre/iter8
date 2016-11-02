@@ -488,8 +488,8 @@ export class Iter implements Iterable<any> {
     get(index: number, defaultValue?: any): any {
         let iterator = this[_iterator]()
         let cur;
-        let index = 0;
-        while (cur = iterator.next(), !cur.done && index < getIndex)  index++;
+        let i = 0;
+        while (cur = iterator.next(), !cur.done && i < index)  i++;
         
         return cur.done ? defaultValue : cur.value; 
     }
