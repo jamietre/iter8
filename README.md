@@ -1,6 +1,6 @@
 # iter8
 
-A small (10k) data transformation library that provides the familiar `Array` API plus extensions for use on JavaScript iterables.
+A small (2.6k gzipped) data transformation library that provides the familiar `Array` API plus extensions for use on JavaScript iterables.
 
 * [Installation](#installation)
 * [Basic Usage](#usage)
@@ -14,7 +14,7 @@ Iterators are a powerful new feature of ES6. ES6 `Set` and `Map` types offer som
 
 iter8 seeks to bridge the gap between arrays and iterables, leveraging native data structures and adding some useful new transformation functions. Because everything is treated as a sequence, no work gets done until you ask for some specific output, and the sequence is only iterated as much as needed to perform your operations. 
 
-iter8 is small (10k uglified) and has no runtime dependencies. 
+iter8 is small (about 10k uglified, and 2.6k gzipped) and has no runtime dependencies. 
 
 ### immutability by design
 
