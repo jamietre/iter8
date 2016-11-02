@@ -34,7 +34,7 @@ namespace iter {
     }
 }  
 
-class Iter implements Iterable<any> {
+export class Iter implements Iterable<any> {
     
     constructor(source: any, _iter?: ()=>Iterator<any>) {
         if (source === _iterator) {

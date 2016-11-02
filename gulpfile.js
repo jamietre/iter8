@@ -114,7 +114,7 @@ function build(src, dest, rebuildAll) {
         
                 let target = tsResult.dts;
 
-                target.pipe(this.gulp.dest(this.options.dest));
+                target.pipe(gulp.dest(dest));
 
                 stream = tsResult.js;
             } else {
