@@ -376,10 +376,6 @@ describe('iter', ()=> {
         assert.equal(sut.get(20),undefined, "undefined is returned for index out of range")
         assert.equal(sut.get(20, null),null, "default value is returned for index out of range")
     });
-    it('value', ()=> {
-        let sut = iter([1,2,3,4,5])
-        assert.equal(sut.skip(1).value(), 2);
-    });
     it('toObject', ()=> {
         let myMap = new Map();
         myMap.set('foo', 'bar')
