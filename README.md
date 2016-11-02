@@ -36,7 +36,7 @@ Wrap any iterable object with `iter(..)` to create an `Iter` instance, and then 
 ```Javascript
 // someArray = [{active, id}, ... ]
 
-const lookup = iter(someArray).
+const lookup = iter(someArray)
     .filter(e=>e.active)
     .map(e=>[e.id, e])
     .toArray();
@@ -59,7 +59,7 @@ let money = iter(allSales)
             volume: sales.length,
             totalDollars: iter(sales).map(e=>e.amount).sum()    
         }
-    }
+    })
 ```
 
 Use data structures to help you:
@@ -201,7 +201,7 @@ import iter from `iter8`
 let obj = iter()
 // obj.toArray() === []
 
-let obj = iter([1,2,3]).filter(e=>e<3)
+let obj = iter([1,2,3]).filter(e => e<3)
 // obj.toArray() === [2,3]
 ```
 
@@ -237,7 +237,7 @@ const val = seq.map(e=>e.value)
     .sum(e=>e > 1);
 // val === 5
 
-const lookup = iter({ foo: 1, bar: 2}).As(Map)
+const lookup = iter({ foo: 1, bar: 2}).as(Map)
 const val = lookup.get('foo')
 // val === 1
 
