@@ -40,8 +40,8 @@ const lookup = iter(someArray).
     .map(e=>[e.id, e])
     .toArray();
 
-const firstThree = lookup.take(3).toArray()  // array of only first 3 elements in lookup
-const fourth = lookup.get(4)                 // value of 4th element in looku
+const firstThree = lookup.take(3).toArray()  // array of only first 3 elements
+const fourth = lookup.get(4)                 // value of 4th element in lookup
 ```
 
 Let's do some more interesting things:
@@ -83,7 +83,7 @@ These are used to create `Iter` instances.
 * [iter.fromObject(obj, [filter])](#iterfromobjectobj-filter)
 * [iter.fromObjectOwn(obj, [filter])](#iterfromobjectownobj-filter)
 * [iter.fromGenerator(iterator)](#iterfromgeneratorgenerator)
-* [iter.repeat(obj, n)](#iterrepeatobj-n)
+* [iter.generate(obj, n)](#itergenerateobj-n)
 
 #### instance methods
 
@@ -200,7 +200,6 @@ let obj = iter()
 
 let obj = iter([1,2,3]).filter(e=>e<3)
 // obj.toArray() === [2,3]
-
 ```
 
 JavaScript objects become sequences of `[key, value]` pairs:
@@ -233,7 +232,7 @@ const seq = iter([{value: 1},{ value: 2}, {value: 3}]);
 
 const val = seq.map(e=>e.value)
     .sum(e=>e > 1);
-/// val === 5
+// val === 5
 
 const lookup = iter({ foo: 1, bar: 2}).As(Map)
 const val = lookup.get('foo')
@@ -269,17 +268,17 @@ let x = iter.fromGenerator(gen).toArray()
 /// x === [1,2,3]
 ```
 
-#### iter.repeat(obj, n) 
+#### iter.generate(obj, n) 
 
 If `obj` is a `function(n)`, invoke it with the index from 0 to 1-n, and create a seqeunce from each value returned.
 
 If `obj` is not a function, create a sequence of `obj` repeated `n` times.
 
 ```Javascript
-let x = iter.repeat('foo', 3).concat('bar').toArray() 
+let x = iter.generate('foo', 3).concat('bar').toArray() 
 // x === ['foo','foo','foo','bar']
 
-let x = iter.repeat((i)=>i*2, 3).toArray()
+let x = iter.generate((i)=>i*2, 3).toArray()
 // x === [0,2,4]
 ```
 
@@ -727,10 +726,11 @@ ditto
 
 Apply a function to the corresponding elements of two sequences; return the output of the function for each element.
 
-
 ### Typescript
 
-I want to convert this to typescript to provide at a minimum IDE intellisense support.
+I did a basic TypeScript conversion, but it doesn't actually work, and adds about 15% to the size anyway because of some
+optimizations that aren't directly possible with TS and Babel. But it's good enough to generate a typings file. Might try to 
+get it completely converted and optimized entirely in TS which would make it easier.
 
 ### Extensibility
 
