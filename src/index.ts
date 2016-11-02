@@ -15,17 +15,41 @@ function iter(source: any): Iter {
 }
 namespace iter {
     /**
-     * Create an Iter from an Iterator (a function returning { next() })
+     * Create an Iter from an generator (a function returning an iterator)
+     * @param {generator} generator The generator function
+     * @returns {Iter} an Iter instance 
      */
     export let fromGenerator = function(generator: ()=>Iterator<any>) {
         return new Iter(_iterator, generator);
     }
+    /**
+     * Create an Iter from an object, returning a seqeunce of [key, value] pairs obtained
+     * by enumerating the object's properties. All properties, including those on the prototype
+     * chain, will be included, except "constructor"
+     * 
+     * @param {any} onj An object
+     * @param {function} filter A callback that is invoked with each property name. Returing `false` will omit a property from the sequence.
+     * @returns {Iter} an Iter instance with a sequence of [key, value] pairs corresponding to the object's properties
+     */
     export let fromObject = function(obj, filter?: (prop: string, index: number)=>boolean): Iter {
           return new Iter(_iterator, makeObjectIterator.call(null, obj, filter, false));
     }
+    /**
+     * Create an Iter from an object, returning a seqeunce of [key, value] pairs obtained
+     * by enumerating the object's properties. Only the object's own properties (e.g. no prototype chain)
+     * are included.
+     * 
+     * @param {any} onj An object
+     * @param {function} filter A callback that is invoked with each property name. Returing `false` will omit a property from the sequence.
+     * @returns {Iter} an Iter instance with a sequence of [key, value] pairs corresponding to the object's properties
+     */
     export let fromObjectOwn = function(obj: any, filter?: (prop: string, index: number)=>boolean): Iter {
           return new Iter(_iterator, makeObjectIterator.call(null, obj, filter, true));
     } 
+    /**
+     * Generate a sequence by repeating the value
+     * 
+     */
     export let repeat = function(obj: any, times: number): Iter {
         return new Iter(_iterator, function() {
             return {
