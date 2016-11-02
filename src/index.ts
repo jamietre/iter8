@@ -10,6 +10,12 @@ const doneIter = {
 }
 Object.freeze(doneIter)
 
+/**
+* Creates an instance of Iter from an Iterable object, or a plain Javascript object.
+* 
+* @param {*} source
+* @returns {Iter} An Iter instance
+*/
 function iter(source: any): Iter {
     return new Iter(source);
 }
@@ -27,7 +33,7 @@ namespace iter {
      * by enumerating the object's properties. All properties, including those on the prototype
      * chain, will be included, except "constructor"
      * 
-     * @param {any} onj An object
+     * @param {any} obj An object
      * @param {function} filter A callback that is invoked with each property name. Returing `false` will omit a property from the sequence.
      * @returns {Iter} an Iter instance with a sequence of [key, value] pairs corresponding to the object's properties
      */
@@ -39,7 +45,7 @@ namespace iter {
      * by enumerating the object's properties. Only the object's own properties (e.g. no prototype chain)
      * are included.
      * 
-     * @param {any} onj An object
+     * @param {any} obj An object
      * @param {function} filter A callback that is invoked with each property name. Returing `false` will omit a property from the sequence.
      * @returns {Iter} an Iter instance with a sequence of [key, value] pairs corresponding to the object's properties
      */
@@ -47,10 +53,12 @@ namespace iter {
           return new Iter(_iterator, makeObjectIterator.call(null, obj, filter, true));
     } 
     /**
-     * Generate a sequence by repeating the value
+     * Generate a sequence from a `function(n)` invoked `times` times, or by repeating a single value.
      * 
+     * @param {any} obj An object to repeat, or a `function(n)` that returns an object.
+     * @param {number} times The number of times to invoke the generator or repeat
      */
-    export let repeat = function(obj: any, times: number): Iter {
+    export let generate = function(obj: (index: number)=>any | any, times: number): Iter {
         return new Iter(_iterator, function() {
             return {
                 next() {
@@ -62,7 +70,12 @@ namespace iter {
 }  
 
 export class Iter implements Iterable<any> {
-    
+    /**
+     * Creates an instance of Iter from an Iterable object, or a plain Javascript object.
+     * 
+     * @param {*} source
+     * @param {()=>Iterator<any>} [_iter]
+     */
     constructor(source: any, _iter?: ()=>Iterator<any>) {
         if (source === _iterator) {
             this[_iterator] = _iter;
@@ -105,50 +118,111 @@ export class Iter implements Iterable<any> {
     do(callback:(item: any, index: number)=>any, thisArg?: any): Iter {
         return new Iter(_iterator, makeDoIterator.call(this, callback, thisArg));
     }
+    /**
+     * Group each element in the sequence according to the value of a property if `group` is a string,
+     * or the value returned by `function(item, index)` if group is a function. Returns a sequence
+     * of `[key, value]` pairs where `value` is an array containing each item in the group.  
+     * 
+     * @param {((item: any, index: number)=>any | string)} group A property name or function
+     * @returns {Iter} A sequence of `[key, value[]]` pairs where `value` is an array of items in the group 
+     */
     groupBy(group: (item: any, index: number)=>any | string): Iter {
         return new Iter(_iterator, makeGroupByIterator.call(this, group))
     }
-
+    /**
+     * Sort by the value of a property, if `order` is a string, or by the value returned by a
+     * `function(item, index)` if `order` is a function
+     * 
+     * @param {((item: any, index: number)=>any | string)} order A property name or function
+     * @returns {Iter} The sorted sequence
+     */
     orderBy(order: (item: any, index: number)=>any | string): Iter {
         return orderBy.call(this, order)
     }
+    /**
+     * Sort by the value of a property, in descending order. If `order` is a string, or by the value returned by a
+     * `function(item, index)` if `order` is a function
+     * 
+     * @param {((item: any, index: number)=>any | string)} order A property name or function
+     * @returns {Iter} The sorted sequence
+     */
     orderDesc(order: (item: any, index: number)=>any | string): Iter {
         return orderBy.call(this, order, true)
     }
+    /**
+     * Add a secondary or n-ary sort order if there are multiple items with the same value. Can only follow an `order` or `then` clause.
+     * 
+     * @param {((item: any, index: number)=>any | string)} order A property name or function
+     * @returns {Iter} The sorted sequence
+     */    
     thenBy(order: (item: any, index: number)=>any | string): Iter {
         return thenBy.call(this, order)
     }
+    /**
+     * Add a secondary or n-ary descending sort order if there are multiple items with the same value. Can only follow an `order` or `then` clause.
+     * 
+     * @param {((item: any, index: number)=>any | string)} order A property name or function
+     * @returns {Iter} The sorted sequence
+     */    
     thenDesc(order: (item: any, index: number)=>any | string, desc): Iter {
         return thenBy.call(this, order, desc)
     }
+    /**
+     * Iterate over the entire sequence and count the items
+     * 
+     * @returns {number} The number of items in the sequence
+     */
     count(): number {
         let count: number=0;
         let iterator:Iterator<any> = this[_iterator]()
         while (!iterator.next().done) count++;
         return count;
     }
+    /**
+     * Skip `n` items in the seqeunce, and return a new sequence of all successive items.
+     * 
+     * @param {number} n The number of items to skip
+     * @returns {Iter} A sequence of all items after the skipped ones
+     */
     skip(n: number): Iter {
         return new Iter(_iterator, skipIterable.call(this, n));
     }
-    // skipWhile: function(/*cb*/) {
-    //     throw new Error('not implemented')
-    // },
+    /**
+     * Create a seqeunce of the next `n` items
+     * 
+     * @param {number} n the number of items to take
+     * @returns {Iter} a sequence of the taken items
+     */
     take(n: number): Iter {
         return new Iter(_iterator, takeIterable.call(this, n));
     }
-    // takeWhile: function(/*cb*/) {
-    //     throw new Error('not implemented')
-    // },
+    /**
+     * Convert all items in the sequence to instances of `Type` by invoking `Type` as a constructor with the sequence as an argument
+     * 
+     * @param {new (element: any)=>any} Type the Constructor to use
+     * @returns {Iter} The new sequence
+     */
     cast(Type: new (element: any)=>any ): Iter {
         return new Iter(_iterator, makeMapIterator.call(this, function(e) {
             return new Type(e);
         }));
     }
-     
+    /**
+     * Return the first item in the sequence, or `undefined`, or an optional `defaultValue`
+     * 
+     * @param {*} [defaultValue] a default value to return if the seqeunce has no items.
+     * @returns {*} The first item in the sequence, or `undefined` (or `defaultValue`) if the sequence has no items. 
+     */
     first(defaultValue?: any):any {
         let cur = this[_iterator]().next()
         return cur.done ? defaultValue : cur.value;
     }
+    /**
+     * Return the firlastst item in the sequence, or `undefined`, or an optional `defaultValue`
+     * 
+     * @param {*} [defaultValue] a default value to return if the seqeunce has no items.
+     * @returns {*} The first item in the sequence, or `undefined` (or `defaultValue`) if the sequence has no items. 
+     */
     last(defaultValue?: any):any {
         let iterator = this[_iterator]()
         let cur = iterator.next()
@@ -162,34 +236,91 @@ export class Iter implements Iterable<any> {
             return last;
         }
     }
+    /**
+     * Return a new sequence created by expanding any iterable elements in the original sequence into their component elements.
+     * 
+     * @param {boolean} [recurse] when true, recurse into inner iterable elements and add their component elements to the seqeunce too
+     * @returns {Iter} a new sequence of all elements within inner sequences
+     */
     flatten(recurse?: boolean): Iter {
         return new Iter(_iterator, makeFlattenIterator.call(this, recurse));
     }
     
-    // todo: equality comparitor callback.
+    /**
+     * Return a sequence with only one occurrence of each distinct value in the seqeunce
+     * 
+     * @returns {Iter} a sequence of unique values
+     */
     unique(): Iter {
         return new Iter(_iterator, makeUniqueIterator.call(this));
     }
+    /**
+     * Return a sequence that excludes any members also found in the other `sequence` 
+     * 
+     * @param {Iterable<any>} sequence the sequence of values to exclude
+     * @returns {Iter} the new sequence
+     */
     except(sequence: Iterable<any>): Iter {
         return new Iter(_iterator, makeExceptIterator.call(this, sequence));
     }
+    /**
+     * Return a sequence that includes only members found in the original and the other `sequence`
+     * 
+     * @param {Iterable<any>} sequence the sequence of values to intersect
+     * @returns {Iter} the new sequence
+     */
     intersect(sequence: Iterable<any>): Iter {
         return new Iter(_iterator, makeIntersectIterator.call(this, sequence));
     }
+    /**
+     * Return a new sequence containing all values found in either sequence
+     * 
+     * @param {Iterable<any>} sequence the sequence of values to union 
+     * @returns {Iter} the new sequence
+     */
     union(sequence: Iterable<any>): Iter {
         let extra = new Iter(sequence).except(this);
         return this.concat(extra);
     }
+    /**
+     * Given a sequence of [key, value] pairs, join another sequence of [key, value] pairs on
+     * `key`, and invoke `mergeCallback` for each matched pair. Create a new sequence that contains
+     * an element for each key in the original seqeunce, and a value from the `mergeCallback`. this
+     * operation assumes the keys are unique, and there will be only one element for each key in the 
+     * resulting sequence. Any keys found only in the right sequence will be ommitted (left join).
+     *
+     * You can add a `joinOn` clause to specify the keys and values on which to merge, if your input
+     * is not in the form of `[key, value]` pairs. When `joinOn` is used, there can be multiple rows
+     * for each key, if there are duplicates in the left or right sequences.
+     * 
+     * @param {Iterable<any>} sequence the "right" sequence to join
+     * @param {(left: any, right: any, key: any)=> any} mergeCallback the callback to create the merged value for each match
+     * @returns a sequence of [key, value] pairs
+     */
     leftJoin(sequence: Iterable<any>, mergeCallback: (left: any, right: any, key: any)=> any) {
         let iter =  new Iter(_iterator, makeLeftJoinIterator.call(this, sequence, mergeCallback));
         iter[_join] = arguments;
         iter[_root] = this;
         return iter;
     }
+    /**
+     * Specify how a leftJoin should be performed by providing a callback function for each element in the left and right sequences
+     * that should return the key on which to merge.
+     * 
+     * @param {(item: any)=>any} mapLeft a function that returns a key from the original sequence
+     * @param {(item: any)=>any} mapRight a function that returns a key from the "right" sequence
+     * @returns a sequence of [key, value] pairs
+     */
     joinOn(mapLeft: (item: any)=>any, mapRight: (item: any)=>any) {
         if (!this[_join]) throw new Error(`"on" doesn't make sense without a join`)
         return new Iter(_iterator, makeLeftJoinIterator.call(this[_root], this[_join][0], this[_join][1], mapLeft, mapRight));
     }
+    /**
+     * Test whether two seqeunces are equal, meaning they are the same lengths and each item at the same position in each sequence is equal.
+     * 
+     * @param {Iterable<any>} sequence the other sequence to test
+     * @returns {boolean} `true` if equal, `false` if not
+     */
     sequenceEqual(sequence: Iterable<any>): boolean {
         let iter = this[_iterator]();
         let cur;
@@ -201,23 +332,45 @@ export class Iter implements Iterable<any> {
         if (!iter.next().done) return false;
         return true;
     }
+    /**
+     * Create a new seqeunce by concanating this sequence with all elements in all other sequences or elements passed by argument.
+     * Any iterable objects will be iterated over; not-iterable objects will be appended. Strings are always consdered non-iterable.
+     *  
+     * @param {...any[]} args the objects and/or seqeunces to append
+     * @returns {Iter} the resulting sequence
+     */
     concat(...args: any[]): Iter {
         return new Iter(_iterator, makeConcatIterator.call(this, args));
     }
     /**
-     * Return a single element that is the return value of a function invoked for 
+     * Return a sequence that is generated from the return values of a function invoked for 
      * each element in the input sequence 
      * 
-     * @param {function} callback The callback(element, index)
-     * @param {any} thisArg The "this" context applied to the callback
-     * @returns {Iter} A transformed sequence 
+     * @param {function} callback the callback(element, index)
+     * @param {any} thisArg the "this" context applied to the callback
+     * @returns {Iter} the transformed sequence 
      */    
     map(callback: (item: any, index: number)=>any, thisArg?: any): Iter {
         return new Iter(_iterator, makeMapIterator.call(this, callback, thisArg));
     }
+    /**
+     * Return a sequence that contains only elements for which the `callback(item, index)` function
+     * when invoked on each element, returns `true`.
+     * 
+     * @param {(item: any, index: number)=>any} callback the filter callback
+     * @param {*} [thisArg] the "this" context applied to the callback
+     * @returns {Iter} the filtered seqeunce
+     */
     filter(callback: (item: any, index: number)=>any, thisArg?: any): Iter {
         return new Iter(_iterator, makeFilterIterator.call(this, callback, thisArg));
     }
+    /**
+     * Test whether any elements in the sequence meet a condition 
+     * 
+     * @param {(item: any, index: number)=>boolean} callback the function to invoke on each element to test
+     * @param {*} [thisArg] the "this" context applied to the callback
+     * @returns {boolean} `true` if at least one element met the condition
+     */
     some(callback: (item: any, index: number)=>boolean, thisArg?: any): boolean {
         let iterator = this[_iterator]()
         let cur;
@@ -229,6 +382,13 @@ export class Iter implements Iterable<any> {
         }
         return false;
     }
+    /**
+     * Test whether all elements in the sequence meet a condition 
+     * 
+     * @param {(item: any, index: number)=>boolean} callback the function to invoke on each element to test
+     * @param {*} [thisArg] the "this" context applied to the callback
+     * @returns {boolean} `true` if all elements met the condition
+     */
     every(callback: (item: any, index: number)=>boolean, thisArg?: any): boolean {
         let iterator = this[_iterator]()
         let cur;
@@ -240,6 +400,12 @@ export class Iter implements Iterable<any> {
         }
         return true;
     }
+    /**
+     * Test whether the specified item is found in the sequence
+     * 
+     * @param {*} item the item to search for
+     * @returns {boolean} `true` if the item is found, `false` if not
+     */
     includes(item: any): boolean {
         let iterator = this[_iterator]()
         let cur;
@@ -250,6 +416,12 @@ export class Iter implements Iterable<any> {
         }
         return false;
     }
+    /**
+     * Locate the ordinal position (0-based) of an item in the sequence
+     * 
+     * @param {*} item the item to locate
+     * @returns {number} 0-based position in the seqeunce, or -1 if it was not found
+     */
     indexOf(item: any): number {
         let iterator = this[_iterator]()
         let cur;
@@ -262,6 +434,12 @@ export class Iter implements Iterable<any> {
         }
         return -1;
     }
+    /**
+     * Locate the last ordinal position (0-based) of an item in the sequence
+     * 
+     * @param {*} item the item to locate
+     * @returns {number} 0-based position of the last occurrence in the seqeunce, or -1 if it was not found
+     */    
     lastIndexOf(item: any): number {
         let iterator = this[_iterator]()
         let cur;
@@ -275,14 +453,39 @@ export class Iter implements Iterable<any> {
         }
         return lastIndex;
     }
-    
-    findIndex(callback: (item: any, index: number)=>boolean, thisArg: any): number {
+    /**
+     * Locate the index of an element meeting the condition specified by the callback function, which
+     * should return `true` when the condition has been met
+     * 
+     * @param {(item: any, index: number)=>boolean} callback the function to invoke for each element
+     * @param {*} thisArg the "this" context to apply to the callback
+     * @returns {number} 0-based position in the sequence, or -1 if the condition was not met
+     */
+    findIndex(callback: (item: any, index: number)=>boolean, thisArg?: any): number {
         return findHelper.call(this, callback, thisArg)[0];
     }
+    /**
+     * Locate in item in the sequence meetioing the condition specified by the callback function, which
+     * should return `true` when the condition has been met. If the condition is not met, return
+     * `undefined`, or `defaultValue` if provided.
+     * 
+     * @param {(item: any, index: number)=>boolean} callback
+     * @param {*} [thisArg] the "this" context to apply to the callback
+     * @param {*} [defaultValue] the default value to return if the condition is never met
+     * @returns {*} the found item, or `undefined`, or `defaultValue`
+     */
     find(callback: (item: any, index: number)=>boolean, thisArg?: any, defaultValue?: any): any {
         return findHelper.call(this, callback, thisArg, defaultValue)[1];
     }
-    get(getIndex: number, defaultValue?: any): any {
+    /**
+     * Return the element at the specified 0-based position in the sequence, or `undefined`
+     * if the sequence has fewer than 
+     * 
+     * @param {number} index the position of the item to return
+     * @param {*} [defaultValue] a value to return if the index was out of range
+     * @returns {*} the item at the specified position, or `undefined`, or `defaultValue`
+     */
+    get(index: number, defaultValue?: any): any {
         let iterator = this[_iterator]()
         let cur;
         let index = 0;
@@ -290,26 +493,54 @@ export class Iter implements Iterable<any> {
         
         return cur.done ? defaultValue : cur.value; 
     }
-    value(): any {
-        return this.get(0)
-    }
+    /**
+     * Return a subset of the sequence starting at 0-based position `begin` and ending at position `end`
+     * 
+     * @param {number} begin the starting position
+     * @param {number} end the ending position
+     * @returns {Iter} the subsetted sequence
+     */
     slice(begin: number, end: number): Iter {
         return this.skip(begin).take(end-begin+1);
     }
+    /**
+     * Reduce the sequence to a single element.
+     * 
+     * @param {(last: any, current: any, index: number)=>any} callback a function invoked for each element, that must return the memoized payload that is passed to the next invocation
+     * @param {*} initial the initial payload
+     * @returns {*} the final payload
+     */
     reduce(callback: (last: any, current: any, index: number)=>any, initial: any): any {
         // Entire array must be traversed, but this might be optimized if we 
         // implement it ourselves to avoid two loops through the array
         return this.toArray().reduce(callback, initial);
     }
+    /**
+     * a function invoked for each element, in reverse order, that must return the memoized payload that is passed to the next invocation
+     * 
+     * @param {(last: any, current: any, index: number)=>any} callback
+     * @param {*} initial the initial payload
+     * @returns {*} the final payload
+     */
     reduceRight(callback: (last: any, current: any, index: number)=>any, initial: any): any {
         // Entire array must be traversed, but this might be optimized if we 
         // implement it ourselves to avoid two loops through the array
         return this.toArray().reduceRight(callback, initial);
     }
-    
+    /**
+     * Return a string formed by joining each element in the sequence with a separator
+     * 
+     * @param {any} separator the separator, defaults to ','
+     * @returns a string of the joined sequence
+     */
     join(separator) {
         return this.toArray().join(separator);
     }
+    /**
+     * Given a seqeunce of [key, value] pairs, create an object with {property: value} for each pair.
+     * 
+     * @returns {*} the object
+     */
     toObject(): any {
         let obj={};
         let iterator = this[_iterator]()
@@ -319,6 +550,11 @@ export class Iter implements Iterable<any> {
         }
         return obj;
     }
+    /**
+     * Craeate an array with each element in the seqeunce.
+     * 
+     * @returns {any[]} the array
+     */
     toArray(): any[] {
         let arr = [];
         let iterator = this[_iterator]()
@@ -328,6 +564,12 @@ export class Iter implements Iterable<any> {
         }
         return arr;
     }
+    /**
+     * Create an instance of `Type` from the sequence.
+     * 
+     * @param {new (element: any)=>any} Type The constructor for Type
+     * @returns {*} An instance of `Type` 
+     */
     as(Type: new (element: any)=>any): any {
         if (Type === Array) {
             return this.toArray();
@@ -379,9 +621,22 @@ export class Iter implements Iterable<any> {
         while (cur = iterator.next(), !cur.done) total+=mapCallback ? mapCallback(cur.value, index) : cur.value;
         return total;
     }
-    sort(callback: (a: any, b: any)=>number): Iter {
+    /**
+     * Sort the sequence using default comparison operator. If a `callback` is provided, then 
+     * it will use the return value to determine priority when comparing two elements `a` and `b`: 
+     * -1 means a<b, 1 means b<a
+     * 
+     * @param {(a: any, b: any)=>number} callback the comparison callback
+     * @returns {Iter} the sorted sequence
+     */
+    sort(callback?: (a: any, b: any)=>number): Iter {
         return deferToArrayProto("sort")
     }
+    /**
+     * Reverse the order of elements in the sequence
+     * 
+     * @returns the reversed sequence
+     */
     reverse() {
         return deferToArrayProto("reverse")
     }

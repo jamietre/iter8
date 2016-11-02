@@ -83,7 +83,7 @@ These are used to create `Iter` instances.
 * [iter.fromObject(obj, [filter])](#iterfromobjectobj-filter)
 * [iter.fromObjectOwn(obj, [filter])](#iterfromobjectownobj-filter)
 * [iter.fromIterator(iterator)](#iterfromiteratoriterator)
-* [iter.repeat(obj, n)](#iterrepeatobj-n)
+* [iter.generate(obj, n)](#itergenerateobj-n)
 
 #### instance methods
 
@@ -269,13 +269,18 @@ let x = iter.fromIterator(gen).toArray()
 /// x === [1,2,3]
 ```
 
-#### iter.repeat(obj, n) 
+#### iter.generate(obj, n) 
 
-Create a sequence of `obj` repeated `n` times.
+If `obj` is a `function(n)`, invoke it with index 0 to n-1, and append each returned value to the sequence. 
+
+Otherwise create a sequence of `obj` repeated `n` times.
 
 ```Javascript
-let x = iter.repeat('foo', 3).concat('bar')toArray() 
+let x = iter.generate('foo', 3).concat('bar').toArray() 
 // x === ['foo','foo','foo','bar']
+
+let x = iter.generate((e)=>e*2, 3).toArray() 
+// x === [0,2,4]
 ```
 
 ### Instance Methods
