@@ -33,7 +33,7 @@ Internally, iter8 handles everything as a sequence, and defers all queries for n
 Wrap any iterable object with `iter(..)` to create an `Iter` instance, and then use familiar `Array` methods for transformation. Many new transformation and traversal methods are also added, like `groupBy` and `flatten`. All evaluation is performed only when actual data is exposed via methods that return data, and it's all performed via iteration, so only elements actually used by an operation are traversed.
 
 ```Javascript
-// someArray = [{active, id}]
+// someArray = [{active, id}, ... ]
 
 const lookup = iter(someArray).
     .filter(e=>e.active)
@@ -224,6 +224,22 @@ let obj = iter({ foo: 'bar', fizz: 'buzz'}).as(Map);
 #### iter(obj)
 
 Create a new `Iter` instance from an iterable object (e.g. an `Array`, `Map`, or `Set`), or a JavaScript object. When creating from an object using the default constructor, only "own" properties of the object are iterated.
+
+
+```Javascript
+import iter from 'iter8'
+
+const seq = iter([{value: 1},{ value: 2}, {value: 3}]);
+
+const val = seq.map(e=>e.value)
+    .sum(e=>e > 1);
+/// val === 5
+
+const lookup = iter({ foo: 1, bar: 2}).As(Map)
+const val = lookup.get('foo')
+// val === 1
+
+```
 
 #### iter.fromObject(obj, [filter])
 
