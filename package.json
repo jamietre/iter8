@@ -3,6 +3,7 @@
   "version": "0.9.9",
   "description": "JavaScript iterable transformation library",
   "main": "index.js",
+  "types": "index.d.ts",
   "scripts": {
     "lint": "eslint src test",
     "pretest": "npm run lint",

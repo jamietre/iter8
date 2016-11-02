@@ -782,7 +782,6 @@ function findHelper(cb, thisArg, def) {
     return [-1, def];
 }
 
-return 
 function emptyIterator() {
     return function() {
         return {

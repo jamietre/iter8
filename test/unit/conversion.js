@@ -7,7 +7,7 @@ describe('iter - conversion', ()=> {
     }
 
     SuperObj.prototype.superProp = 'super-prop'
-
+    
     Object.defineProperties(SuperObj.prototype, {
         superFoobar: {
             get: function() {
@@ -32,7 +32,7 @@ describe('iter - conversion', ()=> {
     })
 
     it('fromObject', ()=> {
-        let sut = new iter({
+        let sut = iter({
             'foo': 'bar',
             'fizz': 'buzz'
         })
@@ -41,10 +41,11 @@ describe('iter - conversion', ()=> {
     })
 
     it('fromObject', ()=> {
-        let sut = new iter({
+        let sut = iter({
             'foo': 'bar',
             'fizz': 'buzz'
-        })
+        });
+        sut
 
         assert.deepEqual(sut.toArray(), [['foo','bar'],['fizz','buzz']])
     })
@@ -53,7 +54,7 @@ describe('iter - conversion', ()=> {
         let obj = new Obj();
         obj.fizz = 'buzz';
         let sut = iter.fromObject(obj);
-
+        iter.fromObject()
         assert.deepEqual(sut.toArray(), [['fizz','buzz'], ['superProp','super-prop']])
     })
 
