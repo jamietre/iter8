@@ -1,5 +1,5 @@
 import assert from 'assert'
-import iter from '../../src/index'
+import iter from '../../dist/index.js'
 import "babel-polyfill";
 
 describe('iter - conversion', ()=> {
@@ -41,6 +41,7 @@ describe('iter - conversion', ()=> {
     })
 
     it('fromObject', ()=> {
+        debugger; 
         let sut = new iter({
             'foo': 'bar',
             'fizz': 'buzz'

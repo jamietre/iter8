@@ -42,11 +42,17 @@ function testSimpleData(sut) {
 }
 
 describe('iter', ()=> {
-    it('Invoke constructor', ()=> {
-        let sut = iter([1,2,3])
-        assert.ok(sut instanceof iter);
-        assert.ok(sut.count() === 3);
-    })
+    describe('constructor', ()=> {
+        it('Invoke constructor', ()=> {
+            let sut = iter([1,2,3])
+            assert.ok(sut instanceof iter);
+            assert.ok(sut.count() === 3);
+        })
+        it('empty', ()=> {
+            let sut = iter()
+            assert.deepEqual(sut, []);
+        })
+    });
     it('map', ()=> {
         let obj = iter([1,2,3]);
         let thisArg = {};
@@ -107,7 +113,7 @@ describe('iter', ()=> {
             assert.ok(obj.first(null) ===null)
         });
     })
-    describe('first', ()=> {
+    describe('last', ()=> {
         it('basic', ()=> {
             let obj = iter([1,2,3,4,5]);
             assert.equal(obj.last(), 5)
@@ -451,39 +457,39 @@ describe('iter', ()=> {
 
             assert.deepEqual(sut.toArray(), [1,5,3,6,7,2,4]);
         })
-        it('sequenceEqual', ()=> {
-            let sut = iter([1,2,3,4,5])
-            assert.ok(sut.sequenceEqual([1,2,3,4,5]), 'same are equal')
-            assert.ok(!sut.sequenceEqual([1,2,3,4,5,6]), 'not equal even though same n elements match')
-            assert.ok(!sut.sequenceEqual([1,2,3,4]), 'not equal even though same n elements match (shorter)')
-            assert.ok(!sut.sequenceEqual([1,2,3,5,4]), 'not equal even though same same length & same elements')
+    })
+    it('sequenceEqual', ()=> {
+        let sut = iter([1,2,3,4,5])
+        assert.ok(sut.sequenceEqual([1,2,3,4,5]), 'same are equal')
+        assert.ok(!sut.sequenceEqual([1,2,3,4,5,6]), 'not equal even though same n elements match')
+        assert.ok(!sut.sequenceEqual([1,2,3,4]), 'not equal even though same n elements match (shorter)')
+        assert.ok(!sut.sequenceEqual([1,2,3,5,4]), 'not equal even though same same length & same elements')
+    })
+    describe('leftJoin', ()=> {
+        let left = [[0,'foo'], [1,'bar'], [1,'baz'], [2, 'fizz']] 
+        let right = [[1,'FOO'], [2,'BAR'], [2,'BARRE'], [3,'NOPE']]
+
+        it('basic', ()=> {
+            let sut = iter(left).leftJoin(right, (left, right='', key)=> {
+                return `${key}:${left}:${right}`;
+            });
+
+            // because key/value pair sequences must have unique IDs, 2,BAR gets tossed 
+            assert.deepEqual(sut.toArray(), [
+                [0,'0:foo:'], [1,'1:bar:FOO'], [1,'1:baz:FOO'], [2,'2:fizz:BARRE']
+            ])
         })
-        describe('leftJoin', ()=> {
-            let left = [[0,'foo'], [1,'bar'], [1,'baz'], [2, 'fizz']] 
-            let right = [[1,'FOO'], [2,'BAR'], [2,'BARRE'], [3,'NOPE']]
 
-            it('basic', ()=> {
-                let sut = iter(left).leftJoin(right, (left, right='', key)=> {
-                    return `${key}:${left}:${right}`;
-                });
+        it('joinOn', ()=> {
+            let sut = iter(left).leftJoin(right, (left, right, key)=> {
+                left = left[1];
+                right = right ? right[1] : '';
+                return `${key}:${left}:${right}`;
+            }).joinOn((left)=>left[0], (right)=>right[0]);
 
-                // because key/value pair sequences must have unique IDs, 2,BAR gets tossed 
-                assert.deepEqual(sut.toArray(), [
-                    [0,'0:foo:'], [1,'1:bar:FOO'], [1,'1:baz:FOO'], [2,'2:fizz:BARRE']
-                ])
-            })
-
-            it('joinOn', ()=> {
-                let sut = iter(left).leftJoin(right, (left, right, key)=> {
-                    left = left[1];
-                    right = right ? right[1] : '';
-                    return `${key}:${left}:${right}`;
-                }).joinOn((left)=>left[0], (right)=>right[0]);
-
-                assert.deepEqual(sut.toArray(), [
-                    [0,'0:foo:'], [1,'1:bar:FOO'], [1,'1:baz:FOO'], [2, '2:fizz:BAR'],[2,'2:fizz:BARRE']
-                ]) 
-            })
+            assert.deepEqual(sut.toArray(), [
+                [0,'0:foo:'], [1,'1:bar:FOO'], [1,'1:baz:FOO'], [2, '2:fizz:BAR'],[2,'2:fizz:BARRE']
+            ]) 
         })
     })
 })
