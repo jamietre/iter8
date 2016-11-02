@@ -7,6 +7,7 @@ A small (2.6k gzipped) data transformation library that provides the familiar `A
 * [API Summary & Index](#api)
 * [Usage Details](#usage-details)
 * [API Reference](#api-reference)
+* [Roadmap](##roadmap)
 
 ## Why?
 
@@ -288,6 +289,20 @@ let x = iter.generate((i)=>i*2, 3).toArray()
 
 All the methods below are available on any `Iter` instance. 
 
+### Transformation methods
+
+These methods return a new sequence based on some transformation of the original one. These include aggregation, traversal, and set operations. These are all chainable, and execution is always deferred. The sequence will only be iterated as much as necessary to perform a given transformation. Some methods will by nature always iterate over the entire sequence, such as set operations.
+
+#### flatten([recurse])
+
+For each element in the sequence, if the element is an array, return each element in the array as a new element in the sequence.
+
+When `recurse` is truthy, elements within each element that are also iterable, will continue to be flattened.
+
+Like `concat`, strings are a special case, and are not iterated over.
+
+```Javascript
+let x = iter([[1,2], "foo", [3,4,[5]]]).toArray()
 
 // x === [1,2,"foo",3,4,[5]]
 ```
@@ -441,7 +456,7 @@ let x = iter([1,2,3]]).union([2,3,4]).toArray()
 
 Join two sequences, and return a single new sequence.
 
-The default behavior assumes that the two sequences are `key-value pairs` with *unique keys* and the key will be used to join them. It returns a new sequence, where the value is result of invoking `mergeCallback(left, right, key)` for the *value* of each matched entries.
+The default behavior with no `joinOn` clause assumes that the two sequences are `[key, value]` pairs with *unique keys*, e.g. `Map`s,  and the key will be used to join them. It returns a new sequence, where the value is result of invoking `mergeCallback(left, right, key)` for the *value* of each matched entries.
 
 You can provide an `joinOn` clause to use sequences of any kind, including supporting sequences with duplicate keys.
 
@@ -689,32 +704,17 @@ Creates an instance of `Type` using the sequence as a single constructor argumen
 let map = iter(something).groupBy('category').as(Map)
 ```
 
-#### join([separator=',']) *value-producing*
+#### join([separator=','])
 
 Join all methods using the `separator` as a string. If the contents of the sequence aren't strings, `toString()` will be invoked on each element. 
 
-### Transformation methods
-
-These methods return a new sequence based on some transformation of the original one. These include aggregation, traversal, and set operations. These are all chainable, and execution is always deferred. The sequence will only be iterated as much as necessary to perform a given transformation. Some methods will by nature always iterate over the entire sequence, such as set operations.
-
-#### flatten([recurse])
-
-For each element in the sequence, if the element is an array, return each element in the array as a new element in the sequence.
-
-When `recurse` is truthy, elements within each element that are also iterable, will continue to be flattened.
-
-Like `concat`, strings are a special case, and are not iterated over.
-
-```Javascript
-let x = iter([[1,2], "foo", [3,4,[5]]]).toArray()## Roadmap
+## Roadmap
 
 ### Construct from object enhancements
 
 Right now property getters are never enumerated, need to add this option. 
 
-### Missing methods
-
-A few things still to add:
+### A few more features
 
 ##### take(callback)
 
@@ -722,7 +722,7 @@ Take elements as long as `callback(value)` is true
 
 ##### skip(callback)
 
-ditto
+Skip elements as long as `callback(value)` is true
 
 ##### zip(other, fn)
 
@@ -730,9 +730,7 @@ Apply a function to the corresponding elements of two sequences; return the outp
 
 ### Typescript
 
-I did a basic TypeScript conversion, but it doesn't actually work, and adds about 15% to the size anyway because of some
-optimizations that aren't directly possible with TS and Babel. But it's good enough to generate a typings file. Might try to 
-get it completely converted and optimized entirely in TS which would make it easier.
+I did a basic TypeScript conversion, but it doesn't actually work, and adds about 15% to the size anyway because of some optimizations that aren't directly possible with TS and Babel. But it's good enough to generate a typings file. Might try to get it completely converted and optimized entirely in TS which would be better.
 
 ### Extensibility
 
@@ -742,17 +740,19 @@ Add an extension point for adding methods.
 
 Some complex set operations are much more useful if a notion of equality comparison other than simply reference equality (e.g. `===`) can be used when performing the operation. In C# think of `getHashCode` and `equals`. There's a vague notion of this with `valueOf` in Javascript, but it doesn't work for direct comparisons, only relative ones (`<` and `>`). 
 
-It would be nice to implement a convention such as `equals` which some operations will use to perform equality comparisons, if available.e
+For `groupBy` and `leftJoin` these had to be implement directly, it not be very expressive to require mapping each set as a precondition for a merge. This same technique (adding clauses) could be applied to other opearations, e.g. perhaps a generic `on` clause for operations involving two seqeunces would be the simplest solution. 
+
+Another alternative is to support a convention such as `equals` which some operations will use to perform equality comparisons, if available on entities in the seqeunce.
 
 ### Performance
 
-I haven't evaluated it at all. This has proven plenty fast for the use cases I've had so far. Because the process of iteration involves many more function invocations then simple looping, it's certainly slower. I'm interested in optimizing as much as possible, but the goal is not extremely high performance for large arrays, but rather expressiveness for complex transformations. 
+I haven't evaluated it at all, but would like to do some basic tests. This has proven plenty fast for the use cases I've had so far. Because the process of iteration by definition involves many more function invocations then simple looping, it's certainly somewhat slower, though there should be gains due to the fact that each step in the sequence is evaluated as part of a single iteration rather than processing the sequence completely at each step.
+
+I'm interested in optimizing as much as possible, but the goal is not extremely high performance for large arrays, but rather expressiveness, safety and ease of maintenance for complex transformations. 
 
 ### Size Optimization
 
-It's about 10K compressed right now. There are opportunities for code reuse that I haven't taken advantage of that could reduce the size of this library.
-
-The size is not an issue for me. If it seems useful to some to break it out into modules with separate entry points to allow only including parts that are needed, I would conisder it.
+It's about 10K compressed/2.6k gzipped right now. There are opportunities for code reuse that I haven't taken advantage of that could further reduce the size of this library. I don't see it growing too much more, as I've arleady implemente pretty much every seqeunce operation I can think of.
 
 ## Similar Libraries
 
@@ -760,7 +760,7 @@ There are a bunch of them. It was actually pretty hard to find a good npm packag
     
 I had the following needs in mind when creating this:
 
-* easy interop with `Array`, `Map`, `Set` and native Javascript objects
+* easy interop with `Array`, `Map`, `Set`, `immutable` library, and native Javascript objects
 * complete support of `Array` API
 * extended API for traversal, and set and group operations 
 * good documentation
