@@ -1,6 +1,53 @@
-
+/**
+* Creates an instance of Iter from an Iterable object, or a plain Javascript object.
+*
+* @param {*} source
+* @returns {Iter} An Iter instance
+*/
+declare function iter(source: any): Iter;
+declare namespace iter {
+    /**
+     * Create an Iter from an generator (a function returning an iterator)
+     * @param {generator} generator The generator function
+     * @returns {Iter} an Iter instance
+     */
+    let fromGenerator: (generator: () => Iterator<any>) => Iter;
+    /**
+     * Create an Iter from an object, returning a seqeunce of [key, value] pairs obtained
+     * by enumerating the object's properties. All properties, including those on the prototype
+     * chain, will be included, except "constructor"
+     *
+     * @param {any} obj An object
+     * @param {function} filter A callback that is invoked with each property name. Returing `false` will omit a property from the sequence.
+     * @returns {Iter} an Iter instance with a sequence of [key, value] pairs corresponding to the object's properties
+     */
+    let fromObject: (obj: any, filter?: (prop: string, index: number) => boolean) => Iter;
+    /**
+     * Create an Iter from an object, returning a seqeunce of [key, value] pairs obtained
+     * by enumerating the object's properties. Only the object's own properties (e.g. no prototype chain)
+     * are included.
+     *
+     * @param {any} obj An object
+     * @param {function} filter A callback that is invoked with each property name. Returing `false` will omit a property from the sequence.
+     * @returns {Iter} an Iter instance with a sequence of [key, value] pairs corresponding to the object's properties
+     */
+    let fromObjectOwn: (obj: any, filter?: (prop: string, index: number) => boolean) => Iter;
+    /**
+     * Generate a sequence from a `function(n)` invoked `times` times, or by repeating a single value.
+     *
+     * @param {any} obj An object to repeat, or a `function(n)` that returns an object.
+     * @param {number} times The number of times to invoke the generator or repeat
+     */
+    let generate: (obj: (index: number) => any, times: number) => Iter;
+}
 export declare class Iter implements Iterable<any> {
-    constructor(source: Iterable<any> | any);
+    /**
+     * Creates an instance of Iter from an Iterable object, or a plain Javascript object.
+     *
+     * @param {*} source
+     * @param {()=>Iterator<any>} [_iter]
+     */
+    constructor(source: any, _iter?: () => Iterator<any>);
     [Symbol.iterator](): any;
     /**
      * forEach is the same as do(), but executes the query immediately.
@@ -19,16 +66,85 @@ export declare class Iter implements Iterable<any> {
     * @returns {Iter} a seqeunce identical to the input sequence
     */
     do(callback: (item: any, index: number) => any, thisArg?: any): Iter;
+    /**
+     * Group each element in the sequence according to the value of a property if `group` is a string,
+     * or the value returned by `function(item, index)` if group is a function. Returns a sequence
+     * of `[key, value]` pairs where `value` is an array containing each item in the group.
+     *
+     * @param {((item: any, index: number)=>any | string)} group A property name or function
+     * @returns {Iter} A sequence of `[key, value[]]` pairs where `value` is an array of items in the group
+     */
     groupBy(group: (item: any, index: number) => any | string): Iter;
+    /**
+     * Sort by the value of a property, if `order` is a string, or by the value returned by a
+     * `function(item, index)` if `order` is a function
+     *
+     * @param {((item: any, index: number)=>any | string)} order A property name or function
+     * @returns {Iter} The sorted sequence
+     */
     orderBy(order: (item: any, index: number) => any | string): Iter;
+    /**
+     * Sort by the value of a property, in descending order. If `order` is a string, or by the value returned by a
+     * `function(item, index)` if `order` is a function
+     *
+     * @param {((item: any, index: number)=>any | string)} order A property name or function
+     * @returns {Iter} The sorted sequence
+     */
     orderDesc(order: (item: any, index: number) => any | string): Iter;
+    /**
+     * Add a secondary or n-ary sort order if there are multiple items with the same value. Can only follow an `order` or `then` clause.
+     *
+     * @param {((item: any, index: number)=>any | string)} order A property name or function
+     * @returns {Iter} The sorted sequence
+     */
     thenBy(order: (item: any, index: number) => any | string): Iter;
+    /**
+     * Add a secondary or n-ary descending sort order if there are multiple items with the same value. Can only follow an `order` or `then` clause.
+     *
+     * @param {((item: any, index: number)=>any | string)} order A property name or function
+     * @returns {Iter} The sorted sequence
+     */
     thenDesc(order: (item: any, index: number) => any | string, desc: any): Iter;
+    /**
+     * Iterate over the entire sequence and count the items
+     *
+     * @returns {number} The number of items in the sequence
+     */
     count(): number;
+    /**
+     * Skip `n` items in the seqeunce, and return a new sequence of all successive items.
+     *
+     * @param {number} n The number of items to skip
+     * @returns {Iter} A sequence of all items after the skipped ones
+     */
     skip(n: number): Iter;
+    /**
+     * Create a seqeunce of the next `n` items
+     *
+     * @param {number} n the number of items to take
+     * @returns {Iter} a sequence of the taken items
+     */
     take(n: number): Iter;
+    /**
+     * Convert all items in the sequence to instances of `Type` by invoking `Type` as a constructor with the sequence as an argument
+     *
+     * @param {new (element: any)=>any} Type the Constructor to use
+     * @returns {Iter} The new sequence
+     */
     cast(Type: new (element: any) => any): Iter;
+    /**
+     * Return the first item in the sequence, or `undefined`, or an optional `defaultValue`
+     *
+     * @param {*} [defaultValue] a default value to return if the seqeunce has no items.
+     * @returns {*} The first item in the sequence, or `undefined` (or `defaultValue`) if the sequence has no items.
+     */
     first(defaultValue?: any): any;
+    /**
+     * Return the firlastst item in the sequence, or `undefined`, or an optional `defaultValue`
+     *
+     * @param {*} [defaultValue] a default value to return if the seqeunce has no items.
+     * @returns {*} The first item in the sequence, or `undefined` (or `defaultValue`) if the sequence has no items.
+     */
     last(defaultValue?: any): any;
     flatten(recurse?: boolean): Iter;
     unique(): Iter;
@@ -97,15 +213,4 @@ export declare class Iter implements Iterable<any> {
     sort(callback: (a: any, b: any) => number): Iter;
     reverse(): Iter;
 }
-
-declare function iter(source: any): Iter;
-
-declare namespace iter {
-    let fromIterator: (iterator: any) => Iter;
-    let fromObject: (obj: any, filter?: (prop: string)=>boolean) => Iter;
-    let fromObjectOwn: (obj: any, filter?: (prop: string, index: number) => boolean) => Iter;
-    let repeat: (obj: any, times: number) => Iter;
-}
-
-
 export default iter;

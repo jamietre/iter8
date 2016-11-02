@@ -82,7 +82,7 @@ These are used to create `Iter` instances.
 * [iter(ob)](#iterobj)
 * [iter.fromObject(obj, [filter])](#iterfromobjectobj-filter)
 * [iter.fromObjectOwn(obj, [filter])](#iterfromobjectownobj-filter)
-* [iter.fromIterator(iterator)](#iterfromiteratoriterator)
+* [iter.fromGenerator(iterator)](#iterfromgeneratorgenerator)
 * [iter.repeat(obj, n)](#iterrepeatobj-n)
 
 #### instance methods
@@ -255,9 +255,9 @@ You can pass a callback `filter(prop)` to filter properties. Returning `false` f
 
 The default object creation behavior when passing an object directly to `iter` is the same as `Iter.fromObjectOwn(obj)` with no filter.
 
-#### iter.fromIterator(iterator)
+#### iter.fromGenerator(generator)
 
-You can create an `Iter` directly from an iterator or generator function:
+You can create an `Iter` directly from a generator, or a function producing an iterator:
 
 ```Javascript
 function* gen() {
@@ -265,17 +265,22 @@ function* gen() {
     yield 2;
     yield 3;
 }
-let x = iter.fromIterator(gen).toArray()
+let x = iter.fromGenerator(gen).toArray()
 /// x === [1,2,3]
 ```
 
 #### iter.repeat(obj, n) 
 
-Create a sequence of `obj` repeated `n` times.
+If `obj` is a `function(n)`, invoke it with the index from 0 to 1-n, and create a seqeunce from each value returned.
+
+If `obj` is not a function, create a sequence of `obj` repeated `n` times.
 
 ```Javascript
-let x = iter.repeat('foo', 3).concat('bar')toArray() 
+let x = iter.repeat('foo', 3).concat('bar').toArray() 
 // x === ['foo','foo','foo','bar']
+
+let x = iter.repeat((i)=>i*2, 3).toArray()
+// x === [0,2,4]
 ```
 
 ### Instance Methods
@@ -575,7 +580,7 @@ let x = iter([1,2,3]]).union([2,3,4]).toArray()
 
 Join two sequences, and return a single new sequence.
 
-The default behavior assumes that the two sequences are `key-value pairs` with *unique keys* and the key will be used to join them. It returns a new sequence of key-value pairs, where the value is result of invoking `mergeCallback(left, right, key)` for the *value* of each matched entries, and the key that matched them.
+The default behavior assumes that the two sequences are `key-value pairs` with *unique keys* and the key will be used to join them. It returns a new sequence, where the value is result of invoking `mergeCallback(left, right, key)` for the *value* of each matched entries.
 
 You can provide an `joinOn` clause to use sequences of any kind, including supporting sequences with duplicate keys.
 
@@ -589,7 +594,7 @@ let merged = iter(seq1).leftJoin(seq2, (left, right='')=> {
     return `${left}:${right}`
 });
 
-/// merged =  [0,'foo:'], [1,'bar:FOO'], [1,'baz:FOO'], [2, 'fizz:BAR']
+/// merged =  ['foo:', 'bar:FOO', 'baz:FOO'], 'fizz:BAR']
 ```
 
 #### joinOn(leftKeyCallback, rightKeyCallback)
@@ -678,7 +683,7 @@ Though this is not a value-producing method, it causes the query to be executed 
 ```Javascript
 const intermediate = iter(something)
     .groupBy('category')
-    .map([key, value]=>[key, iter(value.map(e=>e.amount).sum())])
+    .map([key, value]=>[key, iter(value).map(e=>e.amount).sum()])
     .execute();
 
 let group1 = intermediate.filter([category]=>category === 'category 1').as(Map)

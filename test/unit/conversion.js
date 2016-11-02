@@ -86,14 +86,21 @@ describe('iter - conversion', ()=> {
             yield 2;
             yield 3;
         }
-        assert.deepEqual(iter.fromIterator(gen).toArray(), [1,2,3]);
+        assert.deepEqual(iter.fromGenerator(gen).toArray(), [1,2,3]);
     });
 
-    it('repeat', ()=> {
-        assert.deepEqual(iter.repeat("foo",5)
-            .concat('bar')
-            .toArray(), ["foo","foo","foo","foo","foo","bar"])
+    describe('generate', ()=> {
+        it('object', ()=> {
+            assert.deepEqual(iter.generate("foo",5)
+                .concat('bar')
+                .toArray(), ["foo","foo","foo","foo","foo","bar"])
+        })
+        it('function', ()=> {
+            assert.deepEqual(iter.generate(n=> {
+                return n*2
+            },5).toArray(), 
+            [0,2,4,6,8])
+        })
     })
-
     
 })

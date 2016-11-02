@@ -21,7 +21,7 @@ function Iter(source, iter) {
 
     const iterator = source && source[_iterator];
     if (source && !iterator) {
-        if (typeof source === 'object') {
+        if (source && typeof source !== 'function') {
             return Iter.fromObjectOwn(source);
         }
         throw new Error('iter can only be sourced with an Iterable object or a regular Javascript object.');
@@ -30,8 +30,8 @@ function Iter(source, iter) {
 }
 
 Object.assign(Iter, {
-    fromIterator:  function(iterator) {
-        return new Iter(_iterator, iterator);
+    fromGenerator:  function(generator) {
+        return new Iter(_iterator, generator);
     },
     fromObject: function(obj, filter) {
           return new Iter(_iterator, makeObjectIterator.call(null, obj, filter, false));
@@ -39,11 +39,13 @@ Object.assign(Iter, {
     fromObjectOwn: function(obj, filter) {
           return new Iter(_iterator, makeObjectIterator.call(null, obj, filter, true));
     },
-    repeat(obj, times) {
+    generate(obj, times) {
         return new Iter(_iterator, function() {
+            let index = -1;
             return {
                 next() {
-                    return iterResult(times--<=0, obj)
+                    index++;
+                    return iterResult(index >= times, (typeof obj === 'function' ? obj(index) : obj))
                 }
             } 
         });
@@ -254,16 +256,13 @@ Iter.prototype = {
     find(cb, thisArg, def) {
         return findHelper.call(this, cb, thisArg, def)[1];
     },
-    get(getIndex, def) {
+    get(index, def) {
         let iterator = this[_iterator]()
         let cur;
-        let index = 0;
-        while (cur = iterator.next(), !cur.done && index < getIndex)  index++;
+        let i = 0;
+        while (cur = iterator.next(), !cur.done && i < index)  i++;
         
         return cur.done ? def : cur.value; 
-    },
-    value() {
-        return this.get(0)
     },
     slice(begin, end) {
         return this.skip(begin).take(end-begin+1);
@@ -428,7 +427,10 @@ function makeLeftJoinIterator(sequence, mergeFn, mapLeft, mapRight) {
                         leftValue = mapLeft ? left.value : left.value[1];
                         let match = other.get(id)
                         if (!match || !match[_iterator] || typeof match === 'string') {
-                            return { done: false, value: [id, mergeFn(leftValue, match, id)] }
+                            return { 
+                                done: false, 
+                                value: mergeFn(leftValue, match, id) 
+                            }
                         }
                         matches = match[_iterator]() 
                     } 
@@ -437,7 +439,10 @@ function makeLeftJoinIterator(sequence, mergeFn, mapLeft, mapRight) {
                     
                     let right = matches.next();
                     if (!right.done) {
-                        return { done: false, value: [id, mergeFn(leftValue, mapRight ? right.value : right.value[1], id)] }
+                        return { 
+                            done: false, 
+                            value: mergeFn(leftValue, mapRight ? right.value : right.value[1], id)
+                         }
                     } else {
                         matches = null;
                     }
