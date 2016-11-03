@@ -1,6 +1,6 @@
 # iter8
 
-A small (2.6k gzipped) data transformation library that provides the familiar `Array` API plus extensions for use on JavaScript iterables.
+A small (3k gzipped) data transformation library that provides the familiar `Array` API plus extensions for use on JavaScript iterables.
 
 * [Installation](#installation)
 * [Basic Usage](#usage)
@@ -13,9 +13,11 @@ A small (2.6k gzipped) data transformation library that provides the familiar `A
 
 Iterators are a powerful new feature of ES6. ES6 `Set` and `Map` types offer some much needed support for basic data structures that support iterables directly. But, interop with arrays is inconvenient, and they lack native support for the most of the familiar array transformation methods.
 
-iter8 seeks to bridge the gap between arrays and iterables, leveraging native data structures and adding some useful new transformation functions. Because everything is treated as a sequence, no work gets done until you ask for some specific output, and the sequence is only iterated as much as needed to perform your operations. 
+iter8 provides seamless interop with arrays, iteratables, generators, and other data structures. In addition to all the nation `Array` methods you are accustomed to using, iter8 provides a tool set for performing complext transformations and set operations, with methods like `intersect`, `union`, `except`, and `leftJoin`. 
 
-iter8 is small (about 10k uglified, and 2.6k gzipped) and has no runtime dependencies. 
+Everything is treated as a sequence, and no work gets done until you ask for some specific output. Sequences are is only iterated as much as needed to perform the queries or operations you request. 
+
+iter8 is small (about 10k uglified, and 3k gzipped) and has no runtime dependencies. 
 
 ### immutability by design
 
@@ -73,8 +75,8 @@ let money = iter(allSales)
 let foodSales = money.get('food');
 ```
 
-## API
 
+## API
 
 
 #### static methods
@@ -110,7 +112,7 @@ Iter8 objects have two types of methods: *transformation* and *value-producing*.
 * [intersect(sequence)](#intersectsequence)
 * [union(sequence)](#unionsequence)
 * [leftJoin(sequence, callback)](#leftjoinsequence-callbackleftitem-rightitem)
-* [on(leftKeyCallback, rightKeyCallback)](#onleftcallback-rightcallback)
+* [on(leftCallback, rightCallback)](#onleftcallback-rightcallback)
 * [concat(obj, [obj, ...])](#concatobj-obj-)*
 
 *Ordering*
@@ -180,11 +182,28 @@ Execution of every query is deferred until a *value producing* method is called,
 
 In addition to its own API, `Iter` implements method for all the `Array` prototype methods that don't mutate the array. Some of these are value-producing, such as `indexOf`, while some are transformation functions and produce a new sequence, such as `filter`.
 
-*Note about key-value pairs:* When describing an element as a *key-value pair*, this always means an array with two elements: `[key, value]`. This is the data structure used by JavaScript `Map` objects, and is also used for many other operations by `Iter` such as iterating over objects (property-value), and grouping (groupname-members).
+##### "getkey" argument
 
-*Note about use of undefined*: 
+For the purposes of many methods that require a key, like `groupBy`, `leftJoin`, and set operations, there may be an argument called `getkey`. This can be one of three things:
 
-JavaScript arrays can be sparse, meaning certain indicies are not defined, and can also contain `undefined` elements. There is no notion of a sparse sequence, and `undefined` is a perfectly valid value.
+* a `function(item)` that, given an item in a sequence, returns a key that identifies is
+* a non-null, non-undefined value, typically a string or number, which identifies a property or index on the item in the seqeunce whose value is the key. 
+* a falsy value, meaning the item itself is the key.
+
+This means you can unversally use strings to refer to an object property in these situations, so the following are identical:
+
+```Javascript
+let x = item.groupBy('name`)
+let x = item.groupBy(e => e.name)
+```
+
+##### Note about key-value pairs
+
+ When describing an element as a *key-value pair*, this always means an array with two elements: `[key, value]`. This is the data structure used by JavaScript `Map` objects, and is also used for many other operations by `Iter` such as iterating over objects (property-value), and grouping (groupname-members).
+
+##### Note about use of undefined
+
+JavaScript arrays can be sparse, meaning certain indices are not defined. The can also contain `undefined` elements which are treated differently by some native operations. With sequences, there is no notion of sparseness, and `undefined` is a perfectly valid value. 
 
 Some methods like `first` could have no value to return, e.g. when called on a zero-length sequence. In JavaScript tradition, iter8 doesn't throw too many errors, but rather returns `undefined` in situations like this. This can result in indeterminate situations... was there no element, or was the result `undefined`?
 
@@ -324,12 +343,11 @@ let x = iter([1,2,3,3,4,4,5,4,5]]).unique().toArray()
 // x === [1,2,3,4,5]
 ```
 
-#### groupBy(group)
+#### groupBy(group: getkey)
 
 Return a sequence of *key-value pairs* where each key is a distinct group, and each value is an `Array` of all the elements from the original sequence in that group.
 
-
-`group` can be a string, which will use the value of the given property on each element in the sequence, or a `callback` function that should return a value, in which case each distinct return value will be a group.
+`group` is a `getkey` argument that identifes the value on which to group.
 
 ```Javascript
 let arr = [
@@ -362,15 +380,15 @@ Transform each element to the return value of `callback`
 
 Return a sequence including only elements that satisfy the condition in `callback`.
 
-#### slice(begin, [end])
+#### slice(begin: number, [end: number])
 
 Return a subset of the original sequence. `skip` and `take` will do the same thing, and may be more expressive. Negative values for "begin" not currently supported.
 
 ### Ordering
 
-#### orderBy(order)
+#### orderBy(order: getkey)
 
-Sort a sequence. `order` can be a string, which will use the named property of each object in the sequence, or a `function(e)`, which is invoked with each element in the sequence, and should return the value to use for the comparison during sorting. 
+Sort a sequence by comparing each element according to the specified `order`. 
 
 ```Javascript
 let seq = [
@@ -386,13 +404,13 @@ let x = iter(seq).orderBy(e=>e.foo).map((e)=>e.id).toArray();
 // x = [2,1,3]
 ```
 
-#### orderDesc(order)
+#### orderDesc(order: getkey)
 
 Same as `orderBy`, but sorts in descending order.
 
-#### thenBy(order)
+#### thenBy(order: getkey)
 
-Chain a secondary (or n-ary) sort to an `orderBy` clause, which sorts orders which are equal during the primary sort. `order` can be a string (property name) or function (callback) to specify the comparison, same as `orderBy`
+Chain a secondary (or n-ary) sort to an `orderBy` clause, which sorts orders which are equal during the primary sort. 
 
 ```Javascript
 let seq = [
@@ -412,7 +430,7 @@ let x = iter(seq)
 
 If you attempt to use a `thenBy` clause anywhere other than directly after another sorting clause, an error will be thrown.
 
-#### thenDesc(order)
+#### thenDesc(order: getkey)
 
 Same as `thenBy`, but sorts in descending order.
 
@@ -475,7 +493,7 @@ let merged = iter(seq1)
 /// merged.toArray() =  ['foo:', 'bar:FOO', 'baz:FOO', 'fizz:BAR']
 ```
 
-#### on(leftCallback, [rightCallback])
+#### on(left: getkey, [right: getkey])
 
 Specify keys to use when performing operations that involve merging two sequences. This is valid only when it immediately follows one of these operations:
 
@@ -484,7 +502,9 @@ Specify keys to use when performing operations that involve merging two sequence
 * union
 * leftJoin
 
-The two callbacks will be invoked against items from the left and right sequences, respectively, and should return a value that will be used to perform a set or join operation.
+The two arguments will be used to obtaink keys from the left and right sequences, respectively. The value that will be used to perform a set or join operation.
+
+If only the `left` getkey is provided, then the same logic will be used on both the left and right sequences. If you wish to explicitly specify a key provider for only the left or right sequence, you can pass `null` or `undefined` as the other argument, and the values from that sequence will used directly as the key.
 
 ```Javascript
 let seq1 = [
@@ -629,22 +649,22 @@ let x = iter([1,2,3,4,5]).count()
 // x === 5
 ```
 
-#### min([callback])
+#### min([value: getkey])
 
-Return the minimum of all values in the sequence: If an optional `callback` function is provided, the function will be invoked for each element, and the return value used as the value to compare.
+Return the minimum of all values in the sequence. If an optional `value` getkey is provided, it will be used to produce the value to sum.
 
 ```Javascript
 let x = iter([3,1,2,4]).min()
 // x===1
 ```
 
-#### max([callback])
+#### max([value: getkey])
 
-Return the max of all values in the sequence. If an optional `callback` function is provided, the function will be invoked for each element, and the return value used as the value to compare.
+Return the max of all values in the sequence. If an optional `value` getkey is provided, it will be used to produce the values to evaluate.
 
-#### sum([callback])
+#### sum([value: getkey])
 
-Return the sum of all values in the sequence. If an optional `callback` function is provided, the function will be invoked for each element, and the return value used in the sum.
+Return the sum of all values in the sequence. If an optional `value` getkey is provided, it will be used to produce the values to evaluate.
 
 #### some(callback(e, i), [thisArg])
 
@@ -760,14 +780,6 @@ I did a basic TypeScript conversion, but it doesn't actually work, and adds abou
 ### Extensibility
 
 Add an extension point for adding methods.
-
-### Equality comparison
-
-Some complex set operations are much more useful if a notion of equality comparison other than simply reference equality (e.g. `===`) can be used when performing the operation. In C# think of `getHashCode` and `equals`. There's a vague notion of this with `valueOf` in Javascript, but it doesn't work for direct comparisons, only relative ones (`<` and `>`). 
-
-For `groupBy` and `leftJoin` these had to be implement directly, it not be very expressive to require mapping each set as a precondition for a merge. This same technique (adding clauses) could be applied to other opearations, e.g. perhaps a generic `on` clause for operations involving two seqeunces would be the simplest solution. 
-
-Another alternative is to support a convention such as `equals` which some operations will use to perform equality comparisons, if available on entities in the seqeunce.
 
 ### Performance
 

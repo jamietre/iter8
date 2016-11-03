@@ -80,9 +80,7 @@ Iter.prototype = {
      * @param {any} thisArg The "this" context applied to the callback
      * @returns {void} 
      */
-    forEach(cb, thisArg) {
-        new Iter(_iterator, makeForEachIterator.call(this,cb, thisArg)).execute()
-    },
+    forEach: makeAggregator('var i=0','if (a.call(b,{v},i++)===false) return',';'),
     /**
      * Execute a callback for each element in the seqeunce, and return the same
      * element. 
@@ -109,12 +107,7 @@ Iter.prototype = {
     thenDesc(order, desc) {
         return thenBy.call(this, order, desc)
     },
-    count() {
-        let count=0;
-        let iterator = this[_iterator]()
-        while (!iterator.next().done) count++;
-        return count;
-    },
+    count: makeAggregator('var r=0', 'r++'),
     skip(n) {
         return new Iter(_iterator, skipIterable.call(this, n));
     },
@@ -175,12 +168,12 @@ Iter.prototype = {
         return new Iter(_iterator, this[_op].apply(this[_root], this[_args].concat([mapLeft, mapRight])))
     },
     sequenceEqual(sequence, mapLeft, mapRight) {
-        let iter = this[_iterator]();
-
+        const iter = this[_iterator]();
+        const mapLeftFn = getValueMapper(mapLeft)
         let cur;
         for (var otherItem of orMapSequence(mapRight, sequence)) {
             cur = iter.next();
-            if (cur.done ||  otherItem !== orMap(mapLeft, cur.value)) return false; 
+            if (cur.done ||  otherItem !== mapLeftFn(cur.value)) return false; 
         }
 
         if (!iter.next().done) return false;
@@ -203,120 +196,80 @@ Iter.prototype = {
     filter(cb, thisArg) {
         return new Iter(_iterator, makeFilterIterator.call(this, cb, thisArg));
     },
-
-    some(cb, thisArg) {
-        let iterator = this[_iterator]()
-        let cur;
-        let index=0;
-        while (cur = iterator.next(), !cur.done) {
-            if (cb.call(thisArg, cur.value, index++)) {
-                return true;
-            }
-        }
-        return false;
-    },
-    every(cb, thisArg) {
-        let iterator = this[_iterator]()
-        let cur;
-        let index =0;
-        while (cur = iterator.next(), !cur.done) {
-            if (!cb.call(thisArg, cur.value, index++)) {
-                return false;
-            }
-        }
-        return true;
-    },
-    includes(el) {
-        let iterator = this[_iterator]()
-        let cur;
-        while (cur = iterator.next(), !cur.done) {
-            if (cur.value===el) {
-                return true;
-            }
-        }
-        return false;
-    },
-    /*
-     * When implemented, this method should return a single sequence with only unique values.
-     * This can be done with concat().unique()
+     /**
+     * test whether some elements in the sequence match the condition
+     * 
+     * @param {any} callback a function (e,i) that returns true if this is the element to match
+     * @param {thisArg} object the "this" argument to apply to the callback
+     * @returns {boolean} true if any elements match the condition
      */
-    // union: function(/*sequence*/) {
-    //     throw new Error('not implemented');
-    // },
-    indexOf(el) {
-        let iterator = this[_iterator]()
-        let cur;
-        let index = 0;
-        while (cur = iterator.next(), !cur.done) {
-            if (cur.value===el) {
-                return index;
-            }
-            index++;
-        }
-        return -1;
-    },
-    lastIndexOf(el) {
-        let iterator = this[_iterator]()
-        let cur;
-        let index = 0;
-        let lastIndex = -1;
-        while (cur = iterator.next(), !cur.done) {
-            if (cur.value===el) {
-                lastIndex = index;
-            }
-            index++;
-        }
-        return lastIndex;
-    },
-    findIndex(cb, thisArg) {
-        return findHelper.call(this, cb, thisArg)[0];
-    },
-    find(cb, thisArg, def) {
-        return findHelper.call(this, cb, thisArg, def)[1];
-    },
-    get(index, def) {
-        let iterator = this[_iterator]()
-        let cur;
-        let i = 0;
-        while (cur = iterator.next(), !cur.done && i < index)  i++;
-        
-        return cur.done ? def : cur.value; 
-    },
+    some: makeAggregator('var i=0','if (a({v},b,i)) return true','return false'),
+     /**
+     * test whether every element in the sequence matches the condition
+     * 
+     * @param {any} callback a function (e,i) that returns true if this is the element to match
+     * @param {thisArg} object the "this" argument to apply to the callback
+     * @returns {boolean} true if all elements match the condition
+     */
+    every: makeAggregator('var i=0','if (!a({v},b,i++)) return false','return true'),
+    /**
+     * test whether the element appears in the sequence
+     * 
+     * @param {any} element the element to locate
+     * @returns {boolean} true if the value is found
+     */    
+    includes: makeAggregator('var i=0', 'if ({v}===a) return true; i++', 'return false'),
+    /**
+     * return the index of the element
+     * 
+     * @param {any} element The element to locate
+     * @returns {number} The index or -1
+     */
+    indexOf: makeAggregator('var i=0', 'if ({v}===a) return i; i++', 'return -1'),
+    /**
+     * return the last index of the element
+     * 
+     * @param {any} element The element to locate
+     * @returns {number} The index or -1
+     */
+    lastIndexOf: makeAggregator('var r=-1, i=0', 'if ({v}===a) r=i; i++'),
+    /**
+     * return the index of the element identified by a callback
+     * 
+     * @param {any} callback a function (e,i) that returns true if this is the element to match
+     * @param {thisArg} object the "this" argument to apply to the callback
+     * @returns {number} The index or -1
+     */
+    findIndex: makeAggregator('var i=0','if (a.call(b,{v},i)===true) return i; i++','return -1'),
+    /**
+     * return the element identified by a callback
+     * 
+     * @param {any} callback a function (e,i) that returns true if this is the element to match
+     * @param {thisArg} object the "this" argument to apply to the callback
+     * @param {default} object the value to return if the index isn't found (or `undefined` if omitted
+     * @returns {number} The index or `undefined` 
+     */
+    find: makeAggregator('var i=0','if (a.call(b,{v},i++)===true) return {v};','return c'),
+    get: makeAggregator('var i=0','if (i++===a) return {v}','return c'), 
+    
     slice(begin, end) {
         // when end is missing, take gets NaN as an arg, and takes everything
         return this.skip(begin).take(end-begin+1);
     },
-    reduce(callback, initial) {
-        // Entire array must be traversed, but this might be optimized if we 
-        // implement it ourselves to avoid two loops through the array
-        return this.toArray().reduce(callback, initial);
-    },
-    reduceRight(callback, initial) {
-        // Entire array must be traversed, but this might be optimized if we 
-        // implement it ourselves to avoid two loops through the array
-        return this.toArray().reduceRight(callback, initial);
-    },
+    reduce: makeAggregator('var r=b;var i=0', 'r=a(r,cur.value,i++)'),
+    reduceRight: (function() {
+        let reduceRight = makeAggregator('var r=b;var i=c', 'r=a(r,cur.value,i--)')
+
+        return function(callback, initial) {
+            let reversed = this.toArray().reverse();
+            return reduceRight.apply(reversed, [callback, initial, reversed.length-1]);
+        }  
+    })(),
     join(separator) {
         return this.toArray().join(separator);
     },
-    toObject() {
-        let obj={};
-        let iterator = this[_iterator]()
-        let cur;
-        while (cur = iterator.next(), !cur.done) {
-            obj[cur.value[0]]=cur.value[1]
-        }
-        return obj;
-    },
-    toArray() {
-        let arr = [];
-        let iterator = this[_iterator]()
-        let cur;
-        while (cur = iterator.next(), !cur.done) {
-            arr.push(cur.value);
-        }
-        return arr;
-    },
+    toObject: makeAggregator('var r={}','r[{v}[0]]={v}[1]'),
+    toArray: makeAggregator('var r=[]','r.push({v})'),
     as(Cotr) {
         if (Cotr === Array) {
             return this.toArray();
@@ -340,31 +293,21 @@ Iter.prototype = {
      * @param {function} mapCallback An optional callback invoked on each element that returns the value to sum
      * @returns {any} The minimum value 
      */
-    min(mapCallback) {
-        return Math.min.apply(null, (mapCallback ? this.map(mapCallback) : this).toArray());
-    },
+    min: makeGetkeyAggregator('var r=Infinity', 'var v = {v}; if (r>v) r=v'),
     /**
      * Return the maximum value in the sequence
      * 
-     * @param {function} mapCallback An optional callback invoked on each element that returns the value to sum
+     * @param {function} getkey An optional callback invoked on each element that returns the value to sum
      * @returns {any} The maximum value 
      */
-    max(mapCallback) {
-        return Math.max.apply(null, (mapCallback ? this.map(mapCallback) : this).toArray());
-    },
+    max: makeGetkeyAggregator('var r=-Infinity', 'var v = {v}; if (r<v) r=v'),
     /**
      * Return the sum of all elements in the sequence
      * 
-     * @param {any} mapCallback An optional callback invoked on each element that returns the value to sum
+     * @param {any} getkey An optional callback invoked on each element that returns the value to sum
      * @returns {any} The sum of all elements in the sequence (using the + operator)
      */
-    sum(mapCallback) {
-        let iterator = this[_iterator]()
-        let cur;
-        let total = 0;
-        while (cur = iterator.next(), !cur.done) total+=mapCallback ? mapCallback(cur.value) : cur.value;
-        return total;
-    }
+    sum: makeGetkeyAggregator('var r=0', 'r+={v}')
 };
 
 // These methods require traversing the entire array so just make them into an array
@@ -378,6 +321,40 @@ Iter.prototype = {
         });
     }
 })
+
+/**
+ * Generate an aggregator function that is optimized for either doing a value transformation, or just using the value.
+ * Using eval allows code reuse without a lot of extra function calls to do conditional logic during evaluations.
+ * 
+ * @param {any} setup
+ * @param {any} aggregator
+ * @param {any} getkey When true provides two implementations, one if there's a callback, one if not
+ * @returns
+ */
+function makeAggregator(setup, aggregator, teardown, getkey) {
+    return new Function('a', 'b', 'c', 'var iterator=this[Symbol.iterator]();' +
+        (setup || 'var r=-1') + ';' + 
+        'var cur;'+
+        (getkey ? 'if (a) while (cur = iterator.next(), !cur.done) {' + aggregator.replace(/\{v\}/g, 'a(cur.value)') + ';} else ' : '') +
+        'while (cur = iterator.next(), !cur.done) {' + aggregator.replace(/\{v\}/g, 'cur.value') + ';};' +  
+        (teardown || 'return r'));
+}
+
+/**
+ * Wrap it wtih automatic "getkey" argument handling
+ * 
+ * @param {any} setup
+ * @param {any} aggregator
+ * @returns
+ */
+function makeGetkeyAggregator(setup, aggregator, teardown) {
+    const aggregatorFn = makeAggregator(setup, aggregator, teardown, true)
+    return function(getkey) {
+        let mapfn = getkey && getValueMapper(getkey);
+        return aggregatorFn.apply(this, [mapfn].concat(arrProto.concat.call(arguments)))
+    }
+}
+
 
 function orderBy(order, desc) {
     let orders=[orProp(order)];
@@ -428,13 +405,27 @@ function makeOrderByIterator(orders, desc){
 function makeLeftJoinIterator(sequence, mergeFn, mapLeft, mapRight) {
     var that = this;
     return function() {
+        const useKvps = !mapLeft && !mapRight;
+
+        // create transform functions for the join. If neither mapper functions are provided,
+        // the default behavior is to treat both sequences as KVP lists.
+        // if not, then get a function using the default "map provider" behavior of either
+        // using a provided function, or treating the value as a property name.
+
+        const leftKeyMapper = getValueMapper(useKvps ? 0 : mapLeft)
+        const leftValueMapper = getValueMapper(useKvps ? 1 : null)
+        const rightKeyMapper = getValueMapper(useKvps ? 0 : mapRight)
+        const rightValueMapper = getValueMapper(useKvps ?  1 : null)
+         
         let iterator = that[_iterator]();
-        let other = new Map(mapRight ? new Iter(sequence).groupBy(e=>mapRight(e)) : sequence)
+        let other = new Map(mapRight ? new Iter(sequence).groupBy(rightKeyMapper) : sequence)
         let matches;
         let leftValue;
         let id;
-
+        
+        
         return {
+            
             next() {
                 /*eslint no-constant-condition:0 */
                 while (true) {
@@ -442,8 +433,8 @@ function makeLeftJoinIterator(sequence, mergeFn, mapLeft, mapRight) {
                         let left = iterator.next()
 
                         if (left.done) return doneIter
-                        id = mapLeft ? mapLeft(left.value) : left.value[0]
-                        leftValue = mapLeft ? left.value : left.value[1];
+                        id = leftKeyMapper(left.value)
+                        leftValue = leftValueMapper(left.value);
                         let match = other.get(id)
                         if (!match || !match[_iterator] || typeof match === 'string') {
                             return { 
@@ -460,7 +451,7 @@ function makeLeftJoinIterator(sequence, mergeFn, mapLeft, mapRight) {
                     if (!right.done) {
                         return { 
                             done: false, 
-                            value: mergeFn(leftValue, mapRight ? right.value : right.value[1], id)
+                            value: mergeFn(leftValue, rightValueMapper(right.value), id)
                          }
                     } else {
                         matches = null;
@@ -559,36 +550,21 @@ function makeDoIterator(cb, thisArg) {
     }
 }
 
-function makeForEachIterator(cb, thisArg) {
-    var that = this;
-    return function() {
-        let index = 0;
-        let sourceIter = that[_iterator]()
-        let finished = false;
-        return {
-            next: ()=> {
-                let cur = sourceIter.next();
-                finished |= cur.done;
-                return iterResult(finished, !finished && 
-                    (finished = cb.call(thisArg, cur.value, index++)===false, cur.value))
-            }
-        }
-    }
-}
-
 function makeExceptIterator(other, mapLeft, mapRight) {
-    var that = this;
+    const that = this;
     return function() {
-        let except = new Set(orMapSequence(mapRight, other))
-        return getNext.call(that, (cur)=> !except.has(orMap(mapLeft, cur.value)))
+        const leftMapper = getValueMapper(mapLeft)
+        const except = new Set(orMapSequence(mapRight, other))
+        return getNext.call(that, (cur)=> !except.has(leftMapper(cur.value)))
     }
 }
 
 function makeIntersectIterator(other, mapLeft, mapRight) {
-    var that = this;
+    const that = this;
     return function() {
-        let intersect = new Set(orMapSequence(mapRight, other));
-        return getNext.call(that, (cur)=> intersect.has(orMap(mapLeft, cur.value)))
+        const leftMapper = getValueMapper(mapLeft)
+        const intersect = new Set(orMapSequence(mapRight, other));
+        return getNext.call(that, (cur)=> intersect.has(leftMapper(cur.value)))
     }
 }
 
@@ -630,7 +606,7 @@ function makeUniqueIterator() {
 function makeGroupByIterator(group) {
     var that = this;
     return function() {
-        const cb = orProp(group);
+        const cb = getValueMapper(group);
         let dict = new Map();
         
         let cur;
@@ -714,40 +690,6 @@ function makeFlattenIterator(recurse) {
             }
         }
     }
-
-    // var that =this;
-    // return function() {
-    //     let sourceIter = that[_iterator]()
-    //     let iter=sourceIter;
-
-    //     return {
-    //         next: ()=> {
-    //             let value = null;
-    //             while(!value) {
-    //                 const isSource = iter === sourceIter;
-    //                 let cur = iter.next();
-    //                 if (cur.done) {
-    //                     if (!isSource) {
-    //                         iter = sourceIter;
-    //                     } else {
-    //                         return doneIter
-    //                     }
-    //                 } else {
-    //                     if (isSource && cur.value[_iterator]) {
-    //                         iter = cur.value[_iterator]();
-    //                     } else {
-    //                         value = cur.value;
-    //                     }
-    //                 }
-    //             }
-
-    //             return {
-    //                 done: false,
-    //                 value: value    
-    //             }
-    //         }
-    //     }
-    // }
 }
 
 function makeFilterIterator(cb, thisArg) {
@@ -791,8 +733,27 @@ function iter(e) {
 function orMapSequence(mapFn, iterable) {
     return mapFn ? iter(iterable).map(mapFn) : iterable; 
 }
-function orMap(mapFn, value) {
-    return mapFn ? mapFn(value) : value
+
+/**
+ * Given a mapFn which can be missing, a function, or something else (probably
+ * a string) that identifies a property, return a transformation function
+ * 
+ * @param {any} mapFn The map function or property
+ * @returns A map function
+ */
+function getValueMapper(mapfn) {
+    if (mapfn==null) {
+        return function(value) { 
+            return value 
+        }
+    } else if (typeof mapfn === 'function') {
+        return mapfn
+    } else {
+        return function(value) {
+            return value[mapfn];
+        } 
+    }
+    
 }
 
 function orProp(obj) {

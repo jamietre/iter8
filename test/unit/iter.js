@@ -231,6 +231,10 @@ describe('iter', ()=> {
             let sut = iter([{ foo: 1}, {foo: 4}, {foo: 10}]);
             assert.equal(sut.sum((e)=>e.foo), 15);
         })
+        it('map - prop', ()=> {
+            let sut = iter([{ foo: 1}, {foo: 4}, {foo: 10}]);
+            assert.equal(sut.sum('foo'), 15);
+        })
     })
     
     describe('min', ()=> {
@@ -333,6 +337,20 @@ describe('iter', ()=> {
             last += cur; 
             return last;
         },0),6)
+    })
+    it('reduceRight', ()=> {
+        let done=false; 
+        assert.equal(iter([1,2,3]).reduceRight((last, cur, index)=> {
+            if (done===false) {
+                assert.ok(index === 2)
+                assert.ok(cur === 3)
+                done = true;
+            }
+            last += cur;
+            return last;
+        },0),6)
+
+        assert.ok(done === true);
     })
     it('indexOf', ()=> {
         let sut = iter([1,2,3,4,5])
@@ -580,58 +598,66 @@ describe('iter', ()=> {
 
             assert.deepEqual(sut.toArray(), [1,5,3,6,7,2,4]);
         })
-        describe('sequenceEqual', ()=> {
-            it('basic', ()=> {
-                let sut = iter([1,2,3,4,5])
-                assert.ok(sut.sequenceEqual([1,2,3,4,5]), 'same are equal')
-                assert.ok(!sut.sequenceEqual([1,2,3,4,5,6]), 'not equal even though same n elements match')
-                assert.ok(!sut.sequenceEqual([1,2,3,4]), 'not equal even though same n elements match (shorter)')
-                assert.ok(!sut.sequenceEqual([1,2,3,5,4]), 'not equal even though same same length & same elements')
-            })
-            it('with map', ()=> {
-                let sut = iter([1,2,3,4,5])
-                assert.ok(sut.sequenceEqual([2,4,6,8,10], e=>e*2), 'left map only')
-                assert.ok(sut.sequenceEqual([2,4,6,8,10], null, e=>e/2), 'right map only')
-                assert.ok(sut.sequenceEqual([2,4,6,8,10], e=>e*4, e=>e*2), 'both maps')
-            })
-        });
-        describe('leftJoin', ()=> {
-            let left = [[0,'foo'], [1,'bar'], [1,'baz'], [2, 'fizz']] 
-            let right = [[1,'FOO'], [2,'BAR'], [2,'BARRE'], [3,'NOPE']]
-
-            it('basic', ()=> {
-                let sut = iter(left).leftJoin(right, (left, right='', key)=> {
-                    return `${key}:${left}:${right}`;
-                });
-
-                // because key/value pair sequences must have unique IDs, 2,BAR gets tossed 
-                assert.deepEqual(sut.toArray(), [
-                    '0:foo:', '1:bar:FOO', '1:baz:FOO', '2:fizz:BARRE'
-                ])
-            })
-
-            it('on', ()=> {
-                let seq1 = [
-                    { group: 1, value: 'bar' }, 
-                    { group: 1, value: 'foo', },
-                    { group: 2, value: 'fizz' },
-                    { group: 3, value: 'buzz' }
-                ];
-                let seq2 = [
-                    { group: 1, value: 'a'},
-                    { group: 3, value: 'b'},
-                    { group: 3, value: 'c'},
-                    { group: 4, value: 'd'},
-                ]
-
-                let merged = iter(seq1)
-                    .leftJoin(seq2, (left, right={}, key)=> `${key}:${left.value},${right.value||''}`)    
-                    .on(left => left.group, right => right.group)
-
-                assert.deepEqual(merged.toArray(), [
-                    "1:bar,a", "1:foo,a", "2:fizz,", "3:buzz,b", "3:buzz,c"])
-                
-            })
+    });
+    describe('sequenceEqual', ()=> {
+        it('basic', ()=> {
+            let sut = iter([1,2,3,4,5])
+            assert.ok(sut.sequenceEqual([1,2,3,4,5]), 'same are equal')
+            assert.ok(!sut.sequenceEqual([1,2,3,4,5,6]), 'not equal even though same n elements match')
+            assert.ok(!sut.sequenceEqual([1,2,3,4]), 'not equal even though same n elements match (shorter)')
+            assert.ok(!sut.sequenceEqual([1,2,3,5,4]), 'not equal even though same same length & same elements')
         })
+        it('with map', ()=> {
+            let sut = iter([1,2,3,4,5])
+            assert.ok(sut.sequenceEqual([2,4,6,8,10], e=>e*2), 'left map only')
+            assert.ok(sut.sequenceEqual([2,4,6,8,10], null, e=>e/2), 'right map only')
+            assert.ok(sut.sequenceEqual([2,4,6,8,10], e=>e*4, e=>e*2), 'both maps')
+        })
+    });
+    describe('leftJoin', ()=> {
+        let left = [[0,'foo'], [1,'bar'], [1,'baz'], [2, 'fizz']] 
+        let right = [[1,'FOO'], [2,'BAR'], [2,'BARRE'], [3,'NOPE']]
+
+        it('basic', ()=> {
+            let sut = iter(left).leftJoin(right, (left, right='', key)=> {
+                return `${key}:${left}:${right}`;
+            });
+
+            // because key/value pair sequences must have unique IDs, 2,BAR gets tossed 
+            assert.deepEqual(sut.toArray(), [
+                '0:foo:', '1:bar:FOO', '1:baz:FOO', '2:fizz:BARRE'
+            ])
+        })
+        let seq1 = [
+            { group: 1, value: 'bar' }, 
+            { group: 1, value: 'foo', },
+            { group: 2, value: 'fizz' },
+            { group: 3, value: 'buzz' }
+        ];
+        let seq2 = [
+            { group: 1, value: 'a'},
+            { group: 3, value: 'b'},
+            { group: 3, value: 'c'},
+            { group: 4, value: 'd'},
+        ]
+        it('on fn', ()=> {
+            let merged = iter(seq1)
+                .leftJoin(seq2, (left, right={}, key)=> `${key}:${left.value},${right.value||''}`)    
+                .on(left => left.group, right => right.group)
+
+            assert.deepEqual(merged.toArray(), [
+                "1:bar,a", "1:foo,a", "2:fizz,", "3:buzz,b", "3:buzz,c"])
+            
+        })
+        it('on string', ()=> {
+            let merged = iter(seq1)
+                .leftJoin(seq2, (left, right={}, key)=> `${key}:${left.value},${right.value||''}`)    
+                .on('group')
+
+            assert.deepEqual(merged.toArray(), [
+                "1:bar,a", "1:foo,a", "2:fizz,", "3:buzz,b", "3:buzz,c"])
+            
+        })
+    
     })
 })
