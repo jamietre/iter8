@@ -1,5 +1,5 @@
 import assert from 'assert'
-import iter from '../../src/index'
+import iter, { Iter } from '../../src/index'
 import "babel-polyfill";
 
 describe('iter - conversion', ()=> {
@@ -29,6 +29,20 @@ describe('iter - conversion', ()=> {
                 return 'fubar'
             }
         }
+    })
+    describe('default constructor', ()=> {
+         it('Invoke constructor', ()=> {
+            let sut = iter([1,2,3])
+            assert.ok(sut instanceof Iter);
+            assert.ok(sut.count() === 3);
+        })
+        it('empty', ()=> {
+            let sut = iter()
+            assert.deepEqual(sut, []);
+        })
+        assert.throws(()=> {
+            iter(false)
+        });
     })
 
     it('fromObject', ()=> {

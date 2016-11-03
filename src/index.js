@@ -16,44 +16,47 @@ const doneIter = {
 }
 Object.freeze(doneIter)
 
+
+function iter(e) {
+    return new Iter(e)
+}
+
 /**
  * When invoked from the public, on the first arg matters. If the first arg is [Sybmol.iterator]
  * then it cann accept to more arguments for use in chaining additional clauses
  * 
  * @param {any} source An iterable, or [Symbol.iterator]
- * @param {any} iter A generator, OR a special case function (when "root" and "args" are passed)
+ * @param {any} generator A generator, OR a special case function (when "root" and "args" are passed)
  * @param {any} args The arguments to the root operation
  * @param {any} root The root "iter" object for chained operations
  */
-function Iter(source, iter, root, args) {
+function Iter(source, generator, root, args) {
     if (source === _iterator) {
         if (!root) {
-            this[_iterator] = iter;
+            this[_iterator] = generator;
         } else {
-            this[_iterator] = iter.apply(root, args)        
-            this[_op] = iter;
+            this[_iterator] = generator.apply(root, args)        
+            this[_op] = generator;
             this[_root] = root
             this[_args] = args
         }
-        
-        return;
+        return; 
     }
     
-    if (!(this instanceof Iter)) {
-        return new Iter(source)
-    }
-
     const iterator = source && source[_iterator];
-    if (source && !iterator) {
+
+    // it's allowed to construct with nothing,  but you can't construct with a non-iterable entity.
+    if (!iterator && !(source == null)) {
         if (source && typeof source !== 'function') {
-            return Iter.fromObjectOwn(source);
+            return iter.fromObjectOwn(source);
         }
         throw new Error('iter can only be sourced with an Iterable object or a regular Javascript object.');
     } 
     this[_iterator]=iterator ? iterator.bind(source) : emptyIterator;
 }
 
-Object.assign(Iter, {
+
+Object.assign(iter, {
     /**
      * Produce an Iter instance from a generator
      */
@@ -736,10 +739,6 @@ function makeMapIterator(cb, thisArg) {
     }
 }
 
-function iter(e) {
-    return new Iter(e)
-}
-
 function orMapSequence(mapFn, iterable) {
     return mapFn ? iter(iterable).map(mapFn) : iterable; 
 }
@@ -811,4 +810,5 @@ function objectAsIterator(e) {
     }
 }
 
-export default Iter;
+export default iter;
+export { Iter }
