@@ -100,7 +100,7 @@ Iter8 objects have two types of methods: *transformation* and *value-producing*.
 * [unique()](#unique)
 * [groupBy(group)](#groupbygroup)
 * [cast(Type)](#casttype)
-* [map(callback, [thisArg])](#callbacke-i-thisarg)*
+* [map(callback, [thisArg])](#mapcallbacke-i-thisarg)*
 * [filter(callback, [thisArg])](#filtercallbacke-i-thisarg)*
 * [slice(begin, [end])](#slicebegin-end)*
 
@@ -109,8 +109,8 @@ Iter8 objects have two types of methods: *transformation* and *value-producing*.
 * [except(sequence)](#exceptsequence)
 * [intersect(sequence)](#intersectsequence)
 * [union(sequence)](#unionsequence)
-* [leftJoin(sequence, callback)](#leftjoinsequence-mergecallbackleftitem-rightitem)
-* [joinOn(leftKeyCallback, rightKeyCallback)](#joinonleftkeycallback-rightkeycallback)
+* [leftJoin(sequence, callback)](#leftjoinsequence-callbackleftitem-rightitem)
+* [on(leftKeyCallback, rightKeyCallback)](#onleftcallback-rightcallback)
 * [concat(obj, [obj, ...])](#concatobj-obj-)*
 
 *Ordering*
@@ -132,7 +132,6 @@ Iter8 objects have two types of methods: *transformation* and *value-producing*.
 
 * [do(callback, [thisArg])](#docallback-thisarg)
 * [execute()](#execute)
-* [forEach(callback, thisArg)](#foreachcallbacke-i-thisarg)*
 
 ##### value-producing methods 
 
@@ -148,15 +147,15 @@ Iter8 objects have two types of methods: *transformation* and *value-producing*.
 * [min([callback])](#mincallback)
 * [max([callback])](#maxcallback)
 * [sum([callback])](#sumcallback)
-* [some(callback, [thisArg])](#somecallbacke-i-thisarg-value-producing)*
-* [every(callback, [thisArg])](#everycallbacke-i-thisarg-value-producing)*
-* [includes(value)](#includesvalue-value-producing)*
-* [indexOf(value)](#indexofvalue-value-producing)*
-* [lastIndexOf(value)](#lastindexofvalue-value-producing)*
-* [findIndex(callback, [thisArg])](#findindexcallbacke-i-thisarg-value-producing)*
-* [find(callback, [thisArg], [default])](#findcallbacke-i-thisarg-default-value-producing)*
-* [reduce(callback, [initial])](#reducecallbacklast-current-i-initial-value-producing)*
-* [reduceRight(callback, [initial])](#reducerightcallbacklast-current-i-initial-value-producing)*
+* [some(callback, [thisArg])](#somecallbacke-i-thisarg)*
+* [every(callback, [thisArg])](#everycallbacke-i-thisarg)*
+* [includes(value)](#includesvalue)*
+* [indexOf(value)](#indexofvalue)*
+* [lastIndexOf(value)](#lastindexofvalue)*
+* [findIndex(callback, [thisArg])](#findindexcallbacke-i-thisarg)*
+* [find(callback, [thisArg], [default])](#findcallbacke-i-thisarg-default)*
+* [reduce(callback, [initial])](#reducecallbacklast-current-i-initial)*
+* [reduceRight(callback, [initial])](#reducerightcallbacklast-current-i-initial)*
 
 *Comparison* 
 
@@ -167,9 +166,11 @@ Iter8 objects have two types of methods: *transformation* and *value-producing*.
 * [toArray()](#toarray)
 * [toObject()](#toobject)
 * [as(Type)](#astype) 
-* [join([separator])](#joinseparator-value-producing)* 
+* [join([separator])](#joinseparator)* 
 
+*Special*
 
+* [forEach(callback, thisArg)](#foreachcallbacke-i-thisarg)*
 
 ### Usage Details
 
@@ -508,9 +509,10 @@ let inBoth = iter(seq1)
 
 Note that the value returned by `intersect` is the value from the *original* sequence when using an `on` clause. The only time a value from the other sequence will appear when using `on` is in the case of a `union`, and it doesn't also appear in the original sequence. 
 
+```Javascript
 let merged = iter(seq1)
-    .leftJoin(seq2, (left, right={}, key)=> `${key}:${left.value},${right.value || ''}`)    
-    .joinOn(left => left.group, right => right.group)
+    .leftJoin(seq2, (left, right={}, key)=> `${key}:${left.value},${right.value || ''}`
+    .on(left => left.group, right => right.group)
 
 // merged.toArray() ===["1:bar,a", "1:foo,a", "2:fizz,", "3:buzz,b", "3:buzz,c"]
 ```

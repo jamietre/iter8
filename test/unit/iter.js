@@ -610,7 +610,7 @@ describe('iter', ()=> {
                 ])
             })
 
-            it('joinOn', ()=> {
+            it('on', ()=> {
                 let seq1 = [
                     { group: 1, value: 'bar' }, 
                     { group: 1, value: 'foo', },
