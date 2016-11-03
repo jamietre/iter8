@@ -100,7 +100,7 @@ Iter8 objects have two types of methods: *transformation* and *value-producing*.
 * [unique()](#unique)
 * [groupBy(group)](#groupbygroup)
 * [cast(Type)](#casttype)
-* [map(callback, [thisArg])](#mapcallbacke-i-thisarg)*
+* [map(callback, [thisArg])](#callbacke-i-thisarg)*
 * [filter(callback, [thisArg])](#filtercallbacke-i-thisarg)*
 * [slice(begin, [end])](#slicebegin-end)*
 
@@ -145,9 +145,9 @@ Iter8 objects have two types of methods: *transformation* and *value-producing*.
 *Aggregation/Analysis*
 
 * [count()](#count)
-* [min([callback])](#minmapcallback)
-* [max([callback])](#maxmapcallback)
-* [sum([callback])](#summapcallback)
+* [min([callback])](#mincallback)
+* [max([callback])](#maxcallback)
+* [sum([callback])](#sumcallback)
 * [some(callback, [thisArg])](#somecallbacke-i-thisarg-value-producing)*
 * [every(callback, [thisArg])](#everycallbacke-i-thisarg-value-producing)*
 * [includes(value)](#includesvalue-value-producing)*
@@ -454,7 +454,7 @@ let x = iter([1,2,3]]).union([2,3,4]).toArray()
 // x === [1,2,3,4]
 ```
 
-#### leftJoin(sequence, mergeCallback(leftItem, rightItem))
+#### leftJoin(sequence, callback(leftItem, rightItem))
 
 Join two sequences, and return a single new sequence.
 
@@ -627,22 +627,22 @@ let x = iter([1,2,3,4,5]).count()
 // x === 5
 ```
 
-#### min([mapCallback])
+#### min([callback])
 
-Return the minimum of all values in the sequence: If an optional `mapCallback` function is provided, the function will be invoked for each element, and the return value used as the value to compare.
+Return the minimum of all values in the sequence: If an optional `callback` function is provided, the function will be invoked for each element, and the return value used as the value to compare.
 
 ```Javascript
 let x = iter([3,1,2,4]).min()
 // x===1
 ```
 
-#### max([mapCallback])
+#### max([callback])
 
-Return the max of all values in the sequence. If an optional `mapCallback` function is provided, the function will be invoked for each element, and the return value used as the value to compare.
+Return the max of all values in the sequence. If an optional `callback` function is provided, the function will be invoked for each element, and the return value used as the value to compare.
 
-#### sum([mapCallback])
+#### sum([callback])
 
-Return the sum of all values in the sequence. If an optional `mapCallback` function is provided, the function will be invoked for each element, and the return value used in the sum.
+Return the sum of all values in the sequence. If an optional `callback` function is provided, the function will be invoked for each element, and the return value used in the sum.
 
 #### some(callback(e, i), [thisArg])
 
@@ -676,7 +676,7 @@ Attempt to locate an element in the sequence by using a `callback`, which should
 
 (todo - Array.reduce)
 
-#### reduceRight(callback(last, current, i), [initial]) *value-producing*
+#### reduceRight(callback(last, current, i), [initial])
 
 (todo - Array.reduceRight)
 
