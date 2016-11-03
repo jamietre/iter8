@@ -112,15 +112,15 @@ Iter8 objects have two types of methods: *transformation* and *value-producing*.
 * [intersect(sequence)](#intersectsequence)
 * [union(sequence)](#unionsequence)
 * [leftJoin(sequence, callback)](#leftjoinsequence-callbackleftitem-rightitem)
-* [on(leftCallback, rightCallback)](#onleftcallback-rightcallback)
+* [on(leftCallback, rightCallback)](#onleft-getkey-right-getkey)
 * [concat(obj, [obj, ...])](#concatobj-obj-)*
 
 *Ordering*
 
-* [orderBy(order)](#orderbyorder)
-* [orderDesc(order)](#orderdescorder)
-* [thenBy(order)](#thenbyorder)
-* [thenDesc(order)](#thendescorder)
+* [orderBy(order)](#orderbyorder-getkey)
+* [orderDesc(order)](#orderdescorder-getkey)
+* [thenBy(order)](#thenbyorder-getkey)
+* [thenDesc(order)](#thendescorder-getkey)
 * [sort([callback])](#sortcallbacka-b)*
 * [reverse()](#reverse)*
 
@@ -146,9 +146,9 @@ Iter8 objects have two types of methods: *transformation* and *value-producing*.
 *Aggregation/Analysis*
 
 * [count()](#count)
-* [min([callback])](#mincallback)
-* [max([callback])](#maxcallback)
-* [sum([callback])](#sumcallback)
+* [min([callback])](#minvalue-getkey)
+* [max([callback])](#maxvalue-getkey)
+* [sum([callback])](#sumvalue-getkey)
 * [some(callback, [thisArg])](#somecallbacke-i-thisarg)*
 * [every(callback, [thisArg])](#everycallbacke-i-thisarg)*
 * [includes(value)](#includesvalue)*
@@ -608,19 +608,6 @@ let group2 = intermediate.filter([category]=>category === 'category 2').as(Map)
 
 Without using "execute" here, the "groupBy" etc. would be run twice for both `group1` and `group2` since execution of the entire query is deferred until a value-producing result, in this case `as(Map)`.
 
-#### forEach(callback(e, i), thisArg) 
-
-`forEach` executes the query immediately, and always returns `undefined`. If you want to cause side effects during normal sequence processing, use `do` instead.
-
-`forEach` can be aborted by returning `false` from the callback. Any other return values are ignored. If `false` is returned, the rest of the sequence will not be iterated.
-
-```Javascript
-// log 'message' for all but the first 3 elements in the sequence
-iter(arr).skip(3).forEach((e)=> {
-    console.log(e.message)
-});
-```
-
 ### Value-returning methods
 
 These methods all cause the query to execute and return some value or object.
@@ -744,9 +731,23 @@ Creates an instance of `Type` using the sequence as a single constructor argumen
 let map = iter(something).groupBy('category').as(Map)
 ```
 
-#### join([separator=','])
+#### join([separator=","])
 
 Join all methods using the `separator` as a string. If the contents of the sequence aren't strings, `toString()` will be invoked on each element. 
+
+### Special Method
+
+#### forEach(callback(e, i), thisArg) 
+
+`forEach` executes the query immediately, iterates over all values in the sequence, and always returns `undefined`. If you want to cause side effects during normal sequence processing, use `do` instead.
+
+```Javascript
+// log 'message' for all but the first 3 elements in the sequence
+iter(arr).skip(3).forEach((e)=> {
+    console.log(e.message)
+});
+```
+
 
 ## Roadmap
 

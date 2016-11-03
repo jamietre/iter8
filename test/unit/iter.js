@@ -318,19 +318,10 @@ describe('iter', ()=> {
         let arr = []
         sut.forEach((e,i)=> {
             arr.push([e, i])
+            // nothing happens
+            return false;
         });
         assert.deepEqual(arr, [[1,0], [2,1], [3,2], [4,3], [5,4]])
-    })
-    it('forEach - cancel action', ()=> {
-        let sut = iter([1,2,3,4,5])
-        let arr = [];
-        sut.forEach((e, i)=> {
-            arr.push([e,i]);
-            if (e === 3) { 
-                return false; 
-            }
-        });
-        assert.deepEqual(arr, [[1,0], [2,1], [3,2]])
     })
     it('reduce', ()=> {
         assert.equal(iter([1,2,3]).reduce((last, cur)=> { 

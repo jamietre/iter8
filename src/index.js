@@ -97,7 +97,7 @@ Iter.prototype = {
      * @param {any} thisArg The "this" context applied to the callback
      * @returns {void} 
      */
-    forEach: makeAggregator('var i=0','if (a.call(b,{v},i++)===false) return',';'),
+    forEach: makeAggregator('var i=0','a.call(b,{v},i++)',';'),
     /**
      * Execute a callback for each element in the seqeunce, and return the same
      * element. 
