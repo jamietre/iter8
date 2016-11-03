@@ -87,19 +87,23 @@ export declare class Iter implements Iterable<any> {
      * Sort by the value of a property, in descending order. If `order` is a string, or by the value returned by a
      * `function(item, index)` if `order` is a function
      *
-     * @param {((item: any, index: number)=>any | string)} order A property name or function
+     * @param {((item: any, index: number)=>any | string)} order A property 
+     *      name or function
      * @returns {Iter} The sorted sequence
      */
     orderDesc(order: (item: any, index: number) => any | string): Iter;
     /**
-     * Add a secondary or n-ary sort order if there are multiple items with the same value. Can only follow an `order` or `then` clause.
+     * Add a secondary or n-ary sort order if there are multiple items with 
+     * the same value. Can only follow an `order` or `then` clause.
      *
-     * @param {((item: any, index: number)=>any | string)} order A property name or function
+     * @param {((item: any, index: number)=>any | string)} order A property 
+     *      name or function
      * @returns {Iter} The sorted sequence
      */
     thenBy(order: (item: any, index: number) => any | string): Iter;
     /**
-     * Add a secondary or n-ary descending sort order if there are multiple items with the same value. Can only follow an `order` or `then` clause.
+     * Add a secondary or n-ary descending sort order if there are multiple 
+     *      items with the same value. Can only follow an `order` or `then` clause.
      *
      * @param {((item: any, index: number)=>any | string)} order A property name or function
      * @returns {Iter} The sorted sequence
@@ -112,7 +116,8 @@ export declare class Iter implements Iterable<any> {
      */
     count(): number;
     /**
-     * Skip `n` items in the seqeunce, and return a new sequence of all successive items.
+     * Skip `n` items in the seqeunce, and return a new sequence of all 
+     * successive items.
      *
      * @param {number} n The number of items to skip
      * @returns {Iter} A sequence of all items after the skipped ones
@@ -126,24 +131,31 @@ export declare class Iter implements Iterable<any> {
      */
     take(n: number): Iter;
     /**
-     * Convert all items in the sequence to instances of `Type` by invoking `Type` as a constructor with the sequence as an argument
+     * Convert all items in the sequence to instances of `Type` by invoking
+     *      `Type` as a constructor with the sequence as an argument
      *
      * @param {new (element: any)=>any} Type the Constructor to use
      * @returns {Iter} The new sequence
      */
     cast(Type: new (element: any) => any): Iter;
     /**
-     * Return the first item in the sequence, or `undefined`, or an optional `defaultValue`
+     * Return the first item in the sequence, or `undefined`, or an optional
+     * `defaultValue`
      *
-     * @param {*} [defaultValue] a default value to return if the seqeunce has no items.
-     * @returns {*} The first item in the sequence, or `undefined` (or `defaultValue`) if the sequence has no items.
+     * @param {*} [defaultValue] a default value to return if the seqeunce has 
+     *      no items.
+     * @returns {*} The first item in the sequence, or `undefined` (or 
+     *      `defaultValue`) if the sequence has no items.
      */
     first(defaultValue?: any): any;
     /**
-     * Return the firlastst item in the sequence, or `undefined`, or an optional `defaultValue`
+     * Return the firlastst item in the sequence, or `undefined`, or an 
+     * optional `defaultValue`
      *
-     * @param {*} [defaultValue] a default value to return if the seqeunce has no items.
-     * @returns {*} The first item in the sequence, or `undefined` (or `defaultValue`) if the sequence has no items.
+     * @param {*} [defaultValue] a default value to return if the seqeunce has
+     *      no items.
+     * @returns {*} The first item in the sequence, or `undefined` (or 
+     *      `defaultValue`) if the sequence has no items.
      */
     last(defaultValue?: any): any;
     /**

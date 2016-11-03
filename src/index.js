@@ -1,4 +1,10 @@
-
+/**
+ * iter8 - an iteration utility library
+ * Author: James Treworgy
+ * License: MIT
+ * 
+ * The jsdoc in this file may not be maintained; please see `index.d.ts` for current method documentation.
+ */
 const _orders = Symbol();
 const _root = Symbol();
 const _args = Symbol();
@@ -18,7 +24,6 @@ Object.freeze(doneIter)
  * @param {any} iter A generator, OR a special case function (when "root" and "args" are passed)
  * @param {any} args The arguments to the root operation
  * @param {any} root The root "iter" object for chained operations
-  * @returns
  */
 function Iter(source, iter, root, args) {
     if (source === _iterator) {
@@ -49,15 +54,27 @@ function Iter(source, iter, root, args) {
 }
 
 Object.assign(Iter, {
+    /**
+     * Produce an Iter instance from a generator
+     */
     fromGenerator:  function(generator) {
         return new Iter(_iterator, generator);
     },
+    /**
+     * Produce an iter instance from an object
+     */
     fromObject: function(obj, filter) {
           return new Iter(_iterator, makeObjectIterator.call(null, obj, filter, false));
     },
+    /**
+     * Produce an iter instance from an object's own properties
+     */
     fromObjectOwn: function(obj, filter) {
           return new Iter(_iterator, makeObjectIterator.call(null, obj, filter, true));
     },
+    /**
+     * Produce an iter instance using a callback to generate values, or repeating a single value
+     */    
     generate(obj, times) {
         return new Iter(_iterator, function() {
             let index = -1;
@@ -111,15 +128,9 @@ Iter.prototype = {
     skip(n) {
         return new Iter(_iterator, skipIterable.call(this, n));
     },
-    // skipWhile: function(/*cb*/) {
-    //     throw new Error('not implemented')
-    // },
     take(n) {
         return new Iter(_iterator, takeIterable.call(this, n));
     },
-    // takeWhile: function(/*cb*/) {
-    //     throw new Error('not implemented')
-    // },
     cast(Type) {
         return new Iter(_iterator, makeMapIterator.call(this, function(e) {
             return new Type(e);
@@ -145,7 +156,6 @@ Iter.prototype = {
     flatten(recurse) {
         return new Iter(_iterator, makeFlattenIterator.call(this, recurse));
     },
-    // todo: equality comparitor callback.
     unique() {
         return new Iter(_iterator, makeUniqueIterator.call(this));
     },
@@ -161,7 +171,6 @@ Iter.prototype = {
     leftJoin(sequence, callback) {
         return new Iter(_iterator, makeLeftJoinIterator, this, [sequence, callback]);
     },
-    // Add a match ID callback to a join operation
     on(mapLeft, mapRight) {
         if (arguments.length === 1) mapRight = mapLeft;
         if (!this[_root]) throw new Error(`"on" doesn't make sense without a prior join or set merge operation.`)
@@ -256,9 +265,9 @@ Iter.prototype = {
         // when end is missing, take gets NaN as an arg, and takes everything
         return this.skip(begin).take(end-begin+1);
     },
-    reduce: makeAggregator('var r=b;var i=0', 'r=a(r,cur.value,i++)'),
+    reduce: makeAggregator('var r=b;var i=0', 'r=a(r,{v},i++)'),
     reduceRight: (function() {
-        let reduceRight = makeAggregator('var r=b;var i=c', 'r=a(r,cur.value,i--)')
+        let reduceRight = makeAggregator('var r=b;var i=c', 'r=a(r,{v},i--)')
 
         return function(callback, initial) {
             let reversed = this.toArray().reverse();
@@ -332,11 +341,11 @@ Iter.prototype = {
  * @returns
  */
 function makeAggregator(setup, aggregator, teardown, getkey) {
-    return new Function('a', 'b', 'c', 'var iterator=this[Symbol.iterator]();' +
+    return new Function('a', 'b', 'c', 'var _i=this[Symbol.iterator]();' +
         (setup || 'var r=-1') + ';' + 
-        'var cur;'+
-        (getkey ? 'if (a) while (cur = iterator.next(), !cur.done) {' + aggregator.replace(/\{v\}/g, 'a(cur.value)') + ';} else ' : '') +
-        'while (cur = iterator.next(), !cur.done) {' + aggregator.replace(/\{v\}/g, 'cur.value') + ';};' +  
+        'var _c;'+
+        (getkey ? 'if (a) while (_c = _i.next(), !_c.done) {' + aggregator.replace(/\{v\}/g, 'a(_c.value)') + ';} else ' : '') +
+        'while (_c=_i.next(), !_c.done) {' + aggregator.replace(/\{v\}/g, '_c.value') + ';};' +  
         (teardown || 'return r'));
 }
 
@@ -726,6 +735,7 @@ function makeMapIterator(cb, thisArg) {
         }
     }
 }
+
 function iter(e) {
     return new Iter(e)
 }
@@ -773,18 +783,6 @@ function iterResult(done, value) {
     } else {
         return doneIter
     }
-}
-function findHelper(cb, thisArg, def) {
-    let iterator = this[_iterator]()
-    let cur;
-    let index = 0;
-    while (cur = iterator.next(), !cur.done) {
-        if (cb.call(thisArg, cur.value, index)) {
-            return [index, cur.value];
-        }
-        index++;
-    }
-    return [-1, def];
 }
 
 function emptyIterator() {
