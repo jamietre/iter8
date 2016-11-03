@@ -1,7 +1,8 @@
 
 const _orders = Symbol();
 const _root = Symbol();
-const _join = Symbol();
+const _args = Symbol();
+const _op = Symbol();
 const _iterator = Symbol.iterator;
 const arrProto = Array.prototype;
 const doneIter = {
@@ -9,9 +10,27 @@ const doneIter = {
 }
 Object.freeze(doneIter)
 
-function Iter(source, iter) {
+/**
+ * When invoked from the public, on the first arg matters. If the first arg is [Sybmol.iterator]
+ * then it cann accept to more arguments for use in chaining additional clauses
+ * 
+ * @param {any} source An iterable, or [Symbol.iterator]
+ * @param {any} iter A generator, OR a special case function (when "root" and "args" are passed)
+ * @param {any} args The arguments to the root operation
+ * @param {any} root The root "iter" object for chained operations
+  * @returns
+ */
+function Iter(source, iter, root, args) {
     if (source === _iterator) {
-        this[_iterator] = iter;
+        if (!root) {
+            this[_iterator] = iter;
+        } else {
+            this[_iterator] = iter.apply(root, args)        
+            this[_op] = iter;
+            this[_root] = root
+            this[_args] = args
+        }
+        
         return;
     }
     
@@ -73,7 +92,7 @@ Iter.prototype = {
      * @returns {Iter} a seqeunce identical to the input sequence 
      */
     do(cb, thisArg) {
-        return new Iter(_iterator, makeDoIterator.call(this,cb, thisArg));
+        return new Iter(_iterator, makeDoIterator.call(this, cb, thisArg));
     },
     groupBy(group) {
         return new Iter(_iterator, makeGroupByIterator.call(this, group))
@@ -138,31 +157,30 @@ Iter.prototype = {
         return new Iter(_iterator, makeUniqueIterator.call(this));
     },
     except(sequence) {
-        return new Iter(_iterator, makeExceptIterator.call(this, sequence));
+        return new Iter(_iterator, makeExceptIterator, this, [sequence]);
     },
     intersect(sequence) {
-        return new Iter(_iterator, makeIntersectIterator.call(this, sequence));
+        return new Iter(_iterator, makeIntersectIterator, this, [sequence]);
     },
     union(sequence) {
-        let extra = new Iter(sequence).except(this);
-        return this.concat(extra);
+        return new Iter(_iterator, makeUnionIterator, this, [sequence]);
     },
-    leftJoin(sequence, mergeCallback) {
-        let iter =  new Iter(_iterator, makeLeftJoinIterator.call(this, sequence, mergeCallback));
-        iter[_join] = arguments;
-        iter[_root] = this;
-        return iter;
+    leftJoin(sequence, callback) {
+        return new Iter(_iterator, makeLeftJoinIterator, this, [sequence, callback]);
     },
-    joinOn(mapLeft, mapRight) {
-        if (!this[_join]) throw new Error(`"on" doesn't make sense without a join`)
-        return new Iter(_iterator, makeLeftJoinIterator.call(this[_root], this[_join][0], this[_join][1], mapLeft, mapRight));
+    // Add a match ID callback to a join operation
+    on(mapLeft, mapRight) {
+        if (arguments.length === 1) mapRight = mapLeft;
+        if (!this[_root]) throw new Error(`"on" doesn't make sense without a prior join or set merge operation.`)
+        return new Iter(_iterator, this[_op].apply(this[_root], this[_args].concat([mapLeft, mapRight])))
     },
-    sequenceEqual(sequence) {
+    sequenceEqual(sequence, mapLeft, mapRight) {
         let iter = this[_iterator]();
+
         let cur;
-        for (var other of sequence) {
+        for (var otherItem of orMapSequence(mapRight, sequence)) {
             cur = iter.next();
-            if (cur.done || other !== cur.value) return false; 
+            if (cur.done ||  otherItem !== orMap(mapLeft, cur.value)) return false; 
         }
 
         if (!iter.next().done) return false;
@@ -558,22 +576,32 @@ function makeForEachIterator(cb, thisArg) {
     }
 }
 
-function makeExceptIterator(other) {
+function makeExceptIterator(other, mapLeft, mapRight) {
     var that = this;
     return function() {
-        let except = new Set(other);        
-        return getNext.call(that, (cur)=> !except.has(cur.value))
+        let except = new Set(orMapSequence(mapRight, other))
+        return getNext.call(that, (cur)=> !except.has(orMap(mapLeft, cur.value)))
     }
 }
 
-function makeIntersectIterator(other) {
+function makeIntersectIterator(other, mapLeft, mapRight) {
     var that = this;
     return function() {
-        let intersect = new Set(other);
-        return getNext.call(that, (cur)=> intersect.has(cur.value))
+        let intersect = new Set(orMapSequence(mapRight, other));
+        return getNext.call(that, (cur)=> intersect.has(orMap(mapLeft, cur.value)))
     }
 }
 
+function makeUnionIterator(other, mapLeft, mapRight) {
+    var that = this;
+    return function() { 
+        
+        let extra = iter(other).except(that);
+        if (mapLeft || mapRight) extra = extra.on(mapLeft, mapRight)
+
+        return that.concat(extra)[_iterator]()
+    }    
+}
 
 function makeUniqueIterator() {
     var that = this;
@@ -755,6 +783,16 @@ function makeMapIterator(cb, thisArg) {
             }
         }
     }
+}
+function iter(e) {
+    return new Iter(e)
+}
+
+function orMapSequence(mapFn, iterable) {
+    return mapFn ? iter(iterable).map(mapFn) : iterable; 
+}
+function orMap(mapFn, value) {
+    return mapFn ? mapFn(value) : value
 }
 
 function orProp(obj) {

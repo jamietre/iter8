@@ -1,19 +1,35 @@
 import assert from 'assert'
 import iter from '../../src/index'
 
-const sampleData =[{ 
-            a: 'foo',
-            b: 1
-        },{
-            a: 'foo',
-            b: 2
-        },{
-            a:'bar',
-            b:6
-        },{
-            a:'foo',
-            b:4
-        }];
+const sampleData =[
+    { a: 'foo', b: 1 },
+    { a: 'foo', b: 2 },
+    { a: 'bar', b: 6 },
+    { a: 'foo', b: 4 }
+    ];
+
+const data2 = [
+    { value: '1', key: 1 },
+    { value: '2-1', key: 2 },
+    { value: '2-2', key: 2 },
+    { value: '3', key: 3 },
+    { value: '4', key: 4 },
+    { value: '5', key: 5 }
+]
+
+const data3 = [
+    { value: 'x-2', key: 2 },
+    { value: 'x-3', key: 3 },
+    { value: 'x-6', key: 6 }
+]
+
+const data4 = [
+    { value: 'x2-1', key: 2 },
+    { value: 'x2-2', key: 2 },
+    { value: 'x3-1', key: 3 },
+    { value: 'x3-2', key: 3 },
+    { value: 'x5', key: 6 }
+]
 
 class Kvp {
     constructor([key,value]) {
@@ -394,20 +410,124 @@ describe('iter', ()=> {
             "fizz": "buzz"
         })
     })
-    it('except', ()=> {
-        let sut = iter([1,2,3,4,5])
-        assert.deepEqual(sut.except([3,4]).toArray(), [1,2,5])
-        assert.deepEqual(sut.except([1,5,6]).toArray(), [2,3,4])
-    })
-    it('intersect', ()=> {
-        let sut = iter([1,2,3,4,5])
-        assert.deepEqual(sut.intersect([4,5,8,9]).toArray(), [4,5])
-        assert.deepEqual(sut.intersect([8,9,10]).toArray(), [])
+
+    describe('except', ()=> {
+        const expected = ['1','4','5']
+        it('basic', ()=> {
+            let sut = iter([1,2,3,4,5])
+            assert.deepEqual(sut.except([3,4]).toArray(), [1,2,5])
+            assert.deepEqual(sut.except([1,5,6]).toArray(), [2,3,4])
+        })
+        it('with on', ()=> {
+            let sut = iter(data2)
+                .except(data3)
+                .on(x=>x.key)
+                .map(a=>a.value)
+
+            assert.deepEqual(sut.toArray(), expected)
+        })
+
+        it('with on - left only', ()=> {
+            let sut = iter(data2)
+                .except([2,3,6])
+                .on(a=>a.key, null)
+                .map(a=>a.value)
+
+            assert.deepEqual(sut.toArray(), expected)
+        })
+
+        it('with on - right only', ()=> {
+            let sut = iter([1,2,2,3,4,5])
+                .except(data3)
+                .on(null, b=>b.key);
+
+            assert.deepEqual(sut.toArray(), [1,4,5])
+        })
+    });
+    describe('intersect', ()=> {
+        let expected = ['2-1', '2-2', '3']
+        it('basic', ()=> {
+            let sut = iter([1,2,3,4,5])
+            assert.deepEqual(sut.intersect([4,5,8,9]).toArray(), [4,5])
+            assert.deepEqual(sut.intersect([8,9,10]).toArray(), [])
+        })
+        it('with on - duplicates', ()=> {
+            let sut = iter(data2)
+                .intersect(data4)
+                .on(x=>x.key)
+                .map(a=>a.value)
+
+            assert.deepEqual(sut.toArray(), ['2-1','2-2', '3'])
+        }) 
+        it('with on', ()=> {
+            let sut = iter(data2)
+                .intersect(data3) 
+                .on(x=>x.key)
+                .map(a=>a.value)
+
+            assert.deepEqual(sut.toArray(), expected)
+        })
+
+
+        it('with on - left only', ()=> {
+            let sut = iter(data2)
+                .intersect([2,3,6])
+                .on(a=>a.key, null)
+                .map(a=>a.value)
+
+            assert.deepEqual(sut.toArray(), expected)
+        })
+
+        it('with on - right only', ()=> {
+            let sut = iter([1,2,2,3,4,5])
+                .intersect(data3)
+                .on(null, b=>b.key);
+
+            assert.deepEqual(sut.toArray(), [2,2,3])
+        })
     })
     
-    it('union', ()=> {
-        let sut = iter([1,2,3,4,5])
-        assert.deepEqual(sut.union([4,5,6,7,8]).toArray(), [1,2,3,4,5,6,7,8])
+    describe('union', ()=> {
+        const expected = ['1','2-1','2-2','3','4','5','x-6']
+        it('union', ()=> {
+            let sut = iter([1,2,3,4,5])
+            assert.deepEqual(sut.union([4,5,6,7,8]).toArray(), [1,2,3,4,5,6,7,8]) 
+        })
+        it('with on - duplicates', ()=> {
+        
+            let sut = iter(data2)
+                .union(data4)
+                .on(x=>x.key)
+                .map(a=>a.value)
+
+            assert.deepEqual(sut.toArray(), ['1','2-1','2-2','3','4','5','x5'], "All values from left, plus any values from right are included")
+        }) 
+        it('with on', ()=> {
+            let sut = iter(data2)
+                .union(data3) 
+                .on(x=>x.key)
+                .map(a=>a.value)
+
+            assert.deepEqual(sut.toArray(), expected)
+        })
+
+
+        it('with on - left only', ()=> {
+            let sut = iter(data2)
+                .union([2,3,6])
+                .on(a=>a.key, null)
+                .map(a=>a.key || a)
+
+            assert.deepEqual(sut.toArray(), [1,2,2,3,4,5,2,3,6])
+        })
+
+        it('with on - right only', ()=> {
+            let sut = iter([1,2,2,3,4,5])
+                .intersect(data3)
+                .on(null, b=>b.key);
+
+            assert.deepEqual(sut.toArray(), [2,2,3])
+        })
     })
 
     describe('orderBy', ()=> {
@@ -460,13 +580,21 @@ describe('iter', ()=> {
 
             assert.deepEqual(sut.toArray(), [1,5,3,6,7,2,4]);
         })
-        it('sequenceEqual', ()=> {
-            let sut = iter([1,2,3,4,5])
-            assert.ok(sut.sequenceEqual([1,2,3,4,5]), 'same are equal')
-            assert.ok(!sut.sequenceEqual([1,2,3,4,5,6]), 'not equal even though same n elements match')
-            assert.ok(!sut.sequenceEqual([1,2,3,4]), 'not equal even though same n elements match (shorter)')
-            assert.ok(!sut.sequenceEqual([1,2,3,5,4]), 'not equal even though same same length & same elements')
-        })
+        describe('sequenceEqual', ()=> {
+            it('basic', ()=> {
+                let sut = iter([1,2,3,4,5])
+                assert.ok(sut.sequenceEqual([1,2,3,4,5]), 'same are equal')
+                assert.ok(!sut.sequenceEqual([1,2,3,4,5,6]), 'not equal even though same n elements match')
+                assert.ok(!sut.sequenceEqual([1,2,3,4]), 'not equal even though same n elements match (shorter)')
+                assert.ok(!sut.sequenceEqual([1,2,3,5,4]), 'not equal even though same same length & same elements')
+            })
+            it('with map', ()=> {
+                let sut = iter([1,2,3,4,5])
+                assert.ok(sut.sequenceEqual([2,4,6,8,10], e=>e*2), 'left map only')
+                assert.ok(sut.sequenceEqual([2,4,6,8,10], null, e=>e/2), 'right map only')
+                assert.ok(sut.sequenceEqual([2,4,6,8,10], e=>e*4, e=>e*2), 'both maps')
+            })
+        });
         describe('leftJoin', ()=> {
             let left = [[0,'foo'], [1,'bar'], [1,'baz'], [2, 'fizz']] 
             let right = [[1,'FOO'], [2,'BAR'], [2,'BARRE'], [3,'NOPE']]
@@ -498,7 +626,7 @@ describe('iter', ()=> {
 
                 let merged = iter(seq1)
                     .leftJoin(seq2, (left, right={}, key)=> `${key}:${left.value},${right.value||''}`)    
-                    .joinOn(left => left.group, right => right.group)
+                    .on(left => left.group, right => right.group)
 
                 assert.deepEqual(merged.toArray(), [
                     "1:bar,a", "1:foo,a", "2:fizz,", "3:buzz,b", "3:buzz,c"])

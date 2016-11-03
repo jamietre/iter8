@@ -48,7 +48,7 @@ const fourth = lookup.get(4)                 // value of 4th element in lookup
 Let's do some more interesting things:
 
 ```Javascript
-// money = [{ category, amount }]
+// money = [{ category, amount }, ... ]
 // group all sale transactions by category, and return the
 // # and total $ of sales per category
 
@@ -80,7 +80,7 @@ let foodSales = money.get('food');
 #### static methods
 
 These are used to create `Iter` instances. 
-* [iter(ob)](#iterobj)
+* [iter(obj)](#iterobj)
 * [iter.fromObject(obj, [filter])](#iterfromobjectobj-filter)
 * [iter.fromObjectOwn(obj, [filter])](#iterfromobjectownobj-filter)
 * [iter.fromGenerator(iterator)](#iterfromgeneratorgenerator)
@@ -132,7 +132,7 @@ Iter8 objects have two types of methods: *transformation* and *value-producing*.
 
 * [do(callback, [thisArg])](#docallback-thisarg)
 * [execute()](#execute)
-* [forEach(callback(e, i), thisArg)](#foreachcallbacke-i-thisarg)*
+* [forEach(callback, thisArg)](#foreachcallbacke-i-thisarg)*
 
 ##### value-producing methods 
 
@@ -145,18 +145,18 @@ Iter8 objects have two types of methods: *transformation* and *value-producing*.
 *Aggregation/Analysis*
 
 * [count()](#count)
-* [min([mapCallback])](#minmapcallback)
-* [max([mapCallback])](#maxmapcallback)
-* [sum([mapCallback])](#summapcallback)
-* [some(callback(e, i), thisArg)](#somecallbacke-i-thisarg-value-producing)*
-* [every(callback(e, i), [thisArg])](#everycallbacke-i-thisarg-value-producing)*
+* [min([callback])](#minmapcallback)
+* [max([callback])](#maxmapcallback)
+* [sum([callback])](#summapcallback)
+* [some(callback, [thisArg])](#somecallbacke-i-thisarg-value-producing)*
+* [every(callback, [thisArg])](#everycallbacke-i-thisarg-value-producing)*
 * [includes(value)](#includesvalue-value-producing)*
 * [indexOf(value)](#indexofvalue-value-producing)*
 * [lastIndexOf(value)](#lastindexofvalue-value-producing)*
-* [findIndex(callback(e, i), [thisArg])](#findindexcallbacke-i-thisarg-value-producing)*
-* [find(callback(e, i), [thisArg], [default])](#findcallbacke-i-thisarg-default-value-producing)*
-* [reduce(callback(last, current, i), [initial])](#reducecallbacklast-current-i-initial-value-producing)*
-* [reduceRight(callback(last, current, i), [initial])](#reducerightcallbacklast-current-i-initial-value-producing)*
+* [findIndex(callback, [thisArg])](#findindexcallbacke-i-thisarg-value-producing)*
+* [find(callback, [thisArg], [default])](#findcallbacke-i-thisarg-default-value-producing)*
+* [reduce(callback, [initial])](#reducecallbacklast-current-i-initial-value-producing)*
+* [reduceRight(callback, [initial])](#reducerightcallbacklast-current-i-initial-value-producing)*
 
 *Comparison* 
 
@@ -167,7 +167,7 @@ Iter8 objects have two types of methods: *transformation* and *value-producing*.
 * [toArray()](#toarray)
 * [toObject()](#toobject)
 * [as(Type)](#astype) 
-* [join(separator)](#joinseparator-value-producing)* 
+* [join([separator])](#joinseparator-value-producing)* 
 
 
 
@@ -447,6 +447,8 @@ let x = iter([1,2,3,4,5]]).except([3,5]).toArray()
 
 Return a sequence containing all unique elements found in either sequence.
 
+If using an `on` clause to specify keys, for keys found in both seqeunces, the value from the original sequence will be returned in the resulting sequence.  
+
 ```Javascript
 let x = iter([1,2,3]]).union([2,3,4]).toArray()
 // x === [1,2,3,4]
@@ -456,9 +458,9 @@ let x = iter([1,2,3]]).union([2,3,4]).toArray()
 
 Join two sequences, and return a single new sequence.
 
-The default behavior with no `joinOn` clause assumes that the two sequences are `[key, value]` pairs with *unique keys*, e.g. `Map`s,  and the key will be used to join them. It returns a new sequence, where the value is result of invoking `mergeCallback(left, right, key)` for the *value* of each matched entries.
+The default behavior with no `on` clause assumes that the two sequences are `[key, value]` pairs with *unique keys*, e.g. `Map`s,  and the key will be used to join them. It returns a new sequence, where the value is result of invoking `mergeCallback(left, right, key)` for the *value* of each matched entries.
 
-You can provide an `joinOn` clause to use sequences of any kind, including supporting sequences with duplicate keys.
+You can provide an `on` clause to use sequences of any kind, including supporting sequences with duplicate keys.
 
 There will be one row for each matching key in the right sequence. If keys are repeated in the left sequence, then each matching value in the right seqence will be repeated. 
 
@@ -472,9 +474,16 @@ let merged = iter(seq1)
 /// merged.toArray() =  ['foo:', 'bar:FOO', 'baz:FOO', 'fizz:BAR']
 ```
 
-#### joinOn(leftKeyCallback, rightKeyCallback)
+#### on(leftCallback, [rightCallback])
 
-Specify keys to use when joining two sequences. Only valid following a `leftJoin` clause. The two callbacks will be invoked against items from the left and right sequences, respectively, and should return a value that will be used to join against.
+Specify keys to use when performing operations that involve merging two sequences. This is valid only when it immediately follows one of these operations:
+
+* except
+* intersect
+* union
+* leftJoin
+
+The two callbacks will be invoked against items from the left and right sequences, respectively, and should return a value that will be used to perform a set or join operation.
 
 ```Javascript
 let seq1 = [
@@ -489,6 +498,15 @@ let seq2 = [
     { group: 3, value: 'c'},
     { group: 4, value: 'd'},
 ]
+
+let inBoth = iter(seq1)
+    .intersect(seq2)
+    .on(e=>e.group);
+
+// inBoth.toArray() = [{ group: 1, value: 'bar' }]
+```
+
+Note that the value returned by `intersect` is the value from the *original* sequence when using an `on` clause. The only time a value from the other sequence will appear when using `on` is in the case of a `union`, and it doesn't also appear in the original sequence. 
 
 let merged = iter(seq1)
     .leftJoin(seq2, (left, right={}, key)=> `${key}:${left.value},${right.value || ''}`)    
