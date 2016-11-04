@@ -10,7 +10,8 @@ const _root = Symbol();
 const _args = Symbol();
 const _op = Symbol();
 const _iterator = Symbol.iterator;
-const arrProto = Array.prototype;
+const _p='prototype'
+const arrProto = Array[_p];
 const doneIter = {
     done: true
 }
@@ -65,16 +66,20 @@ Object.assign(Iter, {
      * Produce an iter instance from an object
      */
     fromObject: function(obj, filter) {
-          return new Iter(_iterator, makeObjectIterator.call(null, obj, filter, false));
+          return new Iter(_iterator, makeObjectIterator.call(null, obj, filter, true));
     },
     /**
      * Produce an iter instance from an object's own properties
      */
     fromObjectOwn: function(obj, filter) {
-          return new Iter(_iterator, makeObjectIterator.call(null, obj, filter, true));
+          return new Iter(_iterator, makeObjectIterator.call(null, obj, filter, false));
     },
-    reflect: function(obj, proto) {
-        return getPropDescriptions(obj, proto)
+    reflect: function(obj, recurse, filter) {
+        if (typeof recurse === 'function') {
+            filter=recurse;
+            recurse=false;
+        }
+        return getPropDescriptions(obj, filter, recurse)
     },
     /**
      * Produce an iter instance using a callback to generate values, or repeating a single value
@@ -92,7 +97,7 @@ Object.assign(Iter, {
     },
 });
 
-Iter.prototype = {
+Iter[_p] = {
     constructor: Iter,
     /**
      * forEach is the same as do(), but executes the query immediately.
@@ -325,7 +330,7 @@ Iter.prototype = {
 
 // These methods require traversing the entire array so just make them into an array
 ['sort', 'reverse'].forEach((method)=> {
-    Iter.prototype[method]=function() {
+    Iter[_p][method]=function() {
         var that = this;
         var args = arguments;
         return new Iter(_iterator, function() {
@@ -522,30 +527,17 @@ function getNext(condition) {
 }
 
 
-function makeObjectIterator(obj, filter, ownPropsOnly/*, includeGetters*/) {
-    if (filter) verifyCb(filter)
+function makeObjectIterator(obj, filter, recurse, getters) {
     return function() {
-        let props;
-        if (!ownPropsOnly) {
-            props = [];
-            for (var prop in obj) {
-                props.push(prop);
-            }
-        } else {
-            props = Object.keys(obj);
-        }
-        let sourceIter = props[_iterator]();
+        let data = getPropDescriptions(
+            obj,  
+            (e)=>e!=='constructor' && (!filter || filter(e)),
+            recurse
+        )
 
-        return {
-            next: ()=> {
-                let cur = sourceIter.next();
-                while (!cur.done && (cur.value === 'constructor' || 
-                    (filter && !filter(cur.value)))) {
-                    cur = sourceIter.next();
-                } 
-                return iterResult(cur.done, !cur.done && [cur.value, obj[cur.value]])
-            }
-        }
+        if (!getters) data = data.filter(e=>e[1].field);
+        data = data.map(e=>[e[0], obj[e[0]]])
+        return data[_iterator]()
     }
 }
 
@@ -557,7 +549,7 @@ function makeDoIterator(cb, thisArg) {
         let sourceIter = that[_iterator]()
 
         return {
-            next: ()=> {
+            next() {
                 let cur = sourceIter.next();
                 return iterResult(cur.done, !cur.done && 
                     (cb.call(thisArg, cur.value, index++), cur.value))
@@ -571,7 +563,7 @@ function makeExceptIterator(other, mapLeft, mapRight) {
     return function() {
         const leftMapper = getValueMapper(mapLeft)
         const except = new Set(orMapSequence(mapRight, other))
-        return getNext.call(that, (cur)=> !except.has(leftMapper(cur.value)))
+        return getNext.call(that, cur=>!except.has(leftMapper(cur.value)))
     }
 }
 
@@ -580,17 +572,15 @@ function makeIntersectIterator(other, mapLeft, mapRight) {
     return function() {
         const leftMapper = getValueMapper(mapLeft)
         const intersect = new Set(orMapSequence(mapRight, other));
-        return getNext.call(that, (cur)=> intersect.has(leftMapper(cur.value)))
+        return getNext.call(that, cur=>intersect.has(leftMapper(cur.value)))
     }
 }
 
 function makeUnionIterator(other, mapLeft, mapRight) {
     var that = this;
     return function() { 
-        
         let extra = new Iter(other).except(that);
         if (mapLeft || mapRight) extra = extra.on(mapLeft, mapRight)
-
         return that.concat(extra)[_iterator]()
     }    
 }
@@ -603,7 +593,7 @@ function makeUniqueIterator(getkey) {
         let cur;
         let mapValue = getValueMapper(getkey);
         return {
-            next: function() {
+            next() {
                 while (cur = iterator.next(), !cur.done) {
                     const value = mapValue(cur.value)
                     if (!used.has(value)) {
@@ -828,6 +818,14 @@ function objectAsGenerator(e) {
     }
 }
 
+/**
+ * Helper for getPropDescriptions
+ * 
+ * @param {any} obj
+ * @param {any} recurse
+ * @param {number} [depth=0]
+ * @returns
+ */
 function getAllProps(obj, recurse, depth=0) {
     // only get prop/owner pairs first, to avoid reflecting on everything deep in the chain that may be overridden
 
@@ -845,8 +843,14 @@ function getAllProps(obj, recurse, depth=0) {
     return props;
 } 
 
-function getPropDescriptions(obj, recurse) {
-    return getAllProps(obj, recurse).map((d)=> {
+function getPropDescriptions(obj, filter, recurse) {
+    
+    let props = getAllProps(obj, recurse);
+    if (filter) {
+        verifyCb(filter)
+        props = props.filter(e=>filter(e[0]));
+    }
+    return props.map((d)=> {
         let e = Object.getOwnPropertyDescriptor(d[1], d[0])
         let hasValue = e.hasOwnProperty('value') 
         return [d[0], {
@@ -864,5 +868,25 @@ function getPropDescriptions(obj, recurse) {
     })
 }
 
-export default Iter;
+function Kvp(arr, value) {
+    this._0=value ? arr : arr[0];
+    this._1=value || arr[1];
+}
 
+['0','1','key','value'].forEach((prop, i)=>{
+    Object.defineProperty(Kvp[_p], prop, {
+        get: new Function('return this._'+i%2)
+    })
+})
+
+Object.assign(Kvp[_p], {
+    toString:function() {
+        return '['+this.key+','+this.value+']'
+    },
+    valueOf: function() {
+        return this.key; 
+    }
+})
+
+export default Iter;
+export { Kvp }

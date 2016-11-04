@@ -54,16 +54,6 @@ describe('iter - conversion', ()=> {
         assert.deepEqual(sut.toArray(), [['foo','bar'],['fizz','buzz']])
     })
 
-    it('fromObject', ()=> {
-        let sut = iter({
-            'foo': 'bar',
-            'fizz': 'buzz'
-        });
-        sut
-
-        assert.deepEqual(sut.toArray(), [['foo','bar'],['fizz','buzz']])
-    })
-
     it('fromObject - proto chain', ()=> {
         let obj = new Obj();
         obj.fizz = 'buzz';

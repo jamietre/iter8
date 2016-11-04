@@ -2,6 +2,7 @@
   "name": "iter8",
   "version": "0.9.12",
   "description": "JavaScript iterable transformation library",
+  "keywords": ["iterable", "iterator", "generator", "array", "ES6", "linq", "sets", "query"],
   "main": "index.js",
   "types": "index.d.ts",
   "scripts": {

@@ -1,6 +1,6 @@
 # iter8
 
-A small (3k gzipped) data transformation library that provides the familiar `Array` API plus extensions for use on JavaScript iterables.
+A small (3k gzipped) data transformation library that provides the familiar `Array` API plus many set and sequence operations for use on JavaScript iterables.
 
 * [Installation](#installation)
 * [Basic Usage](#usage)
@@ -179,13 +179,15 @@ Iter8 objects have two types of methods: *transformation* and *value-producing*.
 
 Execution of every query is deferred until a *value producing* method is called, which exports data outside the construct of an `Iter` object. If your query doesn't need to iterate over the entire sequence, it won't. Each value-producing methods returns something other than an `Iter` object thus ending the chain and causing execution.
 
+This is extremely powerful, but can have unitended side effects, particular when chaining queries with recursion or loops. If you use data passed by reference during a transformation, the value used will be the value *at the time the transformation happens* -- not when the query was created. You can use the `execute` method as needed to fully iterate a sequence.
+
 In addition to its own API, `Iter` implements method for all the `Array` prototype methods that don't mutate the array. Some of these are value-producing, such as `indexOf`, while some are transformation functions and produce a new sequence, such as `filter`.
 
 ##### "key" argument
 
-For the purposes of many methods that require a key for equality comparison, like `groupBy`, `leftJoin`, and set operations, there will be an parameter of type `key`. This means that the argument can be one of three things:
+For many methods that require a key for equality comparison, like `groupBy`, `leftJoin`, and set operations, there will be an parameter of type `key`. This means that the argument can be one of three things:
 
-* a `function(item)` that, given an item in a sequence, returns a key that identifies is
+* a `function(item)` that, given an item in a sequence, returns a key that identifies it
 * a non-null, non-undefined value, typically a string or number, which identifies a property or index on the item in the seqeunce whose value is the key. 
 * a falsy value, meaning the item itself is the key.
 
@@ -252,14 +254,16 @@ Create a new `Iter` instance from an iterable object (e.g. an `Array`, `Map`, or
 import iter from 'iter8'
 
 const seq = iter([{value: 1},{ value: 2}, {value: 3}]);
+const val = seq
+    .filter(e=>e.value > 1)
+    .sum('value');
 
-const val = seq.map(e=>e.value)
-    .sum(e=>e > 1);
 // val === 5
 
 const lookup = iter({ foo: 1, bar: 2}).as(Map)
-const val = lookup.get('foo')
-// val === 1
+const val = lookup.get('bar')
+
+// val === 2
 ```
 
 #### iter.fromObject(obj, [filter])
@@ -401,6 +405,12 @@ let x = iter(arr).groupBy('category').toArray()
 #### cast(Type)
 
 Convert each element to an instance of `Type`. `Type` must be a constructor, and is invoked with the element as a single constructor argument for each element in the sequence.
+
+A common use case for this is dealing with `[key, value]` pairs. Imagine a class `Kvp` that takes an array with two elements as its constructor argument, and returns an object exposing `key` and `value` properties. You could do things like this:
+
+
+ 
+
 
 #### map(callback(e, i), [thisArg])
 
