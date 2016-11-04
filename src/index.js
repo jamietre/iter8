@@ -16,11 +16,6 @@ const doneIter = {
 }
 Object.freeze(doneIter)
 
-
-function iter(e) {
-    return new Iter(e)
-}
-
 /**
  * When invoked from the public, on the first arg matters. If the first arg is [Sybmol.iterator]
  * then it cann accept to more arguments for use in chaining additional clauses
@@ -41,22 +36,25 @@ function Iter(source, generator, root, args) {
             this[_args] = args
         }
         return; 
+    } else if  (!(this instanceof Iter)) {
+        // instantiation checking is only for public consumers, so we don't need to pass more than one argument
+        return new Iter(source);
     }
-    
+
     const iterator = source && source[_iterator];
 
     // it's allowed to construct with nothing,  but you can't construct with a non-iterable entity.
     if (!iterator && !(source == null)) {
         if (source && typeof source !== 'function') {
-            return iter.fromObjectOwn(source);
+            return Iter.fromObjectOwn(source);
         }
         throw new Error('iter can only be sourced with an Iterable object or a regular Javascript object.');
     } 
-    this[_iterator]=iterator ? iterator.bind(source) : emptyIterator;
+    this[_iterator]=iterator ? iterator.bind(source) : emptyGenerator;
 }
 
 
-Object.assign(iter, {
+Object.assign(Iter, {
     /**
      * Produce an Iter instance from a generator
      */
@@ -74,6 +72,9 @@ Object.assign(iter, {
      */
     fromObjectOwn: function(obj, filter) {
           return new Iter(_iterator, makeObjectIterator.call(null, obj, filter, true));
+    },
+    reflect: function(obj, proto) {
+        return getPropDescriptions(obj, proto)
     },
     /**
      * Produce an iter instance using a callback to generate values, or repeating a single value
@@ -389,6 +390,7 @@ function orderByHelper(root, orders, desc) {
 
 function makeOrderByIterator(orders, desc){
     var that = this;
+
     return function() {
         
         let sorted = that.toArray().sort(function(a, b) {
@@ -521,6 +523,7 @@ function getNext(condition) {
 
 
 function makeObjectIterator(obj, filter, ownPropsOnly/*, includeGetters*/) {
+    if (filter) verifyCb(filter)
     return function() {
         let props;
         if (!ownPropsOnly) {
@@ -547,6 +550,7 @@ function makeObjectIterator(obj, filter, ownPropsOnly/*, includeGetters*/) {
 }
 
 function makeDoIterator(cb, thisArg) {
+    verifyCb(cb)
     var that = this;
     return function() {
         let index = 0;
@@ -584,7 +588,7 @@ function makeUnionIterator(other, mapLeft, mapRight) {
     var that = this;
     return function() { 
         
-        let extra = iter(other).except(that);
+        let extra = new Iter(other).except(that);
         if (mapLeft || mapRight) extra = extra.on(mapLeft, mapRight)
 
         return that.concat(extra)[_iterator]()
@@ -657,7 +661,7 @@ function makeConcatIterator(args) {
                         const nextSource = sources[index]
                         iterator = typeof nextSource !== 'string' && nextSource[_iterator] ? 
                             nextSource[_iterator]() : 
-                            objectAsIterator(nextSource);
+                            objectAsGenerator(nextSource);
                     } 
                     
                     let cur = iterator.next();
@@ -705,6 +709,7 @@ function makeFlattenIterator(recurse) {
 }
 
 function makeFilterIterator(cb, thisArg) {
+    verifyCb(cb)
     var that = this;
     return function() {
         let index = 0;
@@ -724,6 +729,7 @@ function makeFilterIterator(cb, thisArg) {
 }
 
 function makeMapIterator(cb, thisArg) {
+    verifyCb(cb)
     var that = this;
     return function() {
         let index = 0;
@@ -740,7 +746,9 @@ function makeMapIterator(cb, thisArg) {
 }
 
 function orMapSequence(mapFn, iterable) {
-    return mapFn ? iter(iterable).map(mapFn) : iterable; 
+    return !(mapFn==null) ? 
+        new Iter(iterable).map(getValueMapper(mapFn) ) :
+         iterable; 
 }
 
 /**
@@ -784,7 +792,12 @@ function iterResult(done, value) {
     }
 }
 
-function emptyIterator() {
+/**
+ * An empty iterable
+ * 
+ * @returns {function} An iterator
+ */
+function emptyGenerator() {
     return function() {
         return {
             next() {
@@ -794,6 +807,9 @@ function emptyIterator() {
     }
 }
 
+function verifyCb(cb) {
+    if (typeof cb !== 'function') throw new Error('The callback argument was not a function.')
+}
 /**
  * Make a single element iterable
  * 
@@ -801,7 +817,7 @@ function emptyIterator() {
  * @returns {function} An iterator
 
  */
-function objectAsIterator(e) {
+function objectAsGenerator(e) {
     let done = false;
     return { 
         next() {
@@ -810,5 +826,41 @@ function objectAsIterator(e) {
     }
 }
 
-export default iter;
-export { Iter }
+function getAllProps(obj, recurse, depth=0) {
+    // only get prop/owner pairs first, to avoid reflecting on everything deep in the chain that may be overridden
+
+    let props = new Iter(Object.getOwnPropertyNames(obj)).map((e)=>[e, obj, depth]).execute() 
+    
+    if (recurse) {
+        let parentProto = Object.getPrototypeOf(obj)
+        if (parentProto !== Object.prototype) {
+            props = props
+                .union(getAllProps(parentProto, true, depth+1))
+                .on('0')
+        }
+    }
+
+    return props;
+} 
+
+function getPropDescriptions(obj, recurse) {
+    return getAllProps(obj, recurse).map((d)=> {
+        let e = Object.getOwnPropertyDescriptor(d[1], d[0])
+        let hasValue = e.hasOwnProperty('value') 
+        return [d[0], {
+            type: !hasValue ? null : 
+                e.value === null ? 'null' : 
+                typeof e.value, 
+            field: hasValue,
+            writable: !!e.writable || !!e.set, 
+            getter: !!e.get,
+            setter: !!e.set,
+            configurable: e.configurable,
+            enumerable: e.enumerable,
+            depth: d[2]
+        }];
+    })
+}
+
+export default Iter;
+

@@ -1,5 +1,5 @@
 import assert from 'assert'
-import iter, { Iter } from '../../src/index'
+import iter from '../../src/index'
 import "babel-polyfill";
 
 describe('iter - conversion', ()=> {
@@ -33,7 +33,7 @@ describe('iter - conversion', ()=> {
     describe('default constructor', ()=> {
          it('Invoke constructor', ()=> {
             let sut = iter([1,2,3])
-            assert.ok(sut instanceof Iter);
+            assert.ok(sut instanceof iter);
             assert.ok(sut.count() === 3);
         })
         it('empty', ()=> {
@@ -116,5 +116,218 @@ describe('iter - conversion', ()=> {
             [0,2,4,6,8])
         })
     })
-    
+
+    describe('reflect', ()=> {
+        it('pojo', ()=> {
+            let sut = iter.reflect({
+                foo: 'foo', 
+                bar: ()=> {}
+            })
+
+            assert.deepEqual(sut.toArray(), [
+                ['foo', {
+                    type: 'string',
+                    field: true,
+                    writable: true,
+                    getter: false,
+                    setter: false,
+                    configurable: true,
+                    enumerable: true, 
+                    depth: 0
+                }],
+                ['bar', {
+                    type: 'function',
+                    field: true,
+                    writable: true,
+                    getter: false,
+                    setter: false,
+                    configurable: true,
+                    enumerable: true, 
+                    depth: 0
+                }]
+            ])
+        })
+
+        class L1 {
+            constructor() {
+                this.name="l1"
+            }
+            foo() {}
+            get bar() { }
+            set bar(val) {}
+            get baz() {}
+        }
+        class L2 extends L1 {
+            constructor() {
+                super()
+                this.foo = ""
+                this.fizz = 2;
+                this.buzz = false;
+                this.fizzbuzz = null;
+                this.frobozz = undefined;
+            }
+            get baz() {}
+        }
+
+        class L3 extends L2 {
+            constructor() {
+                super()
+                this.frobozz = false; 
+            }
+            bar() {}
+        }
+        
+        it('proto chain 1', ()=> {
+            let sut = iter.reflect(new L1(),true).orderBy('0')
+            
+            assert.deepEqual(sut.toArray(), [
+                ['bar', {
+                    type: null,
+                    field: false,
+                    writable: true,
+                    getter: true,
+                    setter: true,
+                    configurable: true,
+                    enumerable: false, 
+                    depth: 1
+                }],
+                
+                ['baz', {
+                    type: null,
+                    field: false,
+                    writable: false,
+                    getter: true,
+                    setter: false,
+                    configurable: true,
+                    enumerable: false, 
+                    depth: 1
+                }],
+                ['constructor', {
+                    type: 'function',
+                    field: true,
+                    writable: true,
+                    getter: false,
+                    setter: false,
+                    configurable: true,
+                    enumerable: false, 
+                    depth: 1
+                }],
+                ['foo', {
+                    type: 'function',
+                    field: true,
+                    writable: true,
+                    getter: false,
+                    setter: false,
+                    configurable: true,
+                    enumerable: false, 
+                    depth: 1
+                }],
+                ['name', {
+                    type: 'string',
+                    field: true,
+                    writable: true,
+                    getter: false,
+                    setter: false,
+                    configurable: true,
+                    enumerable: true, 
+                    depth: 0 
+                }]
+             ])   
+        })
+
+        it('proto chain 2', ()=> {
+            let sut = iter.reflect(new L2(),true).orderBy(e=>e[1].depth).thenBy(e=>e[0])
+           
+            assert.deepEqual(sut.toArray(), [
+                
+                [ 'buzz',
+                    { type: 'boolean',
+                    field: true,
+                    writable: true,
+                    getter: false,
+                    setter: false,
+                    configurable: true,
+                    enumerable: true,
+                    depth: 0 } ],
+                [ 'fizz',
+                    { type: 'number',
+                    field: true,
+                    writable: true,
+                    getter: false,
+                    setter: false,
+                    configurable: true,
+                    enumerable: true,
+                    depth: 0 } ],    
+                [ 'fizzbuzz',
+                    { type: 'null',
+                    field: true,
+                    writable: true,
+                    getter: false,
+                    setter: false,
+                    configurable: true,
+                    enumerable: true,
+                    depth: 0 } ],    
+                ['foo', {
+                    type: 'string',
+                    field: true,
+                    writable: true,
+                    getter: false,
+                    setter: false,
+                    configurable: true,
+                    enumerable: true,  
+                    depth: 0
+                }],                
+                        
+                [ 'frobozz',
+                    { type: 'undefined',
+                    field: true,
+                    writable: true,
+                    getter: false,
+                    setter: false,
+                    configurable: true,
+                    enumerable: true,
+                    depth: 0 } ],                                            
+                 ['name', {
+                    type: 'string',
+                    field: true,
+                    writable: true,
+                    getter: false,
+                    setter: false,
+                    configurable: true,
+                    enumerable: true, 
+                    depth: 0
+                }],
+                ['baz', {
+                    type: null,
+                    field: false,
+                    writable: false,
+                    getter: true,
+                    setter: false,
+                    configurable: true,
+                    enumerable: false, 
+                    depth: 1
+                }],
+                ['constructor', {
+                    type: 'function',
+                    field: true,
+                    writable: true,
+                    getter: false,
+                    setter: false,
+                    configurable: true,
+                    enumerable: false, 
+                    depth: 1
+                }],
+                ['bar', {
+                    type: null,
+                    field: false,
+                    writable: true,
+                    getter: true,
+                    setter: true,
+                    configurable: true,
+                    enumerable: false, 
+                    depth: 2
+                }],                
+            ])   
+        })
+    })  
 })

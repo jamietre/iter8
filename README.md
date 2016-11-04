@@ -7,7 +7,7 @@ A small (3k gzipped) data transformation library that provides the familiar `Arr
 * [API Summary & Index](#api)
 * [Usage Details](#usage-details)
 * [API Reference](#api-reference)
-* [Roadmap](##roadmap)
+* [Roadmap](#roadmap)
 
 ## Why?
 
@@ -21,7 +21,7 @@ iter8 is small (about 10k uglified, and 3k gzipped) and has no runtime dependenc
 
 ### immutability by design
 
-Internally, iter8 handles everything as a sequence, and defers all queries for non-value-producing operations. All sequences are immutable naturally - you only access elements during processing, and not entire sets. 
+Internally, iter8 handles everything as a sequence, and defers all queries for non-value-producing operations. Sequences are immutable naturally - you only access elements during processing, and not entire sets. You can't change them by adding or removing elements, you can only create new ones by transforming them. 
 
 ### interop with `Map`, `Set`, `Array`, and `immutable` data structures
 
@@ -75,9 +75,7 @@ let money = iter(allSales)
 let foodSales = money.get('food');
 ```
 
-
 ## API
-
 
 #### static methods
 
@@ -100,7 +98,7 @@ Iter8 objects have two types of methods: *transformation* and *value-producing*.
 
 * [flatten([recurse])](#flattenrecurse)
 * [unique()](#unique)
-* [groupBy(group)](#groupbygroup)
+* [groupBy(group)](#groupbygetkey)
 * [cast(Type)](#casttype)
 * [map(callback, [thisArg])](#mapcallbacke-i-thisarg)*
 * [filter(callback, [thisArg])](#filtercallbacke-i-thisarg)*
@@ -113,7 +111,7 @@ Iter8 objects have two types of methods: *transformation* and *value-producing*.
 * [union(sequence)](#unionsequence)
 * [leftJoin(sequence, callback)](#leftjoinsequence-callbackleftitem-rightitem)
 * [on(leftCallback, rightCallback)](#onleft-getkey-right-getkey)
-* [concat(obj, [obj, ...])](#concatobj-obj-)*
+* [concat(obj, [obj, ...])](#concatobj-obj)*
 
 *Ordering*
 
@@ -220,6 +218,7 @@ import iter from `iter8`
 
 let obj = iter()
 // obj.toArray() === []
+// obj instanceof iter === true 
 
 let obj = iter([1,2,3]).filter(e => e<3)
 // obj.toArray() === [2,3]
@@ -260,7 +259,6 @@ const val = seq.map(e=>e.value)
 const lookup = iter({ foo: 1, bar: 2}).as(Map)
 const val = lookup.get('foo')
 // val === 1
-
 ```
 
 #### iter.fromObject(obj, [filter])
@@ -343,11 +341,11 @@ let x = iter([1,2,3,3,4,4,5,4,5]]).unique().toArray()
 // x === [1,2,3,4,5]
 ```
 
-#### groupBy(group: getkey)
+#### groupBy(getkey)
 
 Return a sequence of *key-value pairs* where each key is a distinct group, and each value is an `Array` of all the elements from the original sequence in that group.
 
-`group` is a `getkey` argument that identifes the value on which to group.
+[`getkey`](#getkey-argument) identifes the value on which to group. 
 
 ```Javascript
 let arr = [
