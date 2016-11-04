@@ -85,7 +85,7 @@ These are used to create `Iter` instances.
 * [iter.fromObjectOwn(obj, [filter])](#iterfromobjectownobj-filter)
 * [iter.fromGenerator(iterator)](#iterfromgeneratorgenerator)
 * [iter.generate(obj, n)](#itergenerateobj-n)
-* [iter.reflect(obj, [recurse])](#iterreflectobj-recurse)
+* [iter.reflect(obj, [recurse], [filter])](#iterreflectobj-recurse)
 
 #### instance methods
 
@@ -409,7 +409,7 @@ Convert each element to an instance of `Type`. `Type` must be a constructor, and
 A common use case for this is dealing with `[key, value]` pairs. Imagine a class `Kvp` that takes an array with two elements as its constructor argument, and returns an object exposing `key` and `value` properties. You could do things like this:
 
 
- 
+
 
 
 #### map(callback(e, i), [thisArg])
