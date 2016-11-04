@@ -85,6 +85,7 @@ These are used to create `Iter` instances.
 * [iter.fromObjectOwn(obj, [filter])](#iterfromobjectownobj-filter)
 * [iter.fromGenerator(iterator)](#iterfromgeneratorgenerator)
 * [iter.generate(obj, n)](#itergenerateobj-n)
+* [iter.reflect(obj, [recurse])](#iterreflectobj-recurse)
 
 #### instance methods
 
@@ -98,7 +99,7 @@ Iter8 objects have two types of methods: *transformation* and *value-producing*.
 
 * [flatten([recurse])](#flattenrecurse)
 * [unique()](#unique)
-* [groupBy(group)](#groupbygetkey)
+* [groupBy(group)](#groupbykey)
 * [cast(Type)](#casttype)
 * [map(callback, [thisArg])](#mapcallbacke-i-thisarg)*
 * [filter(callback, [thisArg])](#filtercallbacke-i-thisarg)*
@@ -110,15 +111,15 @@ Iter8 objects have two types of methods: *transformation* and *value-producing*.
 * [intersect(sequence)](#intersectsequence)
 * [union(sequence)](#unionsequence)
 * [leftJoin(sequence, callback)](#leftjoinsequence-callbackleftitem-rightitem)
-* [on(leftCallback, rightCallback)](#onleft-getkey-right-getkey)
+* [on(leftCallback, rightCallback)](#onleft-key-right-key)
 * [concat(obj, [obj, ...])](#concatobj-obj)*
 
 *Ordering*
 
-* [orderBy(order)](#orderbyorder-getkey)
-* [orderDesc(order)](#orderdescorder-getkey)
-* [thenBy(order)](#thenbyorder-getkey)
-* [thenDesc(order)](#thendescorder-getkey)
+* [orderBy(order)](#orderbyorder-key)
+* [orderDesc(order)](#orderdescorder-key)
+* [thenBy(order)](#thenbyorder-key)
+* [thenDesc(order)](#thendescorder-key)
 * [sort([callback])](#sortcallbacka-b)*
 * [reverse()](#reverse)*
 
@@ -144,9 +145,9 @@ Iter8 objects have two types of methods: *transformation* and *value-producing*.
 *Aggregation/Analysis*
 
 * [count()](#count)
-* [min([callback])](#minvalue-getkey)
-* [max([callback])](#maxvalue-getkey)
-* [sum([callback])](#sumvalue-getkey)
+* [min([callback])](#minvalue-key)
+* [max([callback])](#maxvalue-key)
+* [sum([callback])](#sumvalue-key)
 * [some(callback, [thisArg])](#somecallbacke-i-thisarg)*
 * [every(callback, [thisArg])](#everycallbacke-i-thisarg)*
 * [includes(value)](#includesvalue)*
@@ -180,9 +181,9 @@ Execution of every query is deferred until a *value producing* method is called,
 
 In addition to its own API, `Iter` implements method for all the `Array` prototype methods that don't mutate the array. Some of these are value-producing, such as `indexOf`, while some are transformation functions and produce a new sequence, such as `filter`.
 
-##### "getkey" argument
+##### "key" argument
 
-For the purposes of many methods that require a key, like `groupBy`, `leftJoin`, and set operations, there may be an argument called `getkey`. This can be one of three things:
+For the purposes of many methods that require a key for equality comparison, like `groupBy`, `leftJoin`, and set operations, there will be an parameter of type `key`. This means that the argument can be one of three things:
 
 * a `function(item)` that, given an item in a sequence, returns a key that identifies is
 * a non-null, non-undefined value, typically a string or number, which identifies a property or index on the item in the seqeunce whose value is the key. 
@@ -303,6 +304,22 @@ let x = iter.generate((i)=>i*2, 3).toArray()
 // x === [0,2,4]
 ```
 
+### iter.reflect(obj, [recurse])
+
+Generate metadata about an object and optionally it's prototype chain (if `recurse===true`). Includes all regular properties as well as getters/setters. For the purpose of this method, `field` means a normal property and `property` means a getter/setter.
+
+Returns a *key-value* seqeunce where the key is the property name, and the value is an object with properties:
+
+* *type*: the data type for fields ('string', 'number', 'function', 'object', 'null', 'undefined'). For properties the value is `null`. (Actuall null values are the string `"null"`).
+* *field*: true for regular properties, false for getter/setter
+* *writeable*: boolean, the property can be assigned to
+* *getter*: the property getter function or `null`
+* *setter*: the property setter function or `null`
+* *configurable*: the property is configurable
+* *enumerable*: the property is enumerable
+* *depth*: the depth in the prototype chain. 0 means the object itself, 1 means its prototype, 2 means the prototype's prototype, etc.
+
+
 ### Instance Methods
 
 All the methods below are available on any `Iter` instance. 
@@ -332,20 +349,35 @@ let x = iter([[1,2], "foo", [3,4,[5]]]).toArray()
 // x === [1,2,"foo",3,4,5]
 ```
 
-#### unique()
+#### unique([key])
 
-Return a sequence containing only one element for each distinct value in the sequence
+Return a sequence containing only one element for each distinct value in the sequence. 
+
+[`key`](#get-key-argument) can be used to identify the value for equality comparison. With no arguments, the values themselves are made used. If a key is identified, then the *first* value in the sequence matching the key will be returned.
 
 ```Javascript
 let x = iter([1,2,3,3,4,4,5,4,5]]).unique().toArray()
 // x === [1,2,3,4,5]
+
+
+let x = iter([ 
+    { key: 1, value: 'foo'},
+    { key: 1, value: 'foo-2'},
+    { key: 2, value: 'bar'},
+    { key: 3, value: 'fizz'},
+    { key: 3, value: 'buzz'},
+  ])
+    .unique('key')
+    .map(e=>e.value)
+    .toArray()
+// x === ['foo', 'bar', 'fizz']
 ```
 
-#### groupBy(getkey)
+#### groupBy(key)
 
 Return a sequence of *key-value pairs* where each key is a distinct group, and each value is an `Array` of all the elements from the original sequence in that group.
 
-[`getkey`](#getkey-argument) identifes the value on which to group. 
+[`key`](#get-key-argument) identifes the value on which to group.
 
 ```Javascript
 let arr = [
@@ -378,13 +410,13 @@ Transform each element to the return value of `callback`
 
 Return a sequence including only elements that satisfy the condition in `callback`.
 
-#### slice(begin: number, [end: number])
+#### slice(begin, [end])
 
 Return a subset of the original sequence. `skip` and `take` will do the same thing, and may be more expressive. Negative values for "begin" not currently supported.
 
 ### Ordering
 
-#### orderBy(order: getkey)
+#### orderBy(key)
 
 Sort a sequence by comparing each element according to the specified `order`. 
 
@@ -402,11 +434,11 @@ let x = iter(seq).orderBy(e=>e.foo).map((e)=>e.id).toArray();
 // x = [2,1,3]
 ```
 
-#### orderDesc(order: getkey)
+#### orderDesc(key)
 
 Same as `orderBy`, but sorts in descending order.
 
-#### thenBy(order: getkey)
+#### thenBy(key)
 
 Chain a secondary (or n-ary) sort to an `orderBy` clause, which sorts orders which are equal during the primary sort. 
 
@@ -428,7 +460,7 @@ let x = iter(seq)
 
 If you attempt to use a `thenBy` clause anywhere other than directly after another sorting clause, an error will be thrown.
 
-#### thenDesc(order: getkey)
+#### thenDesc(key)
 
 Same as `thenBy`, but sorts in descending order.
 
@@ -491,7 +523,7 @@ let merged = iter(seq1)
 /// merged.toArray() =  ['foo:', 'bar:FOO', 'baz:FOO', 'fizz:BAR']
 ```
 
-#### on(left: getkey, [right: getkey])
+#### on(left: key, [right: key])
 
 Specify keys to use when performing operations that involve merging two sequences. This is valid only when it immediately follows one of these operations:
 
@@ -500,9 +532,9 @@ Specify keys to use when performing operations that involve merging two sequence
 * union
 * leftJoin
 
-The two arguments will be used to obtaink keys from the left and right sequences, respectively. The value that will be used to perform a set or join operation.
+The two arguments will be used to obtain keys from the left and right sequences, respectively. The value that will be used to perform a set or join operation.
 
-If only the `left` getkey is provided, then the same logic will be used on both the left and right sequences. If you wish to explicitly specify a key provider for only the left or right sequence, you can pass `null` or `undefined` as the other argument, and the values from that sequence will used directly as the key.
+If only the `left` key is provided, then the same logic will be used on both the left and right sequences. If you wish to explicitly specify a key provider for only the left or right sequence, you can pass `null` or `undefined` as the other argument, and the values from that sequence will used directly as the key.
 
 ```Javascript
 let seq1 = [
@@ -634,22 +666,22 @@ let x = iter([1,2,3,4,5]).count()
 // x === 5
 ```
 
-#### min([value: getkey])
+#### min([value: key])
 
-Return the minimum of all values in the sequence. If an optional `value` getkey is provided, it will be used to produce the value to sum.
+Return the minimum of all values in the sequence. If an optional `value` key is provided, it will be used to produce the value to sum.
 
 ```Javascript
 let x = iter([3,1,2,4]).min()
 // x===1
 ```
 
-#### max([value: getkey])
+#### max([value: key])
 
-Return the max of all values in the sequence. If an optional `value` getkey is provided, it will be used to produce the values to evaluate.
+Return the max of all values in the sequence. If an optional `value` key is provided, it will be used to produce the values to evaluate.
 
-#### sum([value: getkey])
+#### sum([value: key])
 
-Return the sum of all values in the sequence. If an optional `value` getkey is provided, it will be used to produce the values to evaluate.
+Return the sum of all values in the sequence. If an optional `value` key is provided, it will be used to produce the values to evaluate.
 
 #### some(callback(e, i), [thisArg])
 

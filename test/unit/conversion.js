@@ -118,13 +118,48 @@ describe('iter - conversion', ()=> {
     })
 
     describe('reflect', ()=> {
+        class L1 {
+            constructor() {
+                this.name="l1"
+            }
+            foo() {}
+            get bar() { }
+            set bar(val) {}
+            get baz() {}
+        }
+        class L2 extends L1 {
+            constructor() {
+                super()
+                this.foo = ""
+                this.fizz = 2;
+                this.buzz = false;
+                this.fizzbuzz = null;
+                this.frobozz = undefined;
+            }
+            get baz() {}
+        }
+
+        // class L3 extends L2 {
+        //     constructor() {
+        //         super()
+        //         this.frobozz = false; 
+        //     }
+        //     bar() {}
+        // } 
+        
+        function mapOutput([key, value]) {
+            return [key, Object.assign({}, value,{
+                getter: (typeof value.getter === 'function') ? true : false,
+                setter: (typeof value.setter === 'function') ? true : false,
+            })]
+        }
         it('pojo', ()=> {
             let sut = iter.reflect({
                 foo: 'foo', 
                 bar: ()=> {}
             })
 
-            assert.deepEqual(sut.toArray(), [
+            assert.deepEqual(sut.map(mapOutput).toArray(), [
                 ['foo', {
                     type: 'string',
                     field: true,
@@ -148,39 +183,10 @@ describe('iter - conversion', ()=> {
             ])
         })
 
-        class L1 {
-            constructor() {
-                this.name="l1"
-            }
-            foo() {}
-            get bar() { }
-            set bar(val) {}
-            get baz() {}
-        }
-        class L2 extends L1 {
-            constructor() {
-                super()
-                this.foo = ""
-                this.fizz = 2;
-                this.buzz = false;
-                this.fizzbuzz = null;
-                this.frobozz = undefined;
-            }
-            get baz() {}
-        }
-
-        class L3 extends L2 {
-            constructor() {
-                super()
-                this.frobozz = false; 
-            }
-            bar() {}
-        }
-        
         it('proto chain 1', ()=> {
             let sut = iter.reflect(new L1(),true).orderBy('0')
             
-            assert.deepEqual(sut.toArray(), [
+            assert.deepEqual(sut.map(mapOutput).toArray(), [
                 ['bar', {
                     type: null,
                     field: false,
@@ -235,10 +241,11 @@ describe('iter - conversion', ()=> {
              ])   
         })
 
+
         it('proto chain 2', ()=> {
             let sut = iter.reflect(new L2(),true).orderBy(e=>e[1].depth).thenBy(e=>e[0])
            
-            assert.deepEqual(sut.toArray(), [
+            assert.deepEqual(sut.map(mapOutput).toArray(), [
                 
                 [ 'buzz',
                     { type: 'boolean',

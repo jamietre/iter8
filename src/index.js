@@ -855,8 +855,8 @@ function getPropDescriptions(obj, recurse) {
                 typeof e.value, 
             field: hasValue,
             writable: !!e.writable || !!e.set, 
-            getter: !!e.get,
-            setter: !!e.set,
+            getter: e.get || null,
+            setter: e.set || null,
             configurable: e.configurable,
             enumerable: e.enumerable,
             depth: d[2]
