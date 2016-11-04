@@ -160,8 +160,8 @@ Iter.prototype = {
     flatten(recurse) {
         return new Iter(_iterator, makeFlattenIterator.call(this, recurse));
     },
-    unique() {
-        return new Iter(_iterator, makeUniqueIterator.call(this));
+    unique(getkey) {
+        return new Iter(_iterator, makeUniqueIterator.call(this, getkey));
     },
     except(sequence) {
         return new Iter(_iterator, makeExceptIterator, this, [sequence]);
@@ -595,17 +595,19 @@ function makeUnionIterator(other, mapLeft, mapRight) {
     }    
 }
 
-function makeUniqueIterator() {
+function makeUniqueIterator(getkey) {
     var that = this;
     return function() {
         let used = new Set();
         let iterator = that[_iterator]()
         let cur;
+        let mapValue = getValueMapper(getkey);
         return {
             next: function() {
                 while (cur = iterator.next(), !cur.done) {
-                    if (!used.has(cur.value)) {
-                        used.add(cur.value)
+                    const value = mapValue(cur.value)
+                    if (!used.has(value)) {
+                        used.add(value)
                         return {
                             done: false,
                             value: cur.value
