@@ -18,13 +18,13 @@
     "lint": "eslint src test",
     "pretest": "npm run lint",
     "test": "mocha ./test/unit/",
-    "build": "babel src --out-dir dist",
+    "build": "babel src --out-dir lib",
     "premake": "npm run build",
-    "make-min": "browserify dist/index.js | uglifyjs -c -m > dist/iter8.min.js",
-    "make-gz": "browserify dist/index.js | uglifyjs -c -m | ngzip > dist/iter8.min.js.gz",
-    "make-big": "browserify dist/index.js > dist/iter8.js",
+    "make-min": "browserify lib/index.js | uglifyjs -c -m > dist/iter8.min.js",
+    "make-gz": "browserify lib/index.js | uglifyjs -c -m | ngzip > dist/iter8.min.js.gz",
+    "make-big": "browserify lib/index.js > dist/iter8.js",
     "make": "npm run make-big && npm run make-min && npm run make-gz",
-    "prepublish": "in-publish && npm run test && npm run build || not-in-publish && npm run build"
+    "prepublish": "in-publish && npm run test && npm run make || not-in-publish && npm run build"
   },
   "repository": {
     "type": "git",
@@ -33,7 +33,7 @@
   "config": {
     "ghooks": {
       "pre-commit": "npm run lint",
-      "pre-push": "npm run test && npm run make"
+      "pre-push": "npm run test"
     }
   },
   "author": "James Treworgy",

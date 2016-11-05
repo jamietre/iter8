@@ -1,3 +1,3 @@
 'use strict'
-var iter = require('./dist/index').default;
+var iter = require('./lib/index').default;
 module.exports = iter;
