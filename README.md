@@ -308,9 +308,11 @@ let x = iter.generate((i)=>i*2, 3).toArray()
 // x === [0,2,4]
 ```
 
-### iter.reflect(obj, [recurse])
+### iter.reflect(obj, [recurse], [filter])
 
-Generate metadata about an object and optionally it's prototype chain (if `recurse===true`). Includes all regular properties as well as getters/setters. For the purpose of this method, `field` means a normal property and `property` means a getter/setter.
+Generate metadata about an object and optionally it's prototype chain (if `recurse===true`). Exclude methods based on a `filter(name)` callback.
+
+`reflect` includes all regular properties as well as getters/setters. For the purpose of this method, `field` means a normal property and `property` means a getter/setter.
 
 Returns a *key-value* seqeunce where the key is the property name, and the value is an object with properties:
 

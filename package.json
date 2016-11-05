@@ -2,7 +2,16 @@
   "name": "iter8",
   "version": "0.9.12",
   "description": "JavaScript iterable transformation library",
-  "keywords": ["iterable", "iterator", "generator", "array", "ES6", "linq", "sets", "query"],
+  "keywords": [
+    "iterable",
+    "iterator",
+    "generator",
+    "array",
+    "ES6",
+    "linq",
+    "sets",
+    "query"
+  ],
   "main": "index.js",
   "types": "index.d.ts",
   "scripts": {
@@ -10,11 +19,22 @@
     "pretest": "npm run lint",
     "test": "mocha ./test/unit/",
     "build": "babel src --out-dir dist",
+    "premake": "npm run build",
+    "make-min": "browserify dist/index.js | uglifyjs -c -m > dist/iter8.min.js",
+    "make-gz": "browserify dist/index.js | uglifyjs -c -m | ngzip > dist/iter8.min.js.gz",
+    "make-big": "browserify dist/index.js > dist/iter8.js",
+    "make": "npm run make-big && npm run make-min && npm run make-gz",
     "prepublish": "in-publish && npm run test && npm run build || not-in-publish && npm run build"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/jamietre/iter8"
+  },
+  "config": {
+    "ghooks": {
+      "pre-commit": "npm run lint",
+      "pre-push": "npm run test && npm run make"
+    }
   },
   "author": "James Treworgy",
   "license": "MIT",
@@ -25,10 +45,14 @@
     "babel-eslint": "^7.0.0",
     "babel-polyfill": "^6.16.0",
     "babel-preset-es2015": "^6.16.0",
+    "browserify": "^13.1.1",
     "eslint": "^3.8.1",
+    "ghooks": "^1.3.2",
     "immutable": "^3.8.1",
     "in-publish": "^2.0.0",
     "mocha": "^3.1.2",
-    "source-map-support": "^0.4.5"
+    "ngzip": "^1.1.3",
+    "source-map-support": "^0.4.5",
+    "uglify-js": "^2.7.4"
   }
 }

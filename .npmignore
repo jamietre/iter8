@@ -1,5 +1,6 @@
 node_modules/
 test/
+dist/iter8.*
 .babelrc
 .eslintrc.json
 *.log
