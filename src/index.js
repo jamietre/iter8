@@ -869,11 +869,11 @@ function getPropDescriptions(obj, filter, recurse) {
 }
 
 function Kvp(arr, value) {
-    this._0=value ? arr : arr[0];
-    this._1=value || arr[1];
+    this[0]=value ? arr : arr[0];
+    this[1]=value || arr[1];
 }
 
-['0','1','key','value'].forEach((prop, i)=>{
+['key','value'].forEach((prop, i)=>{
     Object.defineProperty(Kvp[_p], prop, {
         get: new Function('return this._'+i%2)
     })
