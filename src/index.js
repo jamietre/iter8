@@ -868,10 +868,10 @@ function getPropDescriptions(obj, filter, recurse) {
     })
 }
 
-function Kvp(arr, value) {
+const Kvp=function(arr, value) {
     this[0]=value ? arr : arr[0];
     this[1]=value || arr[1];
-}
+};
 
 ['key','value'].forEach((prop, i)=>{
     Object.defineProperty(Kvp[_p], prop, {
@@ -887,6 +887,8 @@ Object.assign(Kvp[_p], {
         return this.key; 
     }
 })
+
+Iter.Kvp = Kvp;
 
 export default Iter;
 export { Kvp }

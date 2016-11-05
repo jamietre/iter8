@@ -24,7 +24,7 @@
     "make-gz": "browserify lib/index.js | uglifyjs -c -m | ngzip > dist/iter8.min.js.gz",
     "make-big": "browserify lib/index.js > dist/iter8.js",
     "make-standalone": "browserify -s iter lib/index.js > dist/iter8.standalone.js",
-    "make-standalone-min": "browserify -s iter lib/index.js | uglifyjs -c -m > dist/iter8.standalone.js",
+    "make-standalone-min": "browserify -s iter lib/index.js | uglifyjs -c -m > dist/iter8.standalone.min.js",
     "make": "npm run make-big && npm run make-min && && npm run make-standalone && npm run make-standalone-min && npm run make-gz",
     "prepublish": "in-publish && npm run test && npm run make || not-in-publish && npm run build"
   },

@@ -1,1 +1,919 @@
-!function(n){if("object"==typeof exports&&"undefined"!=typeof module)module.exports=n();else if("function"==typeof define&&define.amd)define([],n);else{var r;r="undefined"!=typeof window?window:"undefined"!=typeof global?global:"undefined"!=typeof self?self:this,r.iter=n()}}(function(){return function n(r,t,e){function u(o,a){if(!t[o]){if(!r[o]){var f="function"==typeof require&&require;if(!a&&f)return f(o,!0);if(i)return i(o,!0);var c=new Error("Cannot find module '"+o+"'");throw c.code="MODULE_NOT_FOUND",c}var l=t[o]={exports:{}};r[o][0].call(l.exports,function(n){var t=r[o][1][n];return u(t?t:n)},l,l.exports,n,r,t,e)}return t[o].exports}for(var i="function"==typeof require&&require,o=0;o<e.length;o++)u(e[o]);return u}({1:[function(n,r,t){"use strict";function e(n,r,t){return r in n?Object.defineProperty(n,r,{value:t,enumerable:!0,configurable:!0,writable:!0}):n[r]=t,n}function u(n,r,t,e){if(n===C)return void(t?(this[C]=r.apply(t,e),this[z]=r,this[T]=t,this[U]=e):this[C]=r);if(!(this instanceof u))return new u(n);var i=n&&n[C];if(!i&&null!=n){if(n&&"function"!=typeof n)return u.fromObjectOwn(n);throw new Error("iter can only be sourced with an Iterable object or a regular Javascript object.")}this[C]=i?i.bind(n):P}function i(n,r,t,e){return new Function("a","b","c","var _i=this[Symbol.iterator]();"+(n||"var r=-1")+";var _c;"+(e?"if (a) while (_c = _i.next(), !_c.done) {"+r.replace(/\{v\}/g,"a(_c.value)")+";} else ":"")+"while (_c=_i.next(), !_c.done) {"+r.replace(/\{v\}/g,"_c.value")+";};"+(t||"return r"))}function o(n,r,t){var e=i(n,r,t,!0);return function(n){var r=n&&k(n);return e.apply(this,[r].concat(K.concat.call(arguments)))}}function a(n,r){var t=[A(n)];return c.call(this,this,t,r)}function f(n,r){if(!this[J])throw new Error("thenBy only makes sense after orderBy");var t=this[J].slice(0);return t.push(A(n)),c.call(this,this[T],t,r)}function c(n,r,t){var e=new u(C,l.call(this,r,t));return e[J]=r,e[T]=n,e}function l(n,r){var t=this;return function(){var e=t.toArray().sort(function(t,e){for(var u=0,i=0;0===u&&i<n.length;i++){var o=n[i],a=o(r?e:t),f=o(r?t:e);a<f?u=-1:f<a&&(u=1)}return u});return e[C]()}}function v(n,r,t,e){var i=this;return function(){var o=!t&&!e,a=k(o?0:t),f=k(o?1:null),c=k(o?0:e),l=k(o?1:null),v=i[C](),s=new Map(e?new u(n).groupBy(c):n),h=void 0,d=void 0,p=void 0;return{next:function(){for(;;){if(!h){var n=v.next();if(n.done)return L;p=a(n.value),d=f(n.value);var t=s.get(p);if(!t||!t[C]||"string"==typeof t)return{done:!1,value:r(d,t,p)};h=t[C]()}var e=h.next();if(!e.done)return{done:!1,value:r(d,l(e.value),p)};h=null}}}}}function s(n){var r=this;return function(){for(var t=r[C]();n-- >0&&!t.next().done;);return t}}function h(n){var r=this;return function(){var t=r[C]();return{next:function(){if(0!==n){var r=t.next();if(!r.done)return n--,{done:!1,value:r.value}}return L}}}}function d(n){var r=this[C](),t=0;return{next:function(){for(var e=r.next();!e.done&&!n(e,t++);)e=r.next();return q(e.done,e.value)}}}function p(n,r,t,e){return function(){var u=M(n,function(n){return"constructor"!==n&&(!r||r(n))},t);return e||(u=u.filter(function(n){return n[1].field})),u=u.map(function(r){return[r[0],n[r[0]]]}),u[C]()}}function y(n,r){B(n);var t=this;return function(){var e=0,u=t[C]();return{next:function(){var t=u.next();return q(t.done,!t.done&&(n.call(r,t.value,e++),t.value))}}}}function w(n,r,t){var e=this;return function(){var u=k(r),i=new Set(E(t,n));return d.call(e,function(n){return!i.has(u(n.value))})}}function b(n,r,t){var e=this;return function(){var u=k(r),i=new Set(E(t,n));return d.call(e,function(n){return i.has(u(n.value))})}}function x(n,r,t){var e=this;return function(){var i=new u(n).except(e);return(r||t)&&(i=i.on(r,t)),e.concat(i)[C]()}}function m(n){var r=this;return function(){var t=new Set,e=r[C](),u=void 0,i=k(n);return{next:function(){for(;u=e.next(),!u.done;){var n=i(u.value);if(!t.has(n))return t.add(n),{done:!1,value:u.value}}return L}}}}function g(n){var r=this;return function(){for(var t=k(n),e=new Map,u=void 0,i=r[C]();u=i.next(),!u.done;){var o=u.value,a=t(o);e.has(a)?e.get(a).push(o):e.set(a,[o])}return e[C]()}}function O(n){var r=this;return function(){var t=[r];K.forEach.call(n,function(n){t.push(n)});var e=0,u=void 0;return{next:function(){for(;e<t.length;){if(!u){var n=t[e];u="string"!=typeof n&&n[C]?n[C]():D(n)}var r=u.next();if(!r.done)return{done:!1,value:r.value};u=null,e++}return L}}}}function j(n){var r=this;return function(){var t=[r[C]()],e=void 0;return{next:function(){for(;e||t.length>0;){e||(e=t.pop());var r=e.next();if(r.value&&r.value[C]&&"string"!=typeof r.value&&(n||0===t.length))t.push(e),e=r.value[C]();else{if(!r.done)return{done:!1,value:r.value};e=void 0}}return L}}}}function S(n,r){B(n);var t=this;return function(){var e=0,u=t[C]();return{next:function(){for(var t=u.next();!t.done&&!n.call(r,t.value,e++);)t=u.next();return q(t.done,t.value)}}}}function _(n,r){B(n);var t=this;return function(){var e=0,u=t[C]();return{next:function(){var t=u.next();return q(t.done,!t.done&&n.call(r,t.value,e++))}}}}function E(n,r){return null!=n?new u(r).map(k(n)):r}function k(n){return null==n?function(n){return n}:"function"==typeof n?n:function(r){return r[n]}}function A(n){return"function"==typeof n?n:function(r){return r[n]}}function q(n,r){return n?L:{value:r,done:!1}}function P(){return function(){return{next:function(){return L}}}}function B(n){if("function"!=typeof n)throw new Error("The callback argument was not a function.")}function D(n){var r=!1;return{next:function(){return r?L:(r=!0,{done:!1,value:n})}}}function I(n,r){var t=arguments.length>2&&void 0!==arguments[2]?arguments[2]:0,e=new u(Object.getOwnPropertyNames(n)).map(function(r){return[r,n,t]}).execute();if(r){var i=Object.getPrototypeOf(n);i!==Object.prototype&&(e=e.union(I(i,!0,t+1)).on("0"))}return e}function M(n,r,t){var e=I(n,t);return r&&(B(r),e=e.filter(function(n){return r(n[0])})),e.map(function(n){var r=Object.getOwnPropertyDescriptor(n[1],n[0]),t=r.hasOwnProperty("value");return[n[0],{type:t?null===r.value?"null":N(r.value):null,field:t,writable:!!r.writable||!!r.set,getter:r.get||null,setter:r.set||null,configurable:r.configurable,enumerable:r.enumerable,depth:n[2]}]})}function F(n,r){this[0]=r?n:n[0],this[1]=r||n[1]}Object.defineProperty(t,"__esModule",{value:!0});var N="function"==typeof Symbol&&"symbol"==typeof Symbol.iterator?function(n){return typeof n}:function(n){return n&&"function"==typeof Symbol&&n.constructor===Symbol&&n!==Symbol.prototype?"symbol":typeof n},J=Symbol(),T=Symbol(),U=Symbol(),z=Symbol(),C=Symbol.iterator,G="prototype",K=Array[G],L={done:!0};Object.freeze(L),Object.assign(u,{fromGenerator:function(n){return new u(C,n)},fromObject:function(n,r){return new u(C,p.call(null,n,r,!0))},fromObjectOwn:function(n,r){return new u(C,p.call(null,n,r,!1))},reflect:function(n,r,t){return"function"==typeof r&&(t=r,r=!1),M(n,t,r)},generate:function(n,r){return new u(C,function(){var t=-1;return{next:function(){return t++,q(t>=r,"function"==typeof n?n(t):n)}}})}}),u[G]={constructor:u,forEach:i("var i=0","a.call(b,{v},i++)",";"),do:function(n,r){return new u(C,y.call(this,n,r))},groupBy:function(n){return new u(C,g.call(this,n))},orderBy:function(n){return a.call(this,n)},orderDesc:function(n){return a.call(this,n,!0)},thenBy:function(n){return f.call(this,n)},thenDesc:function(n,r){return f.call(this,n,r)},count:i("var r=0","r++"),skip:function(n){return new u(C,s.call(this,n))},take:function(n){return new u(C,h.call(this,n))},cast:function(n){return new u(C,_.call(this,function(r){return new n(r)}))},first:function(n){var r=this[C]().next();return r.done?n:r.value},last:function n(r){var t=this[C](),e=t.next();if(e.done)return r;for(var n=void 0;e=t.next(),!e.done;)n=e.value;return n},flatten:function(n){return new u(C,j.call(this,n))},unique:function(n){return new u(C,m.call(this,n))},except:function(n){return new u(C,w,this,[n])},intersect:function(n){return new u(C,b,this,[n])},union:function(n){return new u(C,x,this,[n])},leftJoin:function(n,r){return new u(C,v,this,[n,r])},on:function(n,r){if(1===arguments.length&&(r=n),!this[T])throw new Error('"on" doesn\'t make sense without a prior join or set merge operation.');return new u(C,this[z].apply(this[T],this[U].concat([n,r])))},sequenceEqual:function(n,r,t){var e=this[C](),u=k(r),i=void 0,o=!0,a=!1,f=void 0;try{for(var c,l=E(t,n)[Symbol.iterator]();!(o=(c=l.next()).done);o=!0){var v=c.value;if(i=e.next(),i.done||v!==u(i.value))return!1}}catch(n){a=!0,f=n}finally{try{!o&&l.return&&l.return()}finally{if(a)throw f}}return!!e.next().done},concat:function(){return new u(C,O.call(this,arguments))},map:function(n,r){return new u(C,_.call(this,n,r))},filter:function(n,r){return new u(C,S.call(this,n,r))},some:i("var i=0","if (a({v},b,i)) return true","return false"),every:i("var i=0","if (!a({v},b,i++)) return false","return true"),includes:i("var i=0","if ({v}===a) return true; i++","return false"),indexOf:i("var i=0","if ({v}===a) return i; i++","return -1"),lastIndexOf:i("var r=-1, i=0","if ({v}===a) r=i; i++"),findIndex:i("var i=0","if (a.call(b,{v},i)===true) return i; i++","return -1"),find:i("var i=0","if (a.call(b,{v},i++)===true) return {v};","return c"),get:i("var i=0","if (i++===a) return {v}","return c"),slice:function(n,r){return this.skip(n).take(r-n+1)},reduce:i("var r=b;var i=0","r=a(r,{v},i++)"),reduceRight:function(){var n=i("var r=b;var i=c","r=a(r,{v},i--)");return function(r,t){var e=this.toArray().reverse();return n.apply(e,[r,t,e.length-1])}}(),join:function(n){return this.toArray().join(n)},toObject:i("var r={}","r[{v}[0]]={v}[1]"),toArray:i("var r=[]","r.push({v})"),as:function(n){return n===Array?this.toArray():new n(e({},C,this[C]))},execute:function(){return new u(this.toArray())},min:o("var r=Infinity","var v = {v}; if (r>v) r=v"),max:o("var r=-Infinity","var v = {v}; if (r<v) r=v"),sum:o("var r=0","r+={v}")},["sort","reverse"].forEach(function(n){u[G][n]=function(){var r=this,t=arguments;return new u(C,function(){var e=r.toArray();return K[n].apply(e,t)[C]()})}}),["key","value"].forEach(function(n,r){Object.defineProperty(F[G],n,{get:new Function("return this._"+r%2)})}),Object.assign(F[G],{toString:function(){return"["+this.key+","+this.value+"]"},valueOf:function(){return this.key}}),t.default=u,t.Kvp=F},{}]},{},[1])(1)});
+(function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.iter = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
+/**
+ * iter8 - an iteration utility library
+ * Author: James Treworgy
+ * License: MIT
+ * 
+ * The jsdoc in this file may not be maintained; please see `index.d.ts` for current method documentation.
+ */
+var _orders = Symbol();
+var _root = Symbol();
+var _args = Symbol();
+var _op = Symbol();
+var _iterator = Symbol.iterator;
+var _p = 'prototype';
+var arrProto = Array[_p];
+var doneIter = {
+    done: true
+};
+Object.freeze(doneIter);
+
+/**
+ * When invoked from the public, on the first arg matters. If the first arg is [Sybmol.iterator]
+ * then it cann accept to more arguments for use in chaining additional clauses
+ * 
+ * @param {any} source An iterable, or [Symbol.iterator]
+ * @param {any} generator A generator, OR a special case function (when "root" and "args" are passed)
+ * @param {any} args The arguments to the root operation
+ * @param {any} root The root "iter" object for chained operations
+ */
+function Iter(source, generator, root, args) {
+    if (source === _iterator) {
+        if (!root) {
+            this[_iterator] = generator;
+        } else {
+            this[_iterator] = generator.apply(root, args);
+            this[_op] = generator;
+            this[_root] = root;
+            this[_args] = args;
+        }
+        return;
+    } else if (!(this instanceof Iter)) {
+        // instantiation checking is only for public consumers, so we don't need to pass more than one argument
+        return new Iter(source);
+    }
+
+    var iterator = source && source[_iterator];
+
+    // it's allowed to construct with nothing,  but you can't construct with a non-iterable entity.
+    if (!iterator && !(source == null)) {
+        if (source && typeof source !== 'function') {
+            return Iter.fromObjectOwn(source);
+        }
+        throw new Error('iter can only be sourced with an Iterable object or a regular Javascript object.');
+    }
+    this[_iterator] = iterator ? iterator.bind(source) : emptyGenerator;
+}
+
+Object.assign(Iter, {
+    /**
+     * Produce an Iter instance from a generator
+     */
+    fromGenerator: function fromGenerator(generator) {
+        return new Iter(_iterator, generator);
+    },
+    /**
+     * Produce an iter instance from an object
+     */
+    fromObject: function fromObject(obj, filter) {
+        return new Iter(_iterator, makeObjectIterator.call(null, obj, filter, true));
+    },
+    /**
+     * Produce an iter instance from an object's own properties
+     */
+    fromObjectOwn: function fromObjectOwn(obj, filter) {
+        return new Iter(_iterator, makeObjectIterator.call(null, obj, filter, false));
+    },
+    reflect: function reflect(obj, recurse, filter) {
+        if (typeof recurse === 'function') {
+            filter = recurse;
+            recurse = false;
+        }
+        return getPropDescriptions(obj, filter, recurse);
+    },
+    /**
+     * Produce an iter instance using a callback to generate values, or repeating a single value
+     */
+    generate: function generate(obj, times) {
+        return new Iter(_iterator, function () {
+            var index = -1;
+            return {
+                next: function next() {
+                    index++;
+                    return iterResult(index >= times, typeof obj === 'function' ? obj(index) : obj);
+                }
+            };
+        });
+    }
+});
+
+Iter[_p] = {
+    constructor: Iter,
+    /**
+     * forEach is the same as do(), but executes the query immediately.
+     * 
+     * @param {function} cb The callback(element, index)
+     * @param {any} thisArg The "this" context applied to the callback
+     * @returns {void} 
+     */
+    forEach: makeAggregator('var i=0', 'a.call(b,{v},i++)', ';'),
+    /**
+     * Execute a callback for each element in the seqeunce, and return the same
+     * element. 
+     * 
+     * @param {function} cb The callback(element, index)
+     * @param {any} thisArg The "this" context applied to the callback
+     * @returns {Iter} a seqeunce identical to the input sequence 
+     */
+    do: function _do(cb, thisArg) {
+        return new Iter(_iterator, makeDoIterator.call(this, cb, thisArg));
+    },
+    groupBy: function groupBy(group) {
+        return new Iter(_iterator, makeGroupByIterator.call(this, group));
+    },
+    orderBy: function orderBy(order) {
+        return _orderBy.call(this, order);
+    },
+    orderDesc: function orderDesc(order) {
+        return _orderBy.call(this, order, true);
+    },
+    thenBy: function thenBy(order) {
+        return _thenBy.call(this, order);
+    },
+    thenDesc: function thenDesc(order, desc) {
+        return _thenBy.call(this, order, desc);
+    },
+
+    count: makeAggregator('var r=0', 'r++'),
+    skip: function skip(n) {
+        return new Iter(_iterator, skipIterable.call(this, n));
+    },
+    take: function take(n) {
+        return new Iter(_iterator, takeIterable.call(this, n));
+    },
+    cast: function cast(Type) {
+        return new Iter(_iterator, makeMapIterator.call(this, function (e) {
+            return new Type(e);
+        }));
+    },
+    first: function first(def) {
+        var cur = this[_iterator]().next();
+        return cur.done ? def : cur.value;
+    },
+    last: function last(def) {
+        var iterator = this[_iterator]();
+        var cur = iterator.next();
+        if (cur.done) {
+            return def;
+        } else {
+            var last = void 0;
+            while (cur = iterator.next(), !cur.done) {
+                last = cur.value;
+            }
+            return last;
+        }
+    },
+    flatten: function flatten(recurse) {
+        return new Iter(_iterator, makeFlattenIterator.call(this, recurse));
+    },
+    unique: function unique(getkey) {
+        return new Iter(_iterator, makeUniqueIterator.call(this, getkey));
+    },
+    except: function except(sequence) {
+        return new Iter(_iterator, makeExceptIterator, this, [sequence]);
+    },
+    intersect: function intersect(sequence) {
+        return new Iter(_iterator, makeIntersectIterator, this, [sequence]);
+    },
+    union: function union(sequence) {
+        return new Iter(_iterator, makeUnionIterator, this, [sequence]);
+    },
+    leftJoin: function leftJoin(sequence, callback) {
+        return new Iter(_iterator, makeLeftJoinIterator, this, [sequence, callback]);
+    },
+    on: function on(mapLeft, mapRight) {
+        if (arguments.length === 1) mapRight = mapLeft;
+        if (!this[_root]) throw new Error('"on" doesn\'t make sense without a prior join or set merge operation.');
+        return new Iter(_iterator, this[_op].apply(this[_root], this[_args].concat([mapLeft, mapRight])));
+    },
+    sequenceEqual: function sequenceEqual(sequence, mapLeft, mapRight) {
+        var iter = this[_iterator]();
+        var mapLeftFn = getValueMapper(mapLeft);
+        var cur = void 0;
+        var _iteratorNormalCompletion = true;
+        var _didIteratorError = false;
+        var _iteratorError = undefined;
+
+        try {
+            for (var _iterator2 = orMapSequence(mapRight, sequence)[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator2.next()).done); _iteratorNormalCompletion = true) {
+                var otherItem = _step.value;
+
+                cur = iter.next();
+                if (cur.done || otherItem !== mapLeftFn(cur.value)) return false;
+            }
+        } catch (err) {
+            _didIteratorError = true;
+            _iteratorError = err;
+        } finally {
+            try {
+                if (!_iteratorNormalCompletion && _iterator2.return) {
+                    _iterator2.return();
+                }
+            } finally {
+                if (_didIteratorError) {
+                    throw _iteratorError;
+                }
+            }
+        }
+
+        if (!iter.next().done) return false;
+        return true;
+    },
+    concat: function concat() {
+        return new Iter(_iterator, makeConcatIterator.call(this, arguments));
+    },
+
+    /**
+     * Return a single element that is the return value of a function invoked for 
+     * each element in the input sequence 
+     * 
+     * @param {function} cb The callback(element, index)
+     * @param {any} thisArg The "this" context applied to the callback
+     * @returns {Iter} A transformed sequence 
+     */
+    map: function map(cb, thisArg) {
+        return new Iter(_iterator, makeMapIterator.call(this, cb, thisArg));
+    },
+    filter: function filter(cb, thisArg) {
+        return new Iter(_iterator, makeFilterIterator.call(this, cb, thisArg));
+    },
+
+    /**
+    * test whether some elements in the sequence match the condition
+    * 
+    * @param {any} callback a function (e,i) that returns true if this is the element to match
+    * @param {thisArg} object the "this" argument to apply to the callback
+    * @returns {boolean} true if any elements match the condition
+    */
+    some: makeAggregator('var i=0', 'if (a({v},b,i)) return true', 'return false'),
+    /**
+    * test whether every element in the sequence matches the condition
+    * 
+    * @param {any} callback a function (e,i) that returns true if this is the element to match
+    * @param {thisArg} object the "this" argument to apply to the callback
+    * @returns {boolean} true if all elements match the condition
+    */
+    every: makeAggregator('var i=0', 'if (!a({v},b,i++)) return false', 'return true'),
+    /**
+     * test whether the element appears in the sequence
+     * 
+     * @param {any} element the element to locate
+     * @returns {boolean} true if the value is found
+     */
+    includes: makeAggregator('var i=0', 'if ({v}===a) return true; i++', 'return false'),
+    /**
+     * return the index of the element
+     * 
+     * @param {any} element The element to locate
+     * @returns {number} The index or -1
+     */
+    indexOf: makeAggregator('var i=0', 'if ({v}===a) return i; i++', 'return -1'),
+    /**
+     * return the last index of the element
+     * 
+     * @param {any} element The element to locate
+     * @returns {number} The index or -1
+     */
+    lastIndexOf: makeAggregator('var r=-1, i=0', 'if ({v}===a) r=i; i++'),
+    /**
+     * return the index of the element identified by a callback
+     * 
+     * @param {any} callback a function (e,i) that returns true if this is the element to match
+     * @param {thisArg} object the "this" argument to apply to the callback
+     * @returns {number} The index or -1
+     */
+    findIndex: makeAggregator('var i=0', 'if (a.call(b,{v},i)===true) return i; i++', 'return -1'),
+    /**
+     * return the element identified by a callback
+     * 
+     * @param {any} callback a function (e,i) that returns true if this is the element to match
+     * @param {thisArg} object the "this" argument to apply to the callback
+     * @param {default} object the value to return if the index isn't found (or `undefined` if omitted
+     * @returns {number} The index or `undefined` 
+     */
+    find: makeAggregator('var i=0', 'if (a.call(b,{v},i++)===true) return {v};', 'return c'),
+    get: makeAggregator('var i=0', 'if (i++===a) return {v}', 'return c'),
+
+    slice: function slice(begin, end) {
+        // when end is missing, take gets NaN as an arg, and takes everything
+        return this.skip(begin).take(end - begin + 1);
+    },
+
+    reduce: makeAggregator('var r=b;var i=0', 'r=a(r,{v},i++)'),
+    reduceRight: function () {
+        var reduceRight = makeAggregator('var r=b;var i=c', 'r=a(r,{v},i--)');
+
+        return function (callback, initial) {
+            var reversed = this.toArray().reverse();
+            return reduceRight.apply(reversed, [callback, initial, reversed.length - 1]);
+        };
+    }(),
+    join: function join(separator) {
+        return this.toArray().join(separator);
+    },
+
+    toObject: makeAggregator('var r={}', 'r[{v}[0]]={v}[1]'),
+    toArray: makeAggregator('var r=[]', 'r.push({v})'),
+    as: function as(Cotr) {
+        if (Cotr === Array) {
+            return this.toArray();
+        }
+        return new Cotr(_defineProperty({}, _iterator, this[_iterator]));
+    },
+
+    /**
+     * Force execution of the deferred query. Useful if you want to finalize a set of operations, but still keep the result
+     * as in Iter object for further processing.
+     * 
+     * @returns {Iter} a new Iter object
+     */
+    execute: function execute() {
+        return new Iter(this.toArray());
+    },
+
+    /**
+     * Return the minimum value in the sequence
+     * 
+     * @param {function} mapCallback An optional callback invoked on each element that returns the value to sum
+     * @returns {any} The minimum value 
+     */
+    min: makeGetkeyAggregator('var r=Infinity', 'var v = {v}; if (r>v) r=v'),
+    /**
+     * Return the maximum value in the sequence
+     * 
+     * @param {function} getkey An optional callback invoked on each element that returns the value to sum
+     * @returns {any} The maximum value 
+     */
+    max: makeGetkeyAggregator('var r=-Infinity', 'var v = {v}; if (r<v) r=v'),
+    /**
+     * Return the sum of all elements in the sequence
+     * 
+     * @param {any} getkey An optional callback invoked on each element that returns the value to sum
+     * @returns {any} The sum of all elements in the sequence (using the + operator)
+     */
+    sum: makeGetkeyAggregator('var r=0', 'r+={v}')
+};
+
+// These methods require traversing the entire array so just make them into an array
+['sort', 'reverse'].forEach(function (method) {
+    Iter[_p][method] = function () {
+        var that = this;
+        var args = arguments;
+        return new Iter(_iterator, function () {
+            var arr = that.toArray();
+            return arrProto[method].apply(arr, args)[_iterator]();
+        });
+    };
+});
+
+/**
+ * Generate an aggregator function that is optimized for either doing a value transformation, or just using the value.
+ * Using eval allows code reuse without a lot of extra function calls to do conditional logic during evaluations.
+ * 
+ * @param {any} setup
+ * @param {any} aggregator
+ * @param {any} getkey When true provides two implementations, one if there's a callback, one if not
+ * @returns
+ */
+function makeAggregator(setup, aggregator, teardown, getkey) {
+    return new Function('a', 'b', 'c', 'var _i=this[Symbol.iterator]();' + (setup || 'var r=-1') + ';' + 'var _c;' + (getkey ? 'if (a) while (_c = _i.next(), !_c.done) {' + aggregator.replace(/\{v\}/g, 'a(_c.value)') + ';} else ' : '') + 'while (_c=_i.next(), !_c.done) {' + aggregator.replace(/\{v\}/g, '_c.value') + ';};' + (teardown || 'return r'));
+}
+
+/**
+ * Wrap it wtih automatic "getkey" argument handling
+ * 
+ * @param {any} setup
+ * @param {any} aggregator
+ * @returns
+ */
+function makeGetkeyAggregator(setup, aggregator, teardown) {
+    var aggregatorFn = makeAggregator(setup, aggregator, teardown, true);
+    return function (getkey) {
+        var mapfn = getkey && getValueMapper(getkey);
+        return aggregatorFn.apply(this, [mapfn].concat(arrProto.concat.call(arguments)));
+    };
+}
+
+function _orderBy(order, desc) {
+    var orders = [orProp(order)];
+    return orderByHelper.call(this, this, orders, desc);
+}
+
+function _thenBy(order, desc) {
+    if (!this[_orders]) throw new Error("thenBy only makes sense after orderBy");
+    var orders = this[_orders].slice(0);
+    orders.push(orProp(order));
+    return orderByHelper.call(this, this[_root], orders, desc);
+}
+
+function orderByHelper(root, orders, desc) {
+    var seq = new Iter(_iterator, makeOrderByIterator.call(this, orders, desc));
+    seq[_orders] = orders;
+    seq[_root] = root;
+    return seq;
+}
+
+function makeOrderByIterator(orders, desc) {
+    var that = this;
+
+    return function () {
+
+        var sorted = that.toArray().sort(function (a, b) {
+            var val = 0;
+            for (var i = 0; val === 0 && i < orders.length; i++) {
+                var fn = orders[i];
+                var va = fn(desc ? b : a);
+                var vb = fn(desc ? a : b);
+                if (va < vb) val = -1;else if (vb < va) val = 1;
+            }
+            return val;
+        });
+
+        return sorted[_iterator]();
+    };
+}
+
+/**
+ * Create a left-join iterator. Fully iterates the sequence on the right.
+ * 
+ * @param {iterable} The right side seqeunce
+ * @param {any} onMap [fn, fn] array of functions to generate keys for the join
+ * @returns {iterable} A new sequence
+ */
+function makeLeftJoinIterator(sequence, mergeFn, mapLeft, mapRight) {
+    var that = this;
+    return function () {
+        var useKvps = !mapLeft && !mapRight;
+
+        // create transform functions for the join. If neither mapper functions are provided,
+        // the default behavior is to treat both sequences as KVP lists.
+        // if not, then get a function using the default "map provider" behavior of either
+        // using a provided function, or treating the value as a property name.
+
+        var leftKeyMapper = getValueMapper(useKvps ? 0 : mapLeft);
+        var leftValueMapper = getValueMapper(useKvps ? 1 : null);
+        var rightKeyMapper = getValueMapper(useKvps ? 0 : mapRight);
+        var rightValueMapper = getValueMapper(useKvps ? 1 : null);
+
+        var iterator = that[_iterator]();
+        var other = new Map(mapRight ? new Iter(sequence).groupBy(rightKeyMapper) : sequence);
+        var matches = void 0;
+        var leftValue = void 0;
+        var id = void 0;
+
+        return {
+            next: function next() {
+                /*eslint no-constant-condition:0 */
+                while (true) {
+                    if (!matches) {
+                        var left = iterator.next();
+
+                        if (left.done) return doneIter;
+                        id = leftKeyMapper(left.value);
+                        leftValue = leftValueMapper(left.value);
+                        var match = other.get(id);
+                        if (!match || !match[_iterator] || typeof match === 'string') {
+                            return {
+                                done: false,
+                                value: mergeFn(leftValue, match, id)
+                            };
+                        }
+                        matches = match[_iterator]();
+                    }
+
+                    // being here means the right is iterable
+
+                    var right = matches.next();
+                    if (!right.done) {
+                        return {
+                            done: false,
+                            value: mergeFn(leftValue, rightValueMapper(right.value), id)
+                        };
+                    } else {
+                        matches = null;
+                    }
+                }
+            }
+        };
+    };
+}
+
+function skipIterable(n) {
+    var that = this;
+    return function () {
+        var iterator = that[_iterator]();
+        while (n-- > 0 && !iterator.next().done) {}
+        return iterator;
+    };
+}
+
+function takeIterable(n) {
+    var that = this;
+    return function () {
+        var iterator = that[_iterator]();
+        return {
+            next: function next() {
+                if (n !== 0) {
+                    var cur = iterator.next();
+                    if (!cur.done) {
+                        n--;
+                        return {
+                            done: false,
+                            value: cur.value
+                        };
+                    }
+                }
+                return doneIter;
+            }
+        };
+    };
+}
+
+function getNext(condition) {
+    var sourceIter = this[_iterator]();
+    var index = 0;
+    return {
+        next: function next() {
+            var cur = sourceIter.next();
+            while (!cur.done && !condition(cur, index++)) {
+                cur = sourceIter.next();
+            }
+            return iterResult(cur.done, cur.value);
+        }
+    };
+}
+
+function makeObjectIterator(obj, filter, recurse, getters) {
+    return function () {
+        var data = getPropDescriptions(obj, function (e) {
+            return e !== 'constructor' && (!filter || filter(e));
+        }, recurse);
+
+        if (!getters) data = data.filter(function (e) {
+            return e[1].field;
+        });
+        data = data.map(function (e) {
+            return [e[0], obj[e[0]]];
+        });
+        return data[_iterator]();
+    };
+}
+
+function makeDoIterator(cb, thisArg) {
+    verifyCb(cb);
+    var that = this;
+    return function () {
+        var index = 0;
+        var sourceIter = that[_iterator]();
+
+        return {
+            next: function next() {
+                var cur = sourceIter.next();
+                return iterResult(cur.done, !cur.done && (cb.call(thisArg, cur.value, index++), cur.value));
+            }
+        };
+    };
+}
+
+function makeExceptIterator(other, mapLeft, mapRight) {
+    var that = this;
+    return function () {
+        var leftMapper = getValueMapper(mapLeft);
+        var except = new Set(orMapSequence(mapRight, other));
+        return getNext.call(that, function (cur) {
+            return !except.has(leftMapper(cur.value));
+        });
+    };
+}
+
+function makeIntersectIterator(other, mapLeft, mapRight) {
+    var that = this;
+    return function () {
+        var leftMapper = getValueMapper(mapLeft);
+        var intersect = new Set(orMapSequence(mapRight, other));
+        return getNext.call(that, function (cur) {
+            return intersect.has(leftMapper(cur.value));
+        });
+    };
+}
+
+function makeUnionIterator(other, mapLeft, mapRight) {
+    var that = this;
+    return function () {
+        var extra = new Iter(other).except(that);
+        if (mapLeft || mapRight) extra = extra.on(mapLeft, mapRight);
+        return that.concat(extra)[_iterator]();
+    };
+}
+
+function makeUniqueIterator(getkey) {
+    var that = this;
+    return function () {
+        var used = new Set();
+        var iterator = that[_iterator]();
+        var cur = void 0;
+        var mapValue = getValueMapper(getkey);
+        return {
+            next: function next() {
+                while (cur = iterator.next(), !cur.done) {
+                    var value = mapValue(cur.value);
+                    if (!used.has(value)) {
+                        used.add(value);
+                        return {
+                            done: false,
+                            value: cur.value
+                        };
+                    }
+                }
+                return doneIter;
+            }
+        };
+    };
+}
+
+function makeGroupByIterator(group) {
+    var that = this;
+    return function () {
+        var cb = getValueMapper(group);
+        var dict = new Map();
+
+        var cur = void 0;
+        var iterator = that[_iterator]();
+        while (cur = iterator.next(), !cur.done) {
+            var e = cur.value;
+            var key = cb(e);
+            if (dict.has(key)) {
+                dict.get(key).push(e);
+            } else {
+                dict.set(key, [e]);
+            }
+        }
+
+        return dict[_iterator]();
+    };
+}
+
+function makeConcatIterator(args) {
+    var that = this;
+    return function () {
+        var sources = [that];
+        arrProto.forEach.call(args, function (arg) {
+            sources.push(arg);
+        });
+
+        var index = 0;
+        var iterator = void 0;
+
+        return {
+            next: function next() {
+                while (index < sources.length) {
+
+                    if (!iterator) {
+                        var nextSource = sources[index];
+                        iterator = typeof nextSource !== 'string' && nextSource[_iterator] ? nextSource[_iterator]() : objectAsGenerator(nextSource);
+                    }
+
+                    var cur = iterator.next();
+                    if (!cur.done) {
+                        return {
+                            done: false,
+                            value: cur.value
+                        };
+                    } else {
+                        iterator = null;
+                        index++;
+                    }
+                }
+                return doneIter;
+            }
+        };
+    };
+}
+
+function makeFlattenIterator(recurse) {
+    var that = this;
+    return function () {
+        var iterators = [that[_iterator]()];
+        var iterator = void 0;
+        return {
+            next: function next() {
+                while (iterator || iterators.length > 0) {
+                    if (!iterator) iterator = iterators.pop();
+                    var cur = iterator.next();
+                    if (cur.value && cur.value[_iterator] && typeof cur.value !== 'string' && (recurse || iterators.length === 0)) {
+                        iterators.push(iterator);
+                        iterator = cur.value[_iterator]();
+                    } else {
+                        if (!cur.done) {
+                            return { done: false, value: cur.value };
+                        } else {
+                            iterator = undefined;
+                        }
+                    }
+                }
+                return doneIter;
+            }
+        };
+    };
+}
+
+function makeFilterIterator(cb, thisArg) {
+    verifyCb(cb);
+    var that = this;
+    return function () {
+        var index = 0;
+        var sourceIter = that[_iterator]();
+
+        return {
+            next: function next() {
+
+                var cur = sourceIter.next();
+                while (!cur.done && !cb.call(thisArg, cur.value, index++)) {
+                    cur = sourceIter.next();
+                }
+                return iterResult(cur.done, cur.value);
+            }
+        };
+    };
+}
+
+function makeMapIterator(cb, thisArg) {
+    verifyCb(cb);
+    var that = this;
+    return function () {
+        var index = 0;
+        var sourceIter = that[_iterator]();
+
+        return {
+            next: function next() {
+                var cur = sourceIter.next();
+                return iterResult(cur.done, !cur.done && cb.call(thisArg, cur.value, index++));
+            }
+        };
+    };
+}
+
+function orMapSequence(mapFn, iterable) {
+    return !(mapFn == null) ? new Iter(iterable).map(getValueMapper(mapFn)) : iterable;
+}
+
+/**
+ * Given a mapFn which can be missing, a function, or something else (probably
+ * a string) that identifies a property, return a transformation function
+ * 
+ * @param {any} mapFn The map function or property
+ * @returns A map function
+ */
+function getValueMapper(mapfn) {
+    if (mapfn == null) {
+        return function (value) {
+            return value;
+        };
+    } else if (typeof mapfn === 'function') {
+        return mapfn;
+    } else {
+        return function (value) {
+            return value[mapfn];
+        };
+    }
+}
+
+function orProp(obj) {
+    return typeof obj === 'function' ? obj : function (e) {
+        return e[obj];
+    };
+}
+
+function iterResult(done, value) {
+    if (!done) {
+        return {
+            value: value,
+            done: false
+        };
+    } else {
+        return doneIter;
+    }
+}
+
+/**
+ * An empty iterable
+ * 
+ * @returns {function} An iterator
+ */
+function emptyGenerator() {
+    return function () {
+        return {
+            next: function next() {
+                return doneIter;
+            }
+        };
+    };
+}
+
+function verifyCb(cb) {
+    if (typeof cb !== 'function') throw new Error('The callback argument was not a function.');
+}
+/**
+ * Make a single element iterable
+ * 
+ * @param {any} e Any object
+ * @returns {function} An iterator
+
+ */
+function objectAsGenerator(e) {
+    var done = false;
+    return {
+        next: function next() {
+            return done ? doneIter : (done = true, { done: false, value: e });
+        }
+    };
+}
+
+/**
+ * Helper for getPropDescriptions
+ * 
+ * @param {any} obj
+ * @param {any} recurse
+ * @param {number} [depth=0]
+ * @returns
+ */
+function getAllProps(obj, recurse) {
+    var depth = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 0;
+
+    // only get prop/owner pairs first, to avoid reflecting on everything deep in the chain that may be overridden
+
+    var props = new Iter(Object.getOwnPropertyNames(obj)).map(function (e) {
+        return [e, obj, depth];
+    }).execute();
+
+    if (recurse) {
+        var parentProto = Object.getPrototypeOf(obj);
+        if (parentProto !== Object.prototype) {
+            props = props.union(getAllProps(parentProto, true, depth + 1)).on('0');
+        }
+    }
+
+    return props;
+}
+
+function getPropDescriptions(obj, filter, recurse) {
+
+    var props = getAllProps(obj, recurse);
+    if (filter) {
+        verifyCb(filter);
+        props = props.filter(function (e) {
+            return filter(e[0]);
+        });
+    }
+    return props.map(function (d) {
+        var e = Object.getOwnPropertyDescriptor(d[1], d[0]);
+        var hasValue = e.hasOwnProperty('value');
+        return [d[0], {
+            type: !hasValue ? null : e.value === null ? 'null' : _typeof(e.value),
+            field: hasValue,
+            writable: !!e.writable || !!e.set,
+            getter: e.get || null,
+            setter: e.set || null,
+            configurable: e.configurable,
+            enumerable: e.enumerable,
+            depth: d[2]
+        }];
+    });
+}
+
+var Kvp = function Kvp(arr, value) {
+    this[0] = value ? arr : arr[0];
+    this[1] = value || arr[1];
+};
+
+['key', 'value'].forEach(function (prop, i) {
+    Object.defineProperty(Kvp[_p], prop, {
+        get: new Function('return this[' + i % 2 + ']')
+    });
+});
+
+Object.assign(Kvp[_p], {
+    toString: function toString() {
+        return '[' + this.key + ',' + this.value + ']';
+    },
+    valueOf: function valueOf() {
+        return this.key;
+    }
+});
+
+Iter.Kvp = Kvp;
+
+exports.default = Iter;
+exports.Kvp = Kvp;
+},{}]},{},[1])(1)
+});
