@@ -13,9 +13,10 @@ declare namespace iter {
      */
     let fromGenerator: (generator: () => Iterator<any>) => Iter;
     /**
-     * Create an Iter from an object, returning a seqeunce of [key, value] pairs obtained
-     * by enumerating the object's properties. All properties, including those on the prototype
-     * chain, will be included, except "constructor"
+     * Create an Iter from an object, returning a seqeunce of [key, value] 
+     * pairs obtained by enumerating the object's properties. All properties, 
+     * including those on the prototype chain, will be included, except 
+     * constructor"
      *
      * @param {any} obj An object
      * @param {function} filter A callback that is invoked with each property name. Returing `false` will omit a property from the sequence.
