@@ -875,7 +875,7 @@ function Kvp(arr, value) {
 
 ['key','value'].forEach((prop, i)=>{
     Object.defineProperty(Kvp[_p], prop, {
-        get: new Function('return this._'+i%2)
+        get: new Function('return this['+i%2+']')
     })
 })
 
