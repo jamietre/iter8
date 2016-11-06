@@ -285,14 +285,14 @@ Iter[_p] = {
      * @param {function} mapCallback An optional callback invoked on each element that returns the value to sum
      * @returns {any} The minimum value 
      */
-    min: makeGetkeyAggregator('var r=Infinity', 'var v = {v}; if (r>v) r=v'),
+    min: makeGetkeyAggregator('var r=Infinity', 'if ({v}>v) r={v}'),
     /**
      * Return the maximum value in the sequence
      * 
      * @param {function} getkey An optional callback invoked on each element that returns the value to sum
      * @returns {any} The maximum value 
      */
-    max: makeGetkeyAggregator('var r=-Infinity', 'var v = {v}; if (r<v) r=v'),
+    max: makeGetkeyAggregator('var r=-Infinity', 'if (r<{v}) r={v}'),
     /**
      * Return the sum of all elements in the sequence
      * 
