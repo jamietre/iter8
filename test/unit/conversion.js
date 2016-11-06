@@ -1,5 +1,5 @@
 import assert from 'assert'
-import iter from '../../src/index'
+import iter from '../../lib/index'
 import "babel-polyfill";
 
 describe('iter - conversion', ()=> {

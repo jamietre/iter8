@@ -1,5 +1,6 @@
 import assert from 'assert'
-import iter, { Kvp } from '../../src/index'
+import iter from '../../lib/index'
+const Kvp = iter.Kvp
 
 const data = {
     bar: 2,

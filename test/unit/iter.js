@@ -1,5 +1,5 @@
 import assert from 'assert'
-import iter from '../../src/index'
+import iter from '../../lib/index'
 
 const sampleData =[
     { a: 'foo', b: 1 },
@@ -118,7 +118,7 @@ describe('iter', ()=> {
             assert.ok(obj.first(null) ===null)
         });
     })
-    describe('first', ()=> {
+    describe('last', ()=> {
         it('basic', ()=> {
             let obj = iter([1,2,3,4,5]);
             assert.equal(obj.last(), 5)

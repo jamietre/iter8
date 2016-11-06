@@ -1,8 +1,0 @@
-{
-    "main": {
-        "tasks": ["babel"],
-        "src": ["./src"],
-        "dest": "./dist"
-    }
-}
-
