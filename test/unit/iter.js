@@ -168,22 +168,46 @@ describe('iter', ()=> {
         assert.ok(sut[0] instanceof Kvp)
         assert.equal(sut[0].key,1)
     })
-    it('groupBy string', ()=> {
-        let x = iter(sampleData);
+    describe('groupBy', ()=> {
+        it('groupBy string', ()=> {
+            let x = iter(sampleData);
 
-        let sut = x.groupBy('a');
-        testSimpleData(sut.cast(Kvp).toArray());
-    }); 
+            let sut = x.groupBy('a');
+            testSimpleData(sut.cast(Kvp).toArray());
+        }); 
 
-    it('groupBy function', ()=> {
-        let x = iter(sampleData);
+        it('groupBy function', ()=> {
+            let x = iter(sampleData);
 
-        let sut = x.groupBy((e)=> {
-            return e.a;
+            let sut = x.groupBy((e)=> {
+                return e.a;
+            });
+            testSimpleData(sut.cast(Kvp).toArray());
         });
-        testSimpleData(sut.cast(Kvp).toArray());
-    });
+        it('with odd keys', ()=>{
+            let symbol = Symbol()
+            let data = [
+                [undefined,'undef1'],
+                [undefined,'undef2'],
+                [null,'null'],
+                ['foo','foo1'],
+                ['foo','foo2'],
+                [symbol,'symbol1'],
+                [symbol,'symbol2']
+            ]
+            let sut = iter(data).groupBy(e=>e[0], e=>e[1])
+                .map(e=>e[1]).
+                flatten()
 
+            assert.deepEqual(sut.toArray(), 
+                ['undef1','undef2',
+                'null',
+                'foo1', 'foo2',
+                'symbol1', 'symbol2']
+            )
+        })
+    })
+    
     it('complex', ()=> {
         let items = iter([['foo', 1], ['foo',2], ['bar',3], ['bar',4], ['foo',5]])
             .cast(Kvp)

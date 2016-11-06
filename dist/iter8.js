@@ -616,12 +616,11 @@ function makeGroupByIterator(group) {
         var cur;
         var iterator = that[_iterator]()
         while (cur = iterator.next(), !cur.done) {
-            var e = cur.value;
             var key = cb(e);
             if (dict.has(key)) {
-                dict.get(key).push(e);
+                dict.get(key).push(cur.value);
             } else {
-                dict.set(key, [e]);
+                dict.set(key, [cur.value]);
             }
         }
 

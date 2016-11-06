@@ -379,11 +379,12 @@ let x = iter([
 // x === ['foo', 'bar', 'fizz']
 ```
 
-#### groupBy(key)
+#### groupBy([key, map])
 
 Return a sequence of *key-value pairs* where each key is a distinct group, and each value is an `Array` of all the elements from the original sequence in that group.
 
 [`key`](#get-key-argument) identifes the value on which to group.
+`map` is also a *key argument* which identifies a transform to be applied to each element from the input when it's added to a group.
 
 ```Javascript
 let arr = [
@@ -403,6 +404,18 @@ let x = iter(arr).groupBy('category').toArray()
 //    ]]
 //  ]
 ```
+
+Using a map:
+
+```Javascript
+let x = iter(arr).groupBy('category', 'value')toArray()
+// returns [
+//    ['home', [ 1,3 ],
+//    ['work', [ 2 ] ]
+//  ]
+
+```
+
 
 #### cast(Type)
 
