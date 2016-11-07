@@ -1,6 +1,6 @@
 # iter8
 
-A small (3k gzipped) data transformation library that provides the familiar `Array` API plus many set and sequence operations for use on JavaScript iterables.
+iter8 is a small (3k gzipped) data transformation library that works with JavaScript iterables. It provides the familiar `Array` API plus a full complement of sequence and set operations like `intersect`, `union`, `except`, and `leftJoin`.
 
 * [Installation](#installation)
 * [Basic Usage](#usage)
@@ -13,9 +13,9 @@ A small (3k gzipped) data transformation library that provides the familiar `Arr
 
 Iterators are a powerful new feature of ES6. ES6 `Set` and `Map` types offer some much needed support for basic data structures that support iterables directly. But, interop with arrays is inconvenient, and they lack native support for the most of the familiar array transformation methods.
 
-iter8 provides seamless interop with arrays, iteratables, generators, and other data structures. In addition to all the nation `Array` methods you are accustomed to using, iter8 provides a tool set for performing complext transformations and set operations, with methods like `intersect`, `union`, `except`, and `leftJoin`. 
+iter8 provides seamless interop with arrays, iteratables, generators, and other data structures. In addition to all the nation `Array` methods you are accustomed to using, iter8 provides a tool set that simplfies dealing with sequences and performing complex transformations and set operation.
 
-Everything is treated as a sequence, and no work gets done until you ask for some specific output. Sequences are is only iterated as much as needed to perform the queries or operations you request. 
+iter8 deals only with iterables, so no work gets done until you ask for some specific output. Every operation consumes its input as a seqeunce, and defers processing until some output requires the sequence be iterated. It doesn't do any work until it needs to, and will only consume the elements of a sequence that are actually required to perform an operation. 
 
 iter8 is small (about 10k uglified, and 3k gzipped) and has no runtime dependencies. 
 

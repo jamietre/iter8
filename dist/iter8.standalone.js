@@ -607,22 +607,27 @@ function makeUniqueIterator(getkey) {
     }
 }
 
-function makeGroupByIterator(group) {
+/**
+ * Group using the group key argument, and optionally transforming the input
+ * into the output array
+ * 
+ * @param {any} group
+ * @param {any} transform
+ * @returns
+ */
+function makeGroupByIterator(group, transform) {
     var that = this;
     return function() {
         var cb = getValueMapper(group);
+        var trans = getValueMapper(transform)
         var dict = new Map();
         
         var cur;
         var iterator = that[_iterator]()
         while (cur = iterator.next(), !cur.done) {
-            var e = cur.value;
-            var key = cb(e);
-            if (dict.has(key)) {
-                dict.get(key).push(e);
-            } else {
-                dict.set(key, [e]);
-            }
+            var key = cb(cur.value);
+            (dict.get(key) || dict.set(key,[]).get(key))
+                .push(trans(cur.value))
         }
 
         return dict[_iterator]();

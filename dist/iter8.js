@@ -285,14 +285,14 @@ Iter[_p] = {
      * @param {function} mapCallback An optional callback invoked on each element that returns the value to sum
      * @returns {any} The minimum value 
      */
-    min: makeGetkeyAggregator('var r=Infinity', 'if ({v}>v) r={v}'),
+    min: makeGetkeyAggregator('var r=Infinity', 'var v = {v}; if (r>v) r=v'),
     /**
      * Return the maximum value in the sequence
      * 
      * @param {function} getkey An optional callback invoked on each element that returns the value to sum
      * @returns {any} The maximum value 
      */
-    max: makeGetkeyAggregator('var r=-Infinity', 'if (r<{v}) r={v}'),
+    max: makeGetkeyAggregator('var r=-Infinity', 'var v = {v}; if (r<v) r=v'),
     /**
      * Return the sum of all elements in the sequence
      * 
@@ -607,21 +607,27 @@ function makeUniqueIterator(getkey) {
     }
 }
 
-function makeGroupByIterator(group) {
+/**
+ * Group using the group key argument, and optionally transforming the input
+ * into the output array
+ * 
+ * @param {any} group
+ * @param {any} transform
+ * @returns
+ */
+function makeGroupByIterator(group, transform) {
     var that = this;
     return function() {
         var cb = getValueMapper(group);
+        var trans = getValueMapper(transform)
         var dict = new Map();
         
         var cur;
         var iterator = that[_iterator]()
         while (cur = iterator.next(), !cur.done) {
-            var key = cb(e);
-            if (dict.has(key)) {
-                dict.get(key).push(cur.value);
-            } else {
-                dict.set(key, [cur.value]);
-            }
+            var key = cb(cur.value);
+            (dict.get(key) || dict.set(key,[]).get(key))
+                .push(trans(cur.value))
         }
 
         return dict[_iterator]();
