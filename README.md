@@ -12,7 +12,11 @@ iter8 is a small (3k gzipped) data transformation library that works with JavaSc
 
 ## Why?
 
-Iterators are a powerful new feature of ES6. ES6 `Set` and `Map` types offer some much needed support for basic data structures that support iterables directly. But, interop with arrays is inconvenient, and they lack native support for the most of the familiar array transformation methods.
+ES6/7 offers several important language features: *itetable* objects, generators, and `Set` and `Map` types. Can we finally stop using `object` for maps and sets? Can we finally stop using mutable arrays for every sequence transformation task? Yes! But there are some probems:
+
+* `Set` and `Map` lack native support for most `Array` transformation methods like `map`, `filter`, and `reduce`, so you often have to do ugly and expensive conversions with `Array.from` for any transformation.
+* there's no native support for set operations like `except` and `intersect`, or more sophisticated operations like `groupBy` and `leftJoin`.
+* Conversion to and from object maps is still a manual tasks
 
 iter8 provides seamless interop with arrays, iteratables, generators, and other data structures. In addition to all the nation `Array` methods you are accustomed to using, iter8 provides a tool set that simplfies dealing with sequences and performing complex transformations and set operation.
 
