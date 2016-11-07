@@ -5,6 +5,7 @@
 * @returns {Iter} An Iter instance
 */
 declare function iter(source: any): Iter;
+
 declare namespace iter {
     /**
      * Create an Iter from an generator (a function returning an iterator)

@@ -7,6 +7,7 @@ iter8 is a small (3k gzipped) data transformation library that works with JavaSc
 * [API Summary & Index](#api)
 * [Usage Details](#usage-details)
 * [API Reference](#api-reference)
+* [Performance](#performance)
 * [Roadmap](#roadmap)
 
 ## Why?
@@ -145,9 +146,10 @@ Iter8 objects have two types of methods: *transformation* and *value-producing*.
 *Aggregation/Analysis*
 
 * [count()](#count)
-* [min([callback])](#minvalue-key)
-* [max([callback])](#maxvalue-key)
-* [sum([callback])](#sumvalue-key)
+* [min([callback])](#minkey)
+* [max([callback])](#maxkey)
+* [sum([callback])](#sumkey)
+* [mean([callback])](#meankey)
 * [some(callback, [thisArg])](#somecallbacke-i-thisarg)*
 * [every(callback, [thisArg])](#everycallbacke-i-thisarg)*
 * [includes(value)](#includesvalue)*
@@ -691,22 +693,27 @@ let x = iter([1,2,3,4,5]).count()
 // x === 5
 ```
 
-#### min([value: key])
+#### min([key])
 
-Return the minimum of all values in the sequence. If an optional `value` key is provided, it will be used to produce the value to sum.
+Return the minimum of all values in the sequence. If an optional `key` is provided, it will be used to produce the value to sum.
 
 ```Javascript
 let x = iter([3,1,2,4]).min()
 // x===1
 ```
 
-#### max([value: key])
+#### max([key])
 
-Return the max of all values in the sequence. If an optional `value` key is provided, it will be used to produce the values to evaluate.
+Return the max of all values in the sequence. If an optional `key` is provided, it will be used to produce the values to evaluate.
 
-#### sum([value: key])
+#### sum([key])
 
-Return the sum of all values in the sequence. If an optional `value` key is provided, it will be used to produce the values to evaluate.
+Return the sum of all values in the sequence. If an optional `key` is provided, it will be used to produce the values to evaluate.
+
+#### mean([key])
+
+Return the mean (average) of all values in the sequence. If an optional `key` is provided, it will be used to produce the values to evaluate.
+
 
 #### some(callback(e, i), [thisArg])
 
@@ -803,6 +810,17 @@ iter(arr).skip(3).forEach((e)=> {
 });
 ```
 
+### Performance
+
+While performance isn't my primary goal with this libary, I think some benchmarks are useful to understand how this performs overall and if it is adequate for your needs. I have some simple tests that compare it to lodash, which I consider the benchmark standard. iter8 will probably never be as fast as lodash for operations that involve iterating the entire sequence -- the purpose of these tests isn't to try to catch up, but just to compare.
+
+Very roughly, whe starting with `Array` sources, typical complex operations that involve iterating the entire set seem to be about 3-5 times faster in lodash. This isn't likely to improve much, except to the extent that the Javascript engines can improve iteration access to arrays interally. It's just a fact of life since iterating over arrays is slower than accessing array elements by index.
+
+iter8 is written in ES5, and only depends on `Symbol` being available and not language syntax support. One consequence of this is that it does not use `for...of` to iterate. This could result in a performance increase, since Javascript engines might be able to optimize this better than `iterator.next()` function calls. I do plan to explore this as an alternative.
+
+If your source is *not* already an `Array`, then iter8 may very well be faster, since you'd actually have to convert it to an array first to use with lodash. A simple test of "except" involving sources in `Set` objects shows iter8 to be about 20% faster.
+
+At the end of the day - both lodash and iter8 are *extremely fast*. iter8 can sum 1,000,000 integers on my 2012 era Core i7 laptop in 0.05 seconds. Lodash can do it in .012 seconds! So if your needs are extremely computation heavy involving very large datasets, and eking out every bit of performance is critical, then lodash is certainly the best choice. But for most typical programming tasks, the difference is not likely to be perceptible.    
 
 ## Roadmap
 
@@ -837,11 +855,6 @@ I did a basic TypeScript conversion, but it doesn't actually work, and adds abou
 
 Add an extension point for adding methods.
 
-### Performance
-
-I haven't evaluated it at all, but would like to do some basic tests. This has proven plenty fast for the use cases I've had so far. Because the process of iteration by definition involves many more function invocations then simple looping, it's certainly somewhat slower, though there should be gains due to the fact that each step in the sequence is evaluated as part of a single iteration rather than processing the sequence completely at each step.
-
-I'm interested in optimizing as much as possible, but the goal is not extremely high performance for large arrays, but rather expressiveness, safety and ease of maintenance for complex transformations. 
 
 ### Size Optimization
 

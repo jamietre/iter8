@@ -249,6 +249,21 @@ describe('iter', ()=> {
             assert.equal(sut.sum('foo'), 15);
         })
     })
+
+    xdescribe('mean', ()=> {
+        it('basic', ()=> {
+            let sut = iter([2,4,6,8,10,12]);
+            assert.equal(sut.sum(), 29);
+        })
+        it('map', ()=> {
+            let sut = iter([{ foo: 1}, {foo: 4}, {foo: 10}]);
+            assert.equal(sut.sum((e)=>e.foo), 15);
+        })
+        it('map - prop', ()=> {
+            let sut = iter([{ foo: 1}, {foo: 4}, {foo: 10}]);
+            assert.equal(sut.sum('foo'), 15);
+        })
+    })
     
     describe('min', ()=> {
         it('basic', ()=> {

@@ -85,7 +85,11 @@ Object.assign(Iter, {
             return {
                 next: function() {
                     index++;
-                    return iterResult(index >= times, (typeof obj === 'function' ? obj(index) : obj))
+                    return {
+                        done: index >= times, 
+                        value: index < times && 
+                            typeof obj === 'function' ? obj(index) : obj
+                    }
                 }
             } 
         });
@@ -285,21 +289,22 @@ Iter[_p] = {
      * @param {function} mapCallback An optional callback invoked on each element that returns the value to sum
      * @returns {any} The minimum value 
      */
-    min: makeGetkeyAggregator('var r=Infinity', 'var v = {v}; if (r>v) r=v'),
+    min: makeGetkeyAggregator('var r=Infinity', 'if (r>{v}) r={v}'),
     /**
      * Return the maximum value in the sequence
      * 
      * @param {function} getkey An optional callback invoked on each element that returns the value to sum
      * @returns {any} The maximum value 
      */
-    max: makeGetkeyAggregator('var r=-Infinity', 'var v = {v}; if (r<v) r=v'),
+    max: makeGetkeyAggregator('var r=-Infinity', 'if (r<{v}) r={v}'),
     /**
      * Return the sum of all elements in the sequence
      * 
      * @param {any} getkey An optional callback invoked on each element that returns the value to sum
      * @returns {any} The sum of all elements in the sequence (using the + operator)
      */
-    sum: makeGetkeyAggregator('var r=0', 'r+={v}')
+    sum: makeGetkeyAggregator('var r=0', 'r+={v}'),
+    mean: makeGetkeyAggregator('var r=0,i=0', 'r+={v};i++', 'return r/i')
 };
 
 // These methods require traversing the entire array so just make them into an array
@@ -370,14 +375,14 @@ function makeGetkeyAggregator(setup, aggregator, teardown) {
 
 
 function orderBy(order, desc) {
-    var orders=[orProp(order)];
+    var orders=[getValueMapper(order)];
     return orderByHelper.call(this, this, orders, desc)
 }
 
 function thenBy(order, desc) {
     if (!this[_orders]) throw new Error("thenBy only makes sense after orderBy")
     var orders = this[_orders].slice(0);
-    orders.push(orProp(order))
+    orders.push(getValueMapper(order))
     return orderByHelper.call(this, this[_root], orders, desc)
 }
 
@@ -435,8 +440,7 @@ function makeLeftJoinIterator(sequence, mergeFn, mapLeft, mapRight) {
         var other = new Map(mapRight ? new Iter(sequence).groupBy(rightKeyMapper) : sequence)
         var matches;
         var leftValue;
-        var id;
-        
+        var id;        
         
         return {
             
@@ -507,21 +511,6 @@ function takeIterable(n) {
     } 
 }
 
-function getNext(condition) {
-    var sourceIter = this[_iterator]()
-    var index = 0;
-    return {    
-        next: function() {
-            var cur = sourceIter.next();
-            while (!cur.done && !condition(cur, index++)) {
-                cur = sourceIter.next();
-            }
-            return iterResult(cur.done, cur.value);
-        }
-    }
-}
-
-
 function makeObjectIterator(recurse, getters, obj, filter) {
     return function() {
         var data = getPropDescriptions(
@@ -547,8 +536,8 @@ function makeDoIterator(cb, thisArg) {
         return {
             next: function() {
                 var cur = sourceIter.next();
-                return iterResult(cur.done, !cur.done && 
-                    (cb.call(thisArg, cur.value, index++), cur.value))
+                !cur.done && cb.call(thisArg, cur.value, index++)
+                return cur
             }
         }
     }
@@ -559,7 +548,18 @@ function makeExceptIterator(other, mapLeft, mapRight) {
     return function() {
         var leftMapper = getValueMapper(mapLeft)
         var except = new Set(orMapSequence(mapRight, other))
-        return getNext.call(that, function(cur) {return !except.has(leftMapper(cur.value)) })
+
+        var sourceIter = that[_iterator]()
+        var cur
+        return {    
+            next: function() {
+                while (cur = sourceIter.next(), 
+                    !cur.done && except.has(leftMapper(cur.value)))
+                        ;
+                        
+                return cur
+            }
+        }
     }
 }
 
@@ -568,7 +568,16 @@ function makeIntersectIterator(other, mapLeft, mapRight) {
     return function() {
         var leftMapper = getValueMapper(mapLeft)
         var intersect = new Set(orMapSequence(mapRight, other));
-        return getNext.call(that, function(cur) { return intersect.has(leftMapper(cur.value)) })
+        var sourceIter = that[_iterator]()
+        var cur
+        return {    
+            next: function() {
+                while (cur = sourceIter.next(), 
+                    !cur.done && !intersect.has(leftMapper(cur.value)))
+                    ;
+                return cur
+            }
+        }
     }
 }
 
@@ -633,7 +642,6 @@ function makeGroupByIterator(group, transform) {
         return dict[_iterator]();
     }
 }
-
 
 function makeConcatIterator() {
     var that = this;
@@ -710,14 +718,14 @@ function makeFilterIterator(cb, thisArg) {
                 while (!cur.done && !cb.call(thisArg, cur.value, index++)) {
                     cur = sourceIter.next();
                 }
-                return iterResult(cur.done, cur.value);
+                return cur
             }
         }
     }
 }
 
-function makeMapIterator(cb, thisArg) {
-    verifyCb(cb)
+function makeMapIterator(key, thisArg) {
+    var mapFn = getValueMapper(key)
     var that = this;
     return function() {
         var index = 0;
@@ -726,8 +734,10 @@ function makeMapIterator(cb, thisArg) {
         return {
             next: function() {
                 var cur = sourceIter.next();
-                return iterResult(cur.done, !cur.done && 
-                    cb.call(thisArg, cur.value, index++))
+                return {
+                    done: cur.done,
+                    value: !cur.done && mapFn.call(thisArg, cur.value, index++)
+                }
             }
         }
     }
@@ -759,25 +769,6 @@ function getValueMapper(mapfn) {
         } 
     }
     
-}
-
-function orProp(obj) {
-    return typeof obj === 'function' ? 
-        obj :
-        function(e) {
-            return e[obj];
-        }
-}
-
-function iterResult(done, value) {
-    if (!done) {
-        return {
-            value: value,
-            done: false
-        }
-    } else {
-        return doneIter()
-    }
 }
 
 function doneIter() {
