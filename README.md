@@ -390,7 +390,7 @@ let x = iter([
 Return a sequence of *key-value pairs* where each key is a distinct group, and each value is an `Array` of all the elements from the original sequence in that group.
 
 [`key`](#key-argument) identifes the value on which to group.
-`map` is also a [key argument](@key-argument) which identifies a transform to be applied to each element from the input when it's added to a group.
+`map` is also a [key argument](#key-argument) which identifies a transform to be applied to each element from the input when it's added to a group.
 
 ```Javascript
 let arr = [

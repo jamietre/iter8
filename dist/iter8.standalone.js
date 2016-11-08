@@ -14,7 +14,17 @@ var _op = Symbol();
 var _iterator = Symbol.iterator;
 var _p='prototype'
 var arrProto = Array[_p];
- 
+
+/*var hasForOf = (function() {
+    try {
+        new Function('for (var x of []);')
+    } catch(e) {
+        return false;
+    }
+    return true;
+}())
+*/
+
 /**
  * When invoked from the public, on the first arg matters. If the first arg is [Sybmol.iterator]
  * then it cann accept to more arguments for use in chaining additional clauses
@@ -25,6 +35,7 @@ var arrProto = Array[_p];
  * @param {any} root The root "iter" object for chained operations
  */
 function Iter(source, generator, root, args) {
+    
     if (source === _iterator) {
         if (!root) {
             this[_iterator] = generator;
@@ -37,7 +48,7 @@ function Iter(source, generator, root, args) {
         return; 
     } else if  (!(this instanceof Iter)) {
         // instantiation checking is only for public consumers, so we don't need to pass more than one argument
-        return new Iter(source);
+        return new Iter(source, generator);
     }
 
     var iterator = source && source[_iterator];
@@ -49,6 +60,27 @@ function Iter(source, generator, root, args) {
         }
         throw new Error('iter can only be sourced with an Iterable object or a regular Javascript object.');
     } 
+
+    // experimental: default iterator for Arrays seems much slower than making our own in some
+    // circumstances. May substitute this if can figure out when it's better
+
+    // if (iterator && Array.isArray(source) && generator===true) {
+    //     this[_iterator]=function() {
+    //         var i=0;
+    //         var length = source.length;
+    //         var arr = source
+    //         return {
+    //             next: function() {                    
+    //                 return  {
+    //                     done: i>=length,
+    //                     value: source[i++]
+    //                 }
+    //             }
+    //         }            
+    //     }
+    //     return;
+    // }
+
     this[_iterator]=iterator ? iterator.bind(source) : emptyGenerator;
 }
 
@@ -73,7 +105,16 @@ Object.assign(Iter, {
      * Produce an iter instance from an object's own properties
      */
     fromObjectOwn: newIter(makeObjectIterator, 2, [0,0] /*false,false */),
+    /**
+     * Get metadata about the properties, and optionally the prototype chain, of an object
+     *  
+     * @param {object} object The object to refelect
+     * @param {boolean} recurse If true, recurse prototype chain
+     * @param {function} filter A callback invoked for each property name that should return true to include it, or false to exclude it
+     * @returns {Array} An array of [key, value] pairs where the key is the prop name, and the value is the prop descriptor
+     */
     reflect: getPropDescriptions,
+
     /**
      * Produce an iter instance using a callback to generate values, or repeating a single value
      */    
@@ -115,11 +156,11 @@ Iter[_p] = {
     do: newIter(makeDoIterator),
     groupBy: newIter(makeGroupByIterator),
     orderBy: orderBy,
-    orderDesc: function(order) {
+    orderByDesc: function(order) {
         return orderBy.call(this, order, true)
     },
     thenBy: thenBy,
-    thenDesc: function(order, desc) {
+    thenByDesc: function(order, desc) {
         return thenBy.call(this, order, desc)
     },
     count: makeAggregator('var r=0', 'r++'),
@@ -347,11 +388,19 @@ function newCachedIter(generator, nargs) {
  * @returns
  */
 function makeAggregator(setup, aggregator, teardown, getkey) {
-    return new Function('a', 'b', 'c', 'var _i=this[Symbol.iterator]();' +
-        (setup || 'var r=-1') + ';' + 
-        'var _c;'+
-        (getkey ? 'if (a) while (_c = _i.next(), !_c.done) {' + aggregator.replace(/\{v\}/g, 'a(_c.value)') + ';} else ' : '') +
-        'while (_c=_i.next(), !_c.done) {' + aggregator.replace(/\{v\}/g, '_c.value') + ';};' +  
+    var iterMethod = 'while (_c=_i.next(),!_c.done)';
+    var valueAccessor ='_c.value';
+
+    var loop = (getkey ? 'if (a) ' + iterMethod + ' {' + 
+        aggregator.replace(/\{v\}/g, 'a(' + valueAccessor +')') +  
+    ';} else ' : '') +
+    iterMethod + '{' + 
+        aggregator.replace(/\{v\}/g, valueAccessor) +  
+    ';};';
+
+    return new Function('a', 'b', 'c', 
+        'var _i=this[Symbol.iterator]();var _c;' + setup + ';' +
+        loop +  
         (teardown || 'return r'));
 }
 
@@ -863,6 +912,9 @@ function getPropDescriptions(obj, recurse, filter) {
 }
 
 var Kvp=function(arr, value) {
+    if (!this instanceof Kvp) {
+        return new Kvp(arr,value);
+    }
     this[0]=value ? arr : arr[0];
     this[1]=value || arr[1];
 };
