@@ -820,7 +820,11 @@ While performance isn't my primary goal with this libary, I think some benchmark
 
 Very roughly, whe starting with `Array` sources, typical complex operations that involve iterating the entire set seem to be about 3-5 times faster in lodash. This isn't likely to improve much, except to the extent that the Javascript engines can improve iteration access to arrays interally. It's just a fact of life since iterating over arrays is slower than accessing array elements by index.
 
-iter8 is written in ES5, and only depends on `Symbol` being available and not language syntax support. One consequence of this is that it does not use `for...of` to iterate. This could result in a performance increase, since Javascript engines might be able to optimize this better than `iterator.next()` function calls. I do plan to explore this as an alternative.
+[This jsperf](https://jsperf.com/four-iteration-methods) compares four methods of iterating an array. Using array indices is *four times faster* (in Chrome) than `for-of` -- which pretty much explains the performance difference compared to lodash. Other browsers show even more dramatic differences:
+
+* Edge is *100 times faster* for indexed access
+* Firefox is *40 times faster* for indexed access
+* Brave is about *15 times faster* for indexed access
 
 If your source is *not* already an `Array`, then iter8 may very well be faster, since you'd actually have to convert it to an array first to use with lodash. A simple test of "except" involving sources in `Set` objects shows iter8 to be about 20% faster.
 

@@ -15,7 +15,6 @@ var _iterator = Symbol.iterator;
 var _p='prototype'
 var arrProto = Array[_p];
  
-
 /**
  * When invoked from the public, on the first arg matters. If the first arg is [Sybmol.iterator]
  * then it cann accept to more arguments for use in chaining additional clauses
@@ -52,7 +51,6 @@ function Iter(source, generator, root, args) {
     } 
     this[_iterator]=iterator ? iterator.bind(source) : emptyGenerator;
 }
-
 
 Object.assign(Iter, {
     /**
@@ -173,8 +171,7 @@ Iter[_p] = {
             if (cur.done ||  mapRightFn(otherItem.value) !== mapLeftFn(cur.value)) return false; 
         }
 
-        if (!iter.next().done) return false;
-        return true;
+        return iter.next().done;
     },
     concat: newIter(makeConcatIterator),
     /**
@@ -201,7 +198,7 @@ Iter[_p] = {
      * @param {thisArg} object the "this" argument to apply to the callback
      * @returns {boolean} true if any elements match the condition
      */
-    some: makeAggregator('var i=0','if (a({v},b,i)) return true','return false'),
+    some: makeAggregator('var i=0','if (a({v},b,i++)) return true','return false'),
      /**
      * test whether every element in the sequence matches the condition
      * 
@@ -230,7 +227,7 @@ Iter[_p] = {
      * @param {any} element The element to locate
      * @returns {number} The index or -1
      */
-    lastIndexOf: makeAggregator('var r=-1, i=0', 'if ({v}===a) r=i; i++'),
+    lastIndexOf: makeAggregator('var r=-1,i=0', 'if ({v}===a) r=i; i++'),
     /**
      * return the index of the element identified by a callback
      * 
@@ -254,9 +251,9 @@ Iter[_p] = {
         // when end is missing, take gets NaN as an arg, and takes everything
         return this.skip(begin).take(end-begin+1);
     },
-    reduce: makeAggregator('var r=b;var i=0', 'r=a(r,{v},i++)'),
+    reduce: makeAggregator('var r=b,i=0', 'r=a(r,{v},i++)'),
     reduceRight: (function() {
-        var reduceRight = makeAggregator('var r=b;var i=c', 'r=a(r,{v},i--)')
+        var reduceRight = makeAggregator('var r=b,i=c', 'r=a(r,{v},i--)')
 
         return function(callback, initial) {
             var reversed = this.toArray().reverse();
