@@ -621,15 +621,15 @@ describe('iter', ()=> {
 
             assert.deepEqual(sut.toArray(), [1,5,3,9,8,6,7,2,4]);
         })
-        it('orderDesc property', ()=> {
-            let sut = iter(seq).orderDesc('foo').map(e=>e.id);
+        it('orderByDesc property', ()=> {
+            let sut = iter(seq).orderByDesc('foo').map(e=>e.id);
 
             // note: not actually the reverse of "orderBy" because the elements with the same value 
             // are in the orignal sequence order either way
             assert.deepEqual(sut.toArray(), [4,2,7,3,5,6,1]);
         })
-        it('orderBy thenDesc property', ()=> {
-            let sut = iter(seq).orderBy('foo').thenDesc('bar').map(e=>e.id);
+        it('orderBy thenByDesc property', ()=> {
+            let sut = iter(seq).orderBy('foo').thenByDesc('bar').map(e=>e.id);
 
             assert.deepEqual(sut.toArray(), [1,5,3,6,7,2,4]);
         })

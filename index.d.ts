@@ -37,10 +37,19 @@ declare namespace iter {
     /**
      * Generate a sequence from a `function(n)` invoked `times` times, or by repeating a single value.
      *
-     * @param {any} obj An object to repeat, or a `function(n)` that returns an object.
+     * @param {any} o An object to repeat, or a `function(n)` that returns an object.
      * @param {number} times The number of times to invoke the generator or repeat
      */
     let generate: (obj: (index: number) => any, times: number) => Iter;
+    /**
+     * Get metadata about the properties, and optionally the prototype chain, of an object
+     *  
+     * @param {object} object The object to refelect
+     * @param {boolean} recurse If true, recurse prototype chain
+     * @param {function} filter A callback invoked for each property name that should return true to include it, or false to exclude it
+     * @returns {Array} An array of [key, value] pairs where the key is the prop name, and the value is the prop descriptor
+     */    
+    let reflect: (obj: (index: number) => any, times: number) => Iter;
 }
 export declare class Iter implements Iterable<any> {
     /**
@@ -73,10 +82,11 @@ export declare class Iter implements Iterable<any> {
      * or the value returned by `function(item, index)` if group is a function. Returns a sequence
      * of `[key, value]` pairs where `value` is an array containing each item in the group.
      *
-     * @param {((item: any, index: number)=>any | string)} group A property name or function
+     * @param {((item: any, index: number)=>any | string)} key A property name or function that specifies a key to group by
+     * @param {((item: any, index: number)=>any | string)} map A property name or function that specifies how to map each value to the group 
      * @returns {Iter} A sequence of `[key, value[]]` pairs where `value` is an array of items in the group
      */
-    groupBy(group: (item: any, index: number) => any | string): Iter;
+    groupBy(key: (item: any, index: number) => any | string, map: (item: any, index: number) => any | string): Iter;
     /**
      * Sort by the value of a property, if `order` is a string, or by the value returned by a
      * `function(item, index)` if `order` is a function
@@ -93,7 +103,7 @@ export declare class Iter implements Iterable<any> {
      *      name or function
      * @returns {Iter} The sorted sequence
      */
-    orderDesc(order: (item: any, index: number) => any | string): Iter;
+    orderByDesc(order: (item: any, index: number) => any | string): Iter;
     /**
      * Add a secondary or n-ary sort order if there are multiple items with 
      * the same value. Can only follow an `order` or `then` clause.
@@ -110,7 +120,7 @@ export declare class Iter implements Iterable<any> {
      * @param {((item: any, index: number)=>any | string)} order A property name or function
      * @returns {Iter} The sorted sequence
      */
-    thenDesc(order: (item: any, index: number) => any | string, desc: any): Iter;
+    thenByDesc(order: (item: any, index: number) => any | string, desc: any): Iter;
     /**
      * Iterate over the entire sequence and count the items
      *
@@ -258,7 +268,7 @@ export declare class Iter implements Iterable<any> {
      * Return a sequence that is generated from the return values of a function invoked for
      * each element in the input sequence
      *
-     * @param {function} callback the callback(element, index)
+     * @param {function} x, the callback(element, index)
      * @param {any} thisArg the "this" context applied to the callback
      * @returns {Iter} the transformed sequence
      */

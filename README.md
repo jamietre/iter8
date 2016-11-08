@@ -90,7 +90,7 @@ These are used to create `Iter` instances.
 * [iter.fromObjectOwn(obj, [filter])](#iterfromobjectownobj-filter)
 * [iter.fromGenerator(iterator)](#iterfromgeneratorgenerator)
 * [iter.generate(obj, n)](#itergenerateobj-n)
-* [iter.reflect(obj, [recurse], [filter])](#iterreflectobj-recurse)
+* [iter.reflect(obj, [recurse], [filter])](#iterreflectobj-recurse-filter)
 
 #### instance methods
 
@@ -103,8 +103,8 @@ Iter8 objects have two types of methods: *transformation* and *value-producing*.
 *Mapping/Filtering/Grouping* 
 
 * [flatten([recurse])](#flattenrecurse)
-* [unique()](#unique)
-* [groupBy(group)](#groupbykey)
+* [unique([key])](#uniquekey)
+* [groupBy([key], [map])](#groupbykey-map)
 * [cast(Type)](#casttype)
 * [map(callback, [thisArg])](#mapcallbacke-i-thisarg)*
 * [filter(callback, [thisArg])](#filtercallbacke-i-thisarg)*
@@ -116,15 +116,15 @@ Iter8 objects have two types of methods: *transformation* and *value-producing*.
 * [intersect(sequence)](#intersectsequence)
 * [union(sequence)](#unionsequence)
 * [leftJoin(sequence, callback)](#leftjoinsequence-callbackleftitem-rightitem)
-* [on(leftCallback, rightCallback)](#onleft-key-right-key)
-* [concat(obj, [obj, ...])](#concatobj-obj)*
+* [on(left: key, right: key)](#onleft-key-right-key)
+* [concat(obj, [obj, ...])](#concatobj-obj-)*
 
 *Ordering*
 
-* [orderBy(order)](#orderbyorder-key)
-* [orderDesc(order)](#orderdescorder-key)
-* [thenBy(order)](#thenbyorder-key)
-* [thenDesc(order)](#thendescorder-key)
+* [orderBy(order)](#orderbykey)
+* [orderByDesc(order)](#orderbydesckey)
+* [thenBy(order)](#thenbykey)
+* [thenByDesc(order)](#thenbydesckey)
 * [sort([callback])](#sortcallbacka-b)*
 * [reverse()](#reverse)*
 
@@ -200,7 +200,7 @@ For many methods that require a key for equality comparison, like `groupBy`, `le
 This means you can unversally use strings to refer to an object property in these situations, so the following are identical:
 
 ```Javascript
-let x = item.groupBy('name`)
+let x = item.groupBy('name')
 let x = item.groupBy(e => e.name)
 ```
 
@@ -389,8 +389,8 @@ let x = iter([
 
 Return a sequence of *key-value pairs* where each key is a distinct group, and each value is an `Array` of all the elements from the original sequence in that group.
 
-[`key`](#get-key-argument) identifes the value on which to group.
-`map` is also a *key argument* which identifies a transform to be applied to each element from the input when it's added to a group.
+[`key`](#key-argument) identifes the value on which to group.
+`map` is also a [key argument](@key-argument) which identifies a transform to be applied to each element from the input when it's added to a group.
 
 ```Javascript
 let arr = [
@@ -445,64 +445,6 @@ Return a sequence including only elements that satisfy the condition in `callbac
 
 Return a subset of the original sequence. `skip` and `take` will do the same thing, and may be more expressive. Negative values for "begin" not currently supported.
 
-### Ordering
-
-#### orderBy(key)
-
-Sort a sequence by comparing each element according to the specified `order`. 
-
-```Javascript
-let seq = [
-    { foo: 2, id: 1}, 
-    { foo: 1, id: 2}, 
-    { foo: 3, id: 3}
-]
-
-let x = iter(seq).orderBy('foo').map((e)=>e.id).toArray();
-// x = [2,1,3]
-
-let x = iter(seq).orderBy(e=>e.foo).map((e)=>e.id).toArray();
-// x = [2,1,3]
-```
-
-#### orderDesc(key)
-
-Same as `orderBy`, but sorts in descending order.
-
-#### thenBy(key)
-
-Chain a secondary (or n-ary) sort to an `orderBy` clause, which sorts orders which are equal during the primary sort. 
-
-```Javascript
-let seq = [
-    { foo: 2, bar: 2, id: 1}, 
-    { foo: 1, id: 2}, 
-    { foo: 3, id: 3},
-    { foo: 2, bar: 1, id: 4}
-]
-
-let x = iter(seq)
-    .orderBy('foo')
-    .thenBy('bar')
-    .map((e)=>e.id).toArray();
-
-// x = [2,4,1,3]
-```
-
-If you attempt to use a `thenBy` clause anywhere other than directly after another sorting clause, an error will be thrown.
-
-#### thenDesc(key)
-
-Same as `thenBy`, but sorts in descending order.
-
-#### sort([callback(a, b)])
-
-Sort the sequence. 
-
-#### reverse()
-
-Reverse the order of the sequence.
-
 ### Merging and Set Operations
 
 #### except(sequence)
@@ -527,7 +469,7 @@ let x = iter([1,2,3,4,5]]).except([3,5]).toArray()
 
 Return a sequence containing all unique elements found in either sequence.
 
-If using an `on` clause to specify keys, for keys found in both seqeunces, the value from the original sequence will be returned in the resulting sequence.  
+If using an `on` clause to specify keys, for keys found in both sequences, the value from the original sequence will be returned in the resulting sequence.  
 
 ```Javascript
 let x = iter([1,2,3]]).union([2,3,4]).toArray()
@@ -556,7 +498,7 @@ let merged = iter(seq1)
 
 #### on(left: key, [right: key])
 
-Specify keys to use when performing operations that involve merging two sequences. This is valid only when it immediately follows one of these operations:
+Specify [keys](#get-key-argument) to use when performing operations that involve merging two sequences. This is valid only when it immediately follows one of these operations:
 
 * except
 * intersect
@@ -617,6 +559,65 @@ Note that concat is not recursive; if an element of an appended sequence is itse
 let x = iter(['foo', 'bar']).concat(['baz', ['fizz'])
 // x === ['foo','bar','baz',['fizz']
 ```
+
+### Ordering
+
+#### orderBy(key)
+
+Sort a sequence by comparing each element according to the value specified [`key`](#key-argument). 
+
+```Javascript
+let seq = [
+    { foo: 2, id: 1}, 
+    { foo: 1, id: 2}, 
+    { foo: 3, id: 3}
+]
+
+let x = iter(seq).orderBy('foo').map((e)=>e.id).toArray();
+// x = [2,1,3]
+
+let x = iter(seq).orderBy(e=>e.foo).map((e)=>e.id).toArray();
+// x = [2,1,3]
+```
+
+#### orderByDesc(key)
+
+Same as `orderBy`, but sorts in descending order.
+
+#### thenBy(key)
+
+Chain a secondary (or n-ary) sort to an `orderBy` clause, which sorts orders which are equal during the primary sort, using the [`key`](#get-key-argument).
+
+```Javascript
+let seq = [
+    { foo: 2, bar: 2, id: 1}, 
+    { foo: 1, id: 2}, 
+    { foo: 3, id: 3},
+    { foo: 2, bar: 1, id: 4}
+]
+
+let x = iter(seq)
+    .orderBy('foo')
+    .thenBy('bar')
+    .map((e)=>e.id).toArray();
+
+// x = [2,4,1,3]
+```
+
+If you attempt to use a `thenBy` clause anywhere other than directly after another sorting clause, an error will be thrown.
+
+#### thenByDesc(key)
+
+Same as `thenBy`, but sorts in descending order.
+
+#### sort([callback(a, b)])
+
+Sort the sequence according to the relative comparison value returned by the callback. Same as Array.sort.
+
+#### reverse()
+
+Reverse the order of the sequence.
+
 
 ### Traversal 
 
@@ -699,7 +700,7 @@ let x = iter([1,2,3,4,5]).count()
 
 #### min([key])
 
-Return the minimum of all values in the sequence. If an optional `key` is provided, it will be used to produce the value to sum.
+Return the minimum of all values in the sequence. If an optional [`key`](#get-key-argument) is provided, it will be used to produce the value to sum.
 
 ```Javascript
 let x = iter([3,1,2,4]).min()
@@ -708,15 +709,15 @@ let x = iter([3,1,2,4]).min()
 
 #### max([key])
 
-Return the max of all values in the sequence. If an optional `key` is provided, it will be used to produce the values to evaluate.
+Return the max of all values in the sequence. If an optional [`key`](#get-key-argument) is provided, it will be used to produce the values to evaluate.
 
 #### sum([key])
 
-Return the sum of all values in the sequence. If an optional `key` is provided, it will be used to produce the values to evaluate.
+Return the sum of all values in the sequence. If an optional [`key`](#get-key-argument) is provided, it will be used to produce the values to evaluate.
 
 #### mean([key])
 
-Return the mean (average) of all values in the sequence. If an optional `key` is provided, it will be used to produce the values to evaluate.
+Return the mean (average) of all values in the sequence. If an optional [`key`](#get-key-argument) is provided, it will be used to produce the values to evaluate.
 
 
 #### some(callback(e, i), [thisArg])
