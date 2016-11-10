@@ -80,7 +80,7 @@ describe('iter - conversion', ()=> {
         assert.deepEqual(sut.toArray(), [['fizz','buzz']])
     })
 
-    // it('fromObject - property getters - own', ()=> {
+    // it('fromObject - property gets - own', ()=> {
         
     // })
 
@@ -139,8 +139,8 @@ describe('iter - conversion', ()=> {
         
         function mapOutput([key, value]) {
             return [key, Object.assign({}, value,{
-                getter: (typeof value.getter === 'function') ? true : false,
-                setter: (typeof value.setter === 'function') ? true : false,
+                get: (typeof value.get === 'function') ? true : false,
+                set: (typeof value.set === 'function') ? true : false,
             })]
         }
         it('pojo', ()=> {
@@ -154,8 +154,8 @@ describe('iter - conversion', ()=> {
                     type: 'string',
                     field: true,
                     writable: true,
-                    getter: false,
-                    setter: false,
+                    get: false,
+                    set: false,
                     configurable: true,
                     enumerable: true, 
                     depth: 0
@@ -164,8 +164,8 @@ describe('iter - conversion', ()=> {
                     type: 'function',
                     field: true,
                     writable: true,
-                    getter: false,
-                    setter: false,
+                    get: false,
+                    set: false,
                     configurable: true,
                     enumerable: true, 
                     depth: 0
@@ -181,8 +181,8 @@ describe('iter - conversion', ()=> {
                     type: null,
                     field: false,
                     writable: true,
-                    getter: true,
-                    setter: true,
+                    get: true,
+                    set: true,
                     configurable: true,
                     enumerable: false, 
                     depth: 1
@@ -192,8 +192,8 @@ describe('iter - conversion', ()=> {
                     type: null,
                     field: false,
                     writable: false,
-                    getter: true,
-                    setter: false,
+                    get: true,
+                    set: false,
                     configurable: true,
                     enumerable: false, 
                     depth: 1
@@ -202,8 +202,8 @@ describe('iter - conversion', ()=> {
                     type: 'function',
                     field: true,
                     writable: true,
-                    getter: false,
-                    setter: false,
+                    get: false,
+                    set: false,
                     configurable: true,
                     enumerable: false, 
                     depth: 1
@@ -212,8 +212,8 @@ describe('iter - conversion', ()=> {
                     type: 'function',
                     field: true,
                     writable: true,
-                    getter: false,
-                    setter: false,
+                    get: false,
+                    set: false,
                     configurable: true,
                     enumerable: false, 
                     depth: 1
@@ -222,8 +222,8 @@ describe('iter - conversion', ()=> {
                     type: 'string',
                     field: true,
                     writable: true,
-                    getter: false,
-                    setter: false,
+                    get: false,
+                    set: false,
                     configurable: true,
                     enumerable: true, 
                     depth: 0 
@@ -241,8 +241,8 @@ describe('iter - conversion', ()=> {
                     { type: 'boolean',
                     field: true,
                     writable: true,
-                    getter: false,
-                    setter: false,
+                    get: false,
+                    set: false,
                     configurable: true,
                     enumerable: true,
                     depth: 0 } ],
@@ -250,8 +250,8 @@ describe('iter - conversion', ()=> {
                     { type: 'number',
                     field: true,
                     writable: true,
-                    getter: false,
-                    setter: false,
+                    get: false,
+                    set: false,
                     configurable: true,
                     enumerable: true,
                     depth: 0 } ],    
@@ -259,8 +259,8 @@ describe('iter - conversion', ()=> {
                     { type: 'null',
                     field: true,
                     writable: true,
-                    getter: false,
-                    setter: false,
+                    get: false,
+                    set: false,
                     configurable: true,
                     enumerable: true,
                     depth: 0 } ],    
@@ -268,8 +268,8 @@ describe('iter - conversion', ()=> {
                     type: 'string',
                     field: true,
                     writable: true,
-                    getter: false,
-                    setter: false,
+                    get: false,
+                    set: false,
                     configurable: true,
                     enumerable: true,  
                     depth: 0
@@ -279,8 +279,8 @@ describe('iter - conversion', ()=> {
                     { type: 'undefined',
                     field: true,
                     writable: true,
-                    getter: false,
-                    setter: false,
+                    get: false,
+                    set: false,
                     configurable: true,
                     enumerable: true,
                     depth: 0 } ],                                            
@@ -288,8 +288,8 @@ describe('iter - conversion', ()=> {
                     type: 'string',
                     field: true,
                     writable: true,
-                    getter: false,
-                    setter: false,
+                    get: false,
+                    set: false,
                     configurable: true,
                     enumerable: true, 
                     depth: 0
@@ -298,8 +298,8 @@ describe('iter - conversion', ()=> {
                     type: null,
                     field: false,
                     writable: false,
-                    getter: true,
-                    setter: false,
+                    get: true,
+                    set: false,
                     configurable: true,
                     enumerable: false, 
                     depth: 1
@@ -308,8 +308,8 @@ describe('iter - conversion', ()=> {
                     type: 'function',
                     field: true,
                     writable: true,
-                    getter: false,
-                    setter: false,
+                    get: false,
+                    set: false,
                     configurable: true,
                     enumerable: false, 
                     depth: 1
@@ -318,8 +318,8 @@ describe('iter - conversion', ()=> {
                     type: null,
                     field: false,
                     writable: true,
-                    getter: true,
-                    setter: true,
+                    get: true,
+                    set: true,
                     configurable: true,
                     enumerable: false, 
                     depth: 2

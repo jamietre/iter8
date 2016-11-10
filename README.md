@@ -325,8 +325,8 @@ Returns a *key-value* seqeunce where the key is the property name, and the value
 * *type*: the data type for fields ('string', 'number', 'function', 'object', 'null', 'undefined'). For properties the value is `null`. (Actuall null values are the string `"null"`).
 * *field*: true for regular properties, false for getter/setter
 * *writeable*: boolean, the property can be assigned to
-* *getter*: the property getter function or `null`
-* *setter*: the property setter function or `null`
+* *get*: the property getter function or `undefined`
+* *set*: the property setter function or `undefined`
 * *configurable*: the property is configurable
 * *enumerable*: the property is enumerable
 * *depth*: the depth in the prototype chain. 0 means the object itself, 1 means its prototype, 2 means the prototype's prototype, etc.

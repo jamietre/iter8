@@ -49,7 +49,7 @@ declare namespace iter {
      * @param {function} filter A callback invoked for each property name that should return true to include it, or false to exclude it
      * @returns {Array} An array of [key, value] pairs where the key is the prop name, and the value is the prop descriptor
      */    
-    let reflect: (obj: (index: number) => any, times: number) => Iter;
+    let reflect: (obj: (index: number) => any, recurse: boolean, filter: (name: string) => boolean) => Iter;
 }
 export declare class Iter implements Iterable<any> {
     /**

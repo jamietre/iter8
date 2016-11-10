@@ -160,8 +160,8 @@ Iter[_p] = {
         return orderBy.call(this, order, true)
     },
     thenBy: thenBy,
-    thenByDesc: function(order, desc) {
-        return thenBy.call(this, order, desc)
+    thenByDesc: function(order) {
+        return thenBy.call(this, order, true)
     },
     count: makeAggregator('var r=0', 'r++'),
     skip: newIter(skipIterable),
@@ -421,14 +421,19 @@ function makeGetkeyAggregator(setup, aggregator, teardown) {
 
 
 function orderBy(order, desc) {
-    var orders=[getValueMapper(order)];
+    var orders=[{ 
+        fn: getValueMapper(order), 
+        desc: desc
+    }];
     return orderByHelper.call(this, this, orders, desc)
 }
 
 function thenBy(order, desc) {
     if (!this[_orders]) throw new Error("thenBy only makes sense after orderBy")
     var orders = this[_orders].slice(0);
-    orders.push(getValueMapper(order))
+    orders.push({ 
+        fn: getValueMapper(order), desc: desc 
+    })
     return orderByHelper.call(this, this[_root], orders, desc)
 }
 
@@ -439,7 +444,7 @@ function orderByHelper(root, orders, desc) {
     return seq;
 }
 
-function makeOrderByIterator(orders, desc){
+function makeOrderByIterator(orders){
     var that = this;
 
     return function() {
@@ -447,7 +452,10 @@ function makeOrderByIterator(orders, desc){
         var sorted = that.toArray().sort(function(a, b) {
             var val=0;
             for (var i=0; val===0 && i<orders.length; i++) {
-                var fn = orders[i];
+                /* need to optimize this  */
+                var desc = orders[i].desc;
+                var fn = orders[i].fn;
+
                 var va = fn(desc?b:a);
                 var vb = fn(desc?a:b);
                 if (va<vb) val=-1
