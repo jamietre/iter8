@@ -432,7 +432,7 @@ function orderBy(order, desc) {
         fn: getValueMapper(order), 
         desc: desc
     }];
-    return orderByHelper.call(this, this, orders, desc)
+    return orderByHelper(this, orders)
 }
 
 function thenBy(order, desc) {
@@ -442,17 +442,17 @@ function thenBy(order, desc) {
         fn: getValueMapper(order), 
         desc: desc 
     })
-    return orderByHelper.call(this, this[_root], orders, desc)
+    return orderByHelper(this[_root], orders)
 }
 
-function orderByHelper(root, orders, desc) {
-    var seq =  new Iter(_iterator, makeOrderByIterator(root, orders, desc));
+function orderByHelper(root, orders) {
+    var seq =  new Iter(_iterator, makeOrderByIterator(root, orders));
     seq[_orders] = orders;
     seq[_root] = root
     return seq;
 }
 
-function makeOrderByIterator(that, orders){
+function makeOrderByIterator(that, orders) {
 
     return function() { 
         var sorted = that.toArray().sort(function(a, b) {
