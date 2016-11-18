@@ -628,22 +628,26 @@ describe('iter', ()=> {
             // are in the orignal sequence order either way
             assert.deepEqual(sut.toArray(), [4,2,7,3,5,6,1]);
         })
-/*
-            {foo:1, id:1},
-            {foo:4, id:2},
-            {foo:2, bar:2, id:3},
-            {foo:5, id:4},
-            {foo:2, bar: 1, id:5},
-            {foo:2, bar: 3, id:6},
-            {foo:3, id:7}
-*/
-
+    
         it('orderBy thenByDesc property', ()=> {
+            const seq = [
+            {foo:1, id:1},
+            {foo:2, bar: 1, id:2},
+            {foo:2, bar: 2, id:3},
+            {foo:2, bar: 3, baz: 3, id:4},
+            {foo:2, bar: 3, baz: 1, id:5},
+            {foo:2, bar: 3, baz: 2, id:6},
+            {foo:3, id:7},
+            {foo:4, id:8},
+            {foo:5, id:9}
+            ]
+
             let sut = iter(seq).orderBy('foo')
                 .thenByDesc('bar')
+                .thenByDesc('baz')
                 .map(e=>e.id);
 
-            assert.deepEqual(sut.toArray(), [1,6,3,5,7,2,4]);
+            assert.deepEqual(sut.toArray(), [1,4,6,5,3,2,7,8,9]);
         })
     });
     describe('sequenceEqual', ()=> {
