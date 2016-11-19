@@ -124,6 +124,32 @@ describe('performance', ()=> {
             }            
         });
     })
+    
+    it('array push vs. direct assignment', ()=> {
+        
+        let arr = iter.generate((e)=>Math.floor(Math.random()*100),100000).toArray();
+
+        runTest({
+            name: "iteration vs. index access",
+            iterations: 5,
+            tests: {
+                'push':()=> {
+                    let target=[];
+                    for (var i=0;i<target.count; i++) {
+                        arr.push(target[i])
+                    }                    
+                    return target.length;
+                },
+                'direct-assign':()=> {
+                    let target=[];
+                    for (var i=0;i<target.count; i++) {
+                        target[i]=arr[i]
+                    }                    
+                    return target.length;
+                },
+            }            
+        });
+    })
 
     it('except - large source', ()=> {
         let arr = iter.generate((e)=>Math.floor(Math.random()*100),1000000).toArray();

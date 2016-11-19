@@ -20,7 +20,9 @@ declare type Provider = (item: any) => any;
 declare type ProviderWithIndex = (item: any, index: number) => any;
 declare type KeyProvider = Provider | string;
 declare type KeyProvider2 = ProviderWithIndex | string;
-declare type TestProvider2 =  (item: any, index: number) => boolean
+
+declare type TestProvider<T> =  (item: T, index: number) => boolean
+declare type TestProvider2 = TestProvider<any>
 
 declare interface IteratorResult<T> {
     done: boolean;
@@ -51,36 +53,36 @@ declare namespace iter {
      * constructor"
      *
      * @param {any} obj An object
-     * @param {function} filter A callback that is invoked with each property name. Returing `false` will omit a property from the sequence.
+     * @param {TestProvider<string>} [filter] A callback that is invoked with each property name. Returing `false` will omit a property from the sequence.
      * @returns {Iter} an Iter instance with a sequence of [key, value] pairs corresponding to the object's properties
      */
-    let fromObject: (obj: any, filter?: (prop: string, index: number) => boolean) => Iter;
+    let fromObject: (obj: any, filter?: TestProvider<string>) => Iter;
     /**
      * Create an Iter from an object, returning a seqeunce of [key, value] pairs obtained
      * by enumerating the object's properties. Only the object's own properties (e.g. no prototype chain)
      * are included.
      *
      * @param {any} obj An object
-     * @param {function} filter A callback that is invoked with each property name. Returing `false` will omit a property from the sequence.
+     * @param {TestProvider<string>} [filter] A callback that is invoked with each property name. Returing `false` will omit a property from the sequence.
      * @returns {Iter} an Iter instance with a sequence of [key, value] pairs corresponding to the object's properties
      */
-    let fromObjectOwn: (obj: any, filter?: (prop: string, index: number) => boolean) => Iter;
+    let fromObjectOwn: (obj: any, filter?: TestProvider<string>) => Iter;
     /**
      * Generate a sequence from a `function(n)` invoked `times` times, or by repeating a single value.
      *
-     * @param {any} o An object to repeat, or a `function(n)` that returns an object.
+     * @param {(index: number) => any | any} obj An object to repeat, or a `function(n)` that returns an object.
      * @param {number} times The number of times to invoke the generator or repeat
      */
-    let generate: (obj: (index: number) => any, times: number) => Iter;
+    let generate: (obj: (index: number) => any | any, times: number) => Iter;
     /**
      * Get metadata about the properties, and optionally the prototype chain, of an object
      *  
      * @param {object} object The object to refelect
      * @param {boolean} recurse If true, recurse prototype chain
-     * @param {function} filter A callback invoked for each property name that should return true to include it, or false to exclude it
+     * @param {TestProvider<string>} filter A callback invoked for each property name that should return true to include it, or false to exclude it
      * @returns {Array} An array of [key, value] pairs where the key is the prop name, and the value is the prop descriptor
      */    
-    let reflect: (obj: (index: number) => any, recurse: boolean, filter: (name: string) => boolean) => Iter;
+    let reflect: (object: any, recurse: boolean, filter: TestProvider<string>) => Iter;
 }
 export declare class Iter implements Iterable<any> {
     /**
