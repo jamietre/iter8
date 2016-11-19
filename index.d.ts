@@ -78,7 +78,7 @@ export declare class Iter implements Iterable<any> {
     */
     do(callback: (item: any, index: number) => any, thisArg?: any): Iter;
     /**
-     * Group each element in the sequence according to the value of a property if `group` is a string,
+     * Group each element in the sequence according to the value of a property if `group` is a string, a ajlk as jklasjklajkl
      * or the value returned by `function(item, index)` if group is a function. Returns a sequence
      * of `[key, value]` pairs where `value` is an array containing each item in the group.
      *
@@ -96,8 +96,8 @@ export declare class Iter implements Iterable<any> {
      */
     orderBy(order: (item: any, index: number) => any | string): Iter;
     /**
-     * Sort by the value of a property, in descending order. If `order` is a string, or by the value returned by a
-     * `function(item, index)` if `order` is a function
+     * Sort by the value of a property, in descending order. If `order` is a string, or 
+     * by the value returned by a `function(item, index)` if `order` is a function
      *
      * @param {((item: any, index: number)=>any | string)} order A property 
      *      name or function
@@ -115,9 +115,10 @@ export declare class Iter implements Iterable<any> {
     thenBy(order: (item: any, index: number) => any | string): Iter;
     /**
      * Add a secondary or n-ary descending sort order if there are multiple 
-     *      items with the same value. Can only follow an `order` or `then` clause.
+     * items with the same value. Can only follow an `order` or `then` clause.
      *
-     * @param {((item: any, index: number)=>any | string)} order A property name or function
+     * @param {((item: any, index: number)=>any | string)} order A property name or 
+     *      function
      * @returns {Iter} The sorted sequence
      */
     thenByDesc(order: (item: any, index: number) => any | string, desc: any): Iter;
@@ -181,7 +182,7 @@ export declare class Iter implements Iterable<any> {
     flatten(recurse?: boolean): Iter;
     /**
      * Return a sequence with only one occurrence of each distinct value in
-     * the seqeunce
+     * the sequence
      *
      * @returns {Iter} a sequence of unique values
      */
@@ -250,15 +251,22 @@ export declare class Iter implements Iterable<any> {
      */
     on(mapLeft: (item: any) => any, mapRight: (item: any) => any): Iter;
     /**
-     * Test whether two seqeunces are equal, meaning they are the same lengths and each item at the same position in each sequence is equal.
+     * Test whether two seqeunces are equal, meaning they are the same lengths and 
+     * each item at the same position in each sequence is equal.
      *
      * @param {Iterable<any>} sequence the other sequence to test
+     * @param {(item: any)=>any} keyLeft a function that returns a key from
+     *    the original or "left" sequence
+     * @param {(item: any)=>any} keyRight a function that returns a key from the
+     *    other or "right" sequence
      * @returns {boolean} `true` if equal, `false` if not
      */
-    sequenceEqual(sequence: Iterable<any>): boolean;
+    sequenceEqual(sequence: Iterable<any>, keyLeft: (item: any) => any, keyRight: (item: any) => any): boolean;
     /**
-     * Create a new seqeunce by concanating this sequence with all elements in all other sequences or elements passed by argument.
-     * Any iterable objects will be iterated over; not-iterable objects will be appended. Strings are always consdered non-iterable.
+     * Create a new seqeunce by concanating this sequence with all elements in all 
+     * other sequences or elements passed by argument. Any iterable objects will be 
+     * iterated over; not-iterable objects will be appended. Strings are always 
+     * considered non-iterable.
      *
      * @param {...any[]} args the objects and/or seqeunces to append
      * @returns {Iter} the resulting sequence
@@ -406,27 +414,26 @@ export declare class Iter implements Iterable<any> {
      */
     execute(): Iter;
     /**
-     * Return the minimum value in the sequence
-     * TODO: Can't really use Math for this if we want to return "any"
+     * Determine the minimum value in the sequence
      *
-     * @param {function} mapCallback An optional callback invoked on each element that returns the value to sum
+     * @param {function} key A function or property name that returns the value to sum
      * @returns {any} The minimum value
      */
-    min(mapCallback?: (item: any, index: any) => any): any;
+    min(key?: (item: any, index: any) => any): any;
     /**
-     * Return the maximum value in the sequence
+     * Determine the maximum value in the sequence
      *
-     * @param {function} mapCallback An optional callback invoked on each element that returns the value to sum
+     * @param {function} key A function or property name that returns the value to sum
      * @returns {any} The maximum value
      */
-    max(mapCallback?: (item: any, index: any) => any): any;
+    max(key?: (item: any, index: any) => any): any;
     /**
      * Return the sum of all elements in the sequence
      *
-     * @param {any} mapCallback An optional callback invoked on each element that returns the value to sum
+     * @param {any} key An optional callback invoked on each element that returns the value to sum
      * @returns {any} The sum of all elements in the sequence (using the + operator)
      */
-    sum(mapCallback?: (item: any, index: any) => any): any;
+    sum(key?: (item: any, index: any) => any): any;
     /**
      * Sort the sequence using default comparison operator. If a `callback` is provided, then
      * it will use the return value to determine priority when comparing two elements `a` and `b`:
