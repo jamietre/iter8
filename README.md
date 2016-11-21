@@ -253,7 +253,17 @@ let obj = iter({ foo: 'bar', fizz: 'buzz'}).as(Map);
 
 #### iter(obj)
 
-Create a new `Iter` instance from an iterable object (e.g. an `Array`, `Map`, or `Set`), or a JavaScript object. When creating from an object using the default constructor, only "own" properties of the object are iterated.
+Create a new `Iter` instance from:
+
+* an `iterable` object. Iterable objects have a method `[Symbol.iterator]` that returns an `iterator`. Most JavaScript types that are containersimplement this, e.g. an `Array`, `Map`, `Set`, and `arguments`.
+* an `iterator`. Iterators are entities that have a method `next()`, and should implement the *iterator protocol*. Some built-in methods return iterators, like `Map.values()`
+* a `generator`. If you pass a function to `iter`, it is assumed to be a generator.
+
+See [iterator protocols](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Iteration_protocols) for details on the specific entity types.
+
+When an `iterable` and `generator` types are uses, each time the sequence for an `Iter` object is enumerated, the seqeunce will be restarted from the original source. That is, we will invoke `source[Symbol.iterator]()` for an iterable, and `generator()` for a generator, to obtain the seqeunce for a given enumeration.
+
+With an `iterator`, however, we only have the seqeuence itself. We can't obtain it again. In this case, iter8 will *cache the sequence* the first time it is enumerated, and re-use the cached values for any subseqeuence enumeration. For this reason any operations on an `Iter` object sourced from an iterator are guaranteed to be reproducible, whereas operations on the others are not, since the sequence could theoretically be different when requested each time. If you want to enforce reproducibility, then you should always cache a sequence at the beginning of an operation. See `execute`. 
 
 
 ```Javascript

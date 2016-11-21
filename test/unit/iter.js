@@ -295,9 +295,12 @@ describe('iter', ()=> {
     })
     describe('unique', ()=> {
         it('unique', ()=> {
-            let sut = iter([1,2,2,3,6,12,1,2,2,9]);
+            let arr=[1,2,2,3,6,12,1,2,2,9];
+            let sut = iter(arr);
+            assert.equal(sut.count(), arr.length)
             assert.deepEqual(sut.unique().toArray(), [1,2,3,6,12,9])
         })
+
         it('unique with key', ()=> {
             let sut = iter([ 
                 { key: 1, value: 'foo'},
@@ -711,4 +714,19 @@ describe('iter', ()=> {
         })
     
     })
+
+    it('can cache a stream', ()=> {
+        let source = new Map([[1,2], [2,2], [3,3], [4,3], [5,3]])
+
+        // the "values()" method returns an iterator, not an iterable. But, it also exposes [Symbol.iterator]()
+        // which returns the stateful iterator, rather than generating a new one. So iter tests first for next()
+        // and if so, treats the seqence as at iterator and caches it, allowing us to safely reuse it.
+
+        let sut = iter(source.values()).unique();
+        assert.equal(sut.count(), 2)
+        assert.deepEqual(sut.unique().toArray(), [2,3])
+    
+    })
+
+
 })

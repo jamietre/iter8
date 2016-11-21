@@ -46,7 +46,7 @@ describe('iter - conversion', ()=> {
     })
 
     it('fromObject', ()=> {
-        let sut = iter({
+        let sut = iter.fromObject({
             'foo': 'bar',
             'fizz': 'buzz'
         })
@@ -58,7 +58,7 @@ describe('iter - conversion', ()=> {
         let obj = new Obj();
         obj.fizz = 'buzz';
         let sut = iter.fromObject(obj);
-        iter.fromObject()
+
         assert.deepEqual(sut.toArray(), [['fizz','buzz'], ['superProp','super-prop']])
     })
 

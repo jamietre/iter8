@@ -29,7 +29,7 @@ describe('kvp', ()=> {
     })
 
     it("casting", ()=> {
-        let seq = iter(data)
+        let seq = iter.fromObject(data)
             .cast(Kvp)
             .orderBy('value')
             .thenBy('key');
