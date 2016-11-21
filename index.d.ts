@@ -6,6 +6,39 @@
 */
 declare function iter(source: any): Iter;
 
+/// <reference path="lib.es2015.symbol.d.ts" />
+
+declare interface Symbol {
+    /** Returns a string representation of an object. */
+    toString(): string;
+
+    /** Returns the primitive value of the specified object. */
+    valueOf(): Object;
+}
+
+declare type Provider = (item: any) => any;
+declare type ProviderWithIndex = (item: any, index: number) => any;
+declare type KeyProvider = Provider | string;
+declare type KeyProvider2 = ProviderWithIndex | string;
+
+declare type TestProvider<T> =  (item: T, index: number) => boolean
+declare type TestProvider2 = TestProvider<any>
+
+declare interface IteratorResult<T> {
+    done: boolean;
+    value: T;
+} 
+
+declare interface Iterator<T> {
+    next(value?: any): IteratorResult<T>;
+    return?(value?: any): IteratorResult<T>;
+    throw?(e?: any): IteratorResult<T>;
+}
+
+declare interface Iterable<T>{
+    [Symbol.iterator]: ()=>Iterator<T>
+}
+
 declare namespace iter {
     /**
      * Create an Iter from an generator (a function returning an iterator)
@@ -20,36 +53,36 @@ declare namespace iter {
      * constructor"
      *
      * @param {any} obj An object
-     * @param {function} filter A callback that is invoked with each property name. Returing `false` will omit a property from the sequence.
+     * @param {TestProvider<string>} [filter] A callback that is invoked with each property name. Returing `false` will omit a property from the sequence.
      * @returns {Iter} an Iter instance with a sequence of [key, value] pairs corresponding to the object's properties
      */
-    let fromObject: (obj: any, filter?: (prop: string, index: number) => boolean) => Iter;
+    let fromObject: (obj: any, filter?: TestProvider<string>) => Iter;
     /**
      * Create an Iter from an object, returning a seqeunce of [key, value] pairs obtained
      * by enumerating the object's properties. Only the object's own properties (e.g. no prototype chain)
      * are included.
      *
      * @param {any} obj An object
-     * @param {function} filter A callback that is invoked with each property name. Returing `false` will omit a property from the sequence.
+     * @param {TestProvider<string>} [filter] A callback that is invoked with each property name. Returing `false` will omit a property from the sequence.
      * @returns {Iter} an Iter instance with a sequence of [key, value] pairs corresponding to the object's properties
      */
-    let fromObjectOwn: (obj: any, filter?: (prop: string, index: number) => boolean) => Iter;
+    let fromObjectOwn: (obj: any, filter?: TestProvider<string>) => Iter;
     /**
      * Generate a sequence from a `function(n)` invoked `times` times, or by repeating a single value.
      *
-     * @param {any} o An object to repeat, or a `function(n)` that returns an object.
+     * @param {(index: number) => any | any} obj An object to repeat, or a `function(n)` that returns an object.
      * @param {number} times The number of times to invoke the generator or repeat
      */
-    let generate: (obj: (index: number) => any, times: number) => Iter;
+    let generate: (obj: (index: number) => any | any, times: number) => Iter;
     /**
      * Get metadata about the properties, and optionally the prototype chain, of an object
      *  
      * @param {object} object The object to refelect
      * @param {boolean} recurse If true, recurse prototype chain
-     * @param {function} filter A callback invoked for each property name that should return true to include it, or false to exclude it
+     * @param {TestProvider<string>} filter A callback invoked for each property name that should return true to include it, or false to exclude it
      * @returns {Array} An array of [key, value] pairs where the key is the prop name, and the value is the prop descriptor
      */    
-    let reflect: (obj: (index: number) => any, recurse: boolean, filter: (name: string) => boolean) => Iter;
+    let reflect: (object: any, recurse: boolean, filter: TestProvider<string>) => Iter;
 }
 export declare class Iter implements Iterable<any> {
     /**
@@ -76,51 +109,49 @@ export declare class Iter implements Iterable<any> {
     * @param {any} thisArg The "this" context applied to the callback
     * @returns {Iter} a seqeunce identical to the input sequence
     */
-    do(callback: (item: any, index: number) => any, thisArg?: any): Iter;
+    do(callback: (item: any, index: number) => void, thisArg?: any): Iter;
     /**
-     * Group each element in the sequence according to the value of a property if `group` is a string,
+     * Group each element in the sequence according to the value of a property if `group` is a string, a ajlk as jklasjklajkl
      * or the value returned by `function(item, index)` if group is a function. Returns a sequence
      * of `[key, value]` pairs where `value` is an array containing each item in the group.
      *
-     * @param {((item: any, index: number)=>any | string)} key A property name or function that specifies a key to group by
-     * @param {((item: any, index: number)=>any | string)} map A property name or function that specifies how to map each value to the group 
+     * @param {KeyProvider} key A property name or function that specifies a key to group by
+     * @param {KeyProvider} map A property name or function that specifies how to map each value to the group 
      * @returns {Iter} A sequence of `[key, value[]]` pairs where `value` is an array of items in the group
      */
-    groupBy(key: (item: any, index: number) => any | string, map: (item: any, index: number) => any | string): Iter;
+    groupBy(key: KeyProvider, map: KeyProvider): Iter;
     /**
      * Sort by the value of a property, if `order` is a string, or by the value returned by a
      * `function(item, index)` if `order` is a function
      *
-     * @param {((item: any, index: number)=>any | string)} order A property name or function
+     * @param {KeyProvider} order A property name or function identifying the sort key
      * @returns {Iter} The sorted sequence
      */
-    orderBy(order: (item: any, index: number) => any | string): Iter;
+    orderBy(order: KeyProvider): Iter;
     /**
-     * Sort by the value of a property, in descending order. If `order` is a string, or by the value returned by a
-     * `function(item, index)` if `order` is a function
+     * Sort by the value of a property, in descending order. If `order` is a string, or 
+     * by the value returned by a `function(item, index)` if `order` is a function
      *
-     * @param {((item: any, index: number)=>any | string)} order A property 
-     *      name or function
+     * @param {KeyProvider} order A property name or function identifying the sort key
      * @returns {Iter} The sorted sequence
      */
-    orderByDesc(order: (item: any, index: number) => any | string): Iter;
+    orderByDesc(order: KeyProvider): Iter;
     /**
      * Add a secondary or n-ary sort order if there are multiple items with 
      * the same value. Can only follow an `order` or `then` clause.
      *
-     * @param {((item: any, index: number)=>any | string)} order A property 
-     *      name or function
+     * @param {KeyProvider} order A property name or function identifying the sort key
      * @returns {Iter} The sorted sequence
      */
-    thenBy(order: (item: any, index: number) => any | string): Iter;
+    thenBy(order: KeyProvider): Iter;
     /**
      * Add a secondary or n-ary descending sort order if there are multiple 
-     *      items with the same value. Can only follow an `order` or `then` clause.
+     * items with the same value. Can only follow an `order` or `then` clause.
      *
-     * @param {((item: any, index: number)=>any | string)} order A property name or function
+     * @param {KeyProvider} order A property name or function identifying the sort key
      * @returns {Iter} The sorted sequence
      */
-    thenByDesc(order: (item: any, index: number) => any | string, desc: any): Iter;
+    thenByDesc(order: KeyProvider): Iter;
     /**
      * Iterate over the entire sequence and count the items
      *
@@ -181,7 +212,7 @@ export declare class Iter implements Iterable<any> {
     flatten(recurse?: boolean): Iter;
     /**
      * Return a sequence with only one occurrence of each distinct value in
-     * the seqeunce
+     * the sequence
      *
      * @returns {Iter} a sequence of unique values
      */
@@ -242,23 +273,30 @@ export declare class Iter implements Iterable<any> {
      * `null` or `undefined` as the 2nd argument (or simply use `map` against
      * the original sequence first).
      *
-     * @param {(item: any)=>any} mapLeft a function that returns a key from
+     * @param {KeyProvider} left a function that returns a key from
      *    the original or "left" sequence
-     * @param {(item: any)=>any} mapRight a function that returns a key from the
+     * @param {KeyProvider} right a function that returns a key from the
      *    other or "right" sequence
      * @returns a sequence of [key, value] pairs
      */
-    on(mapLeft: (item: any) => any, mapRight: (item: any) => any): Iter;
+    on(keft: KeyProvider, right: KeyProvider): Iter;
     /**
-     * Test whether two seqeunces are equal, meaning they are the same lengths and each item at the same position in each sequence is equal.
+     * Test whether two seqeunces are equal, meaning they are the same lengths and 
+     * each item at the same position in each sequence is equal.
      *
      * @param {Iterable<any>} sequence the other sequence to test
+     * @param {KeyProvider} left a function that returns a key from
+     *    the original or "left" sequence
+     * @param {KeyProvider} right a function that returns a key from the
+     *    other or "right" sequence
      * @returns {boolean} `true` if equal, `false` if not
      */
-    sequenceEqual(sequence: Iterable<any>): boolean;
+    sequenceEqual(sequence: Iterable<any>, left: KeyProvider, right: KeyProvider): boolean;
     /**
-     * Create a new seqeunce by concanating this sequence with all elements in all other sequences or elements passed by argument.
-     * Any iterable objects will be iterated over; not-iterable objects will be appended. Strings are always consdered non-iterable.
+     * Create a new seqeunce by concanating this sequence with all elements in all 
+     * other sequences or elements passed by argument. Any iterable objects will be 
+     * iterated over; not-iterable objects will be appended. Strings are always 
+     * considered non-iterable.
      *
      * @param {...any[]} args the objects and/or seqeunces to append
      * @returns {Iter} the resulting sequence
@@ -268,36 +306,36 @@ export declare class Iter implements Iterable<any> {
      * Return a sequence that is generated from the return values of a function invoked for
      * each element in the input sequence
      *
-     * @param {function} x, the callback(element, index)
+     * @param {KeyProvider2} callback the callback(element, index)
      * @param {any} thisArg the "this" context applied to the callback
      * @returns {Iter} the transformed sequence
      */
-    map(callback: (item: any, index: number) => any, thisArg?: any): Iter;
+    map(callback: KeyProvider2, thisArg?: any): Iter;
     /**
      * Return a sequence that contains only elements for which the `callback(item, index)` function
      * when invoked on each element, returns `true`.
      *
-     * @param {(item: any, index: number)=>any} callback the filter callback
+     * @param {KeyProvider2} callback the filter callback
      * @param {*} [thisArg] the "this" context applied to the callback
      * @returns {Iter} the filtered seqeunce
      */
-    filter(callback: (item: any, index: number) => any, thisArg?: any): Iter;
+    filter(callback: KeyProvider2, thisArg?: any): Iter;
     /**
      * Test whether any elements in the sequence meet a condition
      *
-     * @param {(item: any, index: number)=>boolean} callback the function to invoke on each element to test
+     * @param {TestProvider2} callback the function to invoke on each element to test
      * @param {*} [thisArg] the "this" context applied to the callback
      * @returns {boolean} `true` if at least one element met the condition
      */
-    some(callback: (item: any, index: number) => boolean, thisArg?: any): boolean;
+    some(callback: TestProvider2, thisArg?: any): boolean;
     /**
      * Test whether all elements in the sequence meet a condition
      *
-     * @param {(item: any, index: number)=>boolean} callback the function to invoke on each element to test
+     * @param {TestProvider2} callback the function to invoke on each element to test
      * @param {*} [thisArg] the "this" context applied to the callback
      * @returns {boolean} `true` if all elements met the condition
      */
-    every(callback: (item: any, index: number) => boolean, thisArg?: any): boolean;
+    every(callback: TestProvider2, thisArg?: any): boolean;
     /**
      * Test whether the specified item is found in the sequence
      *
@@ -323,22 +361,22 @@ export declare class Iter implements Iterable<any> {
      * Locate the index of an element meeting the condition specified by the callback function, which
      * should return `true` when the condition has been met
      *
-     * @param {(item: any, index: number)=>boolean} callback the function to invoke for each element
+     * @param {TestProvider2} callback the function to invoke for each element
      * @param {*} thisArg the "this" context to apply to the callback
      * @returns {number} 0-based position in the sequence, or -1 if the condition was not met
      */
-    findIndex(callback: (item: any, index: number) => boolean, thisArg?: any): number;
+    findIndex(callback: TestProvider2, thisArg?: any): number;
     /**
      * Locate in item in the sequence meetioing the condition specified by the callback function, which
      * should return `true` when the condition has been met. If the condition is not met, return
      * `undefined`, or `defaultValue` if provided.
      *
-     * @param {(item: any, index: number)=>boolean} callback
+     * @param {TestProvider2} callback a function returning true if the item is found
      * @param {*} [thisArg] the "this" context to apply to the callback
      * @param {*} [defaultValue] the default value to return if the condition is never met
      * @returns {*} the found item, or `undefined`, or `defaultValue`
      */
-    find(callback: (item: any, index: number) => boolean, thisArg?: any, defaultValue?: any): any;
+    find(callback: TestProvider2, thisArg?: any, defaultValue?: any): any;
     /**
      * Return the element at the specified 0-based position in the sequence, or `undefined`
      * if the sequence has fewer than
@@ -375,10 +413,10 @@ export declare class Iter implements Iterable<any> {
     /**
      * Return a string formed by joining each element in the sequence with a separator
      *
-     * @param {any} separator the separator, defaults to ','
+     * @param {string} separator the separator, defaults to ','
      * @returns a string of the joined sequence
      */
-    join(separator: any): string;
+    join(separator: string): string;
     /**
      * Given a seqeunce of [key, value] pairs, create an object with {property: value} for each pair.
      *
@@ -406,27 +444,26 @@ export declare class Iter implements Iterable<any> {
      */
     execute(): Iter;
     /**
-     * Return the minimum value in the sequence
-     * TODO: Can't really use Math for this if we want to return "any"
+     * Determine the minimum value in the sequence
      *
-     * @param {function} mapCallback An optional callback invoked on each element that returns the value to sum
+     * @param {KeyProvider} key A function or property name that returns the value to sum
      * @returns {any} The minimum value
      */
-    min(mapCallback?: (item: any, index: any) => any): any;
+    min(key?: KeyProvider): any;
     /**
-     * Return the maximum value in the sequence
+     * Determine the maximum value in the sequence
      *
-     * @param {function} mapCallback An optional callback invoked on each element that returns the value to sum
+     * @param {KeyProvider} key A function or property name that returns the value to sum
      * @returns {any} The maximum value
      */
-    max(mapCallback?: (item: any, index: any) => any): any;
+    max(key?: KeyProvider): any;
     /**
      * Return the sum of all elements in the sequence
      *
-     * @param {any} mapCallback An optional callback invoked on each element that returns the value to sum
-     * @returns {any} The sum of all elements in the sequence (using the + operator)
+     * @param {KeyProvider} key An optional callback invoked on each element that returns the value to sum
+     * @returns {number} The sum of all elements in the sequence (using the + operator)
      */
-    sum(mapCallback?: (item: any, index: any) => any): any;
+    sum(key?: KeyProvider): number;
     /**
      * Sort the sequence using default comparison operator. If a `callback` is provided, then
      * it will use the return value to determine priority when comparing two elements `a` and `b`:

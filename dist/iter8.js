@@ -206,11 +206,20 @@ Iter[_p] = {
         if (!this[_root]) throw new Error('"on" make no sense without a prior join or set merge operation.')
         return new Iter(_iterator, this[_op].apply(this[_root], this[_args].concat([mapLeft, mapRight])))
     },
-    sequenceEqual: function(sequence, mapLeft, mapRight) {
+    /**
+     * Test whether two seqeunces are equal, meaning they are the same lengths and 
+     * each item at the same position in each sequence is equal.
+     *
+     * @param {Iterable<any>} sequence the other sequence to test
+     * @param {(item: any)=>any} keyLeft a function that returns a key from the original or "left" sequence
+     * @param {(item: any)=>any} keyRight a function that returns a key from the other or "right" sequence
+     * @returns {boolean} `true` if equal, `false` if not
+     */
+    sequenceEqual: function(sequence, keyLeft, keyRight) {
         var iter = this[_iterator]();
         var otherIter = sequence[_iterator]();
-        var mapLeftFn = getValueMapper(mapLeft)
-        var mapRightFn = getValueMapper(mapRight)
+        var mapLeftFn = getValueMapper(keyLeft)
+        var mapRightFn = getValueMapper(keyRight)
         var cur;
         var otherItem;
 
@@ -221,7 +230,15 @@ Iter[_p] = {
 
         return iter.next().done;
     },
-    concat: newIter(makeConcatIterator),
+    /**
+     * Append each argument or each item in each argument that is a sequence to 
+     * the current sequence
+     * 
+     * @returns {Iter} a new seqeunce
+     */
+    concat: function(/*...args*/) {
+        return new Iter([this].concat(arrProto.slice.call(arguments))).flatten()
+    },
     /**
      * Return a single element that is the return value of a function invoked for 
      * each element in the input sequence 
@@ -696,40 +713,6 @@ function makeGroupByIterator(group, transform) {
         }
 
         return dict[_iterator]();
-    }
-}
-
-function makeConcatIterator() {
-    var that = this;
-    var sources = [that].concat(arrProto.slice.call(arguments));
-    return function() {       
-        var index = 0;
-        var iterator;
-        return {
-            next: function() {
-                while (index < sources.length) {
-                    
-                    if (!iterator) {
-                        var nextSource = sources[index]
-                        iterator = typeof nextSource !== 'string' && nextSource[_iterator] ? 
-                            nextSource[_iterator]() : 
-                            objectAsGenerator(nextSource);
-                    } 
-                    
-                    var cur = iterator.next();
-                    if (!cur.done) {
-                        return {
-                            done: false,
-                            value: cur.value
-                        }                                        
-                    } else {
-                        iterator = null;
-                        index++;
-                    }
-                }
-                return doneIter();                
-            }
-        }        
     }
 }
 

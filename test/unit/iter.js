@@ -1,5 +1,5 @@
 import assert from 'assert'
-import iter from '../../lib/index'
+import iter from '../../'
 
 const sampleData =[
     { a: 'foo', b: 1 },
@@ -172,7 +172,7 @@ describe('iter', ()=> {
         it('groupBy string', ()=> {
             let x = iter(sampleData);
 
-            let sut = x.groupBy('a');
+            let sut = x.groupBy('a')
             testSimpleData(sut.cast(Kvp).toArray());
         }); 
 
