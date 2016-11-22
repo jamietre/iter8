@@ -1,10 +1,9 @@
 /**
-* Creates an instance of Iter from an Iterable object, or a plain Javascript object.
-*
-* @param {*} source
-* @returns {Iter} An Iter instance
-*/
-declare function iter(source: any): Iter;
+ * Creates an instance of Iter from an iterable object, an iterator, or a generator.
+ *
+ * @param {(source: Iterable<any> | Iterator<any> | Generator<any>)} source the source, either an iterable, an iterator, or a generator
+ */
+declare function iter(source: Iterable<any> | Iterator<any> | Generator<any>): Iter;
 
 /// <reference path="lib.es2015.symbol.d.ts" />
 
@@ -24,6 +23,8 @@ declare type KeyProvider2 = ProviderWithIndex | string;
 declare type TestProvider<T> =  (item: T, index: number) => boolean
 declare type TestProvider2 = TestProvider<any>
 
+declare type Generator<T> = ()=>Iterator<T>
+
 declare interface IteratorResult<T> {
     done: boolean;
     value: T;
@@ -35,17 +36,12 @@ declare interface Iterator<T> {
     throw?(e?: any): IteratorResult<T>;
 }
 
-declare interface Iterable<T>{
+declare interface Iterable<T> {
     [Symbol.iterator]: ()=>Iterator<T>
 }
 
+
 declare namespace iter {
-    /**
-     * Create an Iter from an generator (a function returning an iterator)
-     * @param {generator} generator The generator function
-     * @returns {Iter} an Iter instance
-     */
-    let fromGenerator: (generator: () => Iterator<any>) => Iter;
     /**
      * Create an Iter from an object, returning a seqeunce of [key, value] 
      * pairs obtained by enumerating the object's properties. All properties, 
@@ -86,17 +82,17 @@ declare namespace iter {
 }
 export declare class Iter implements Iterable<any> {
     /**
-     * Creates an instance of Iter from an Iterable object, or a plain Javascript object.
+     * Creates an instance of Iter from an iterable object, an iterator, or a generator.
      *
-     * @param {*} source
-     * @param {()=>Iterator<any>} [_iter]
+     * @param {(source: Iterable<any> | Iterator<any> | Generator<any>)} source the source, either an iterable, an iterator, or a generator
      */
-    constructor(source: any, _iter?: () => Iterator<any>);
-    [Symbol.iterator](): any;
+    constructor(source: Iterable<any> | Iterator<any> | Generator<any>);
+    
+    [Symbol.iterator](): Iterator<any>;
     /**
      * forEach is the same as do(), but executes the query immediately.
      *
-     * @param {function} callback The callback(element, index)
+     * @param {(item: any, index: number) => void} callback The callback(element, index)
      * @param {any} thisArg The "this" context applied to the callback
      * @returns {void}
      */
@@ -105,7 +101,7 @@ export declare class Iter implements Iterable<any> {
     * Execute a callback for each element in the seqeunce, and return the same
     * element.
     *
-    * @param {function} callback The callback(element, index)
+    * @param {(item: any, index: number) => void} callback The callback(element, index)
     * @param {any} thisArg The "this" context applied to the callback
     * @returns {Iter} a seqeunce identical to the input sequence
     */

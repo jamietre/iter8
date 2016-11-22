@@ -245,19 +245,20 @@ describe('iter', ()=> {
             assert.equal(sut.sum((e)=>e.foo), 15);
         })
         it('map - prop', ()=> {
+            iter()
             let sut = iter([{ foo: 1}, {foo: 4}, {foo: 10}]);
             assert.equal(sut.sum('foo'), 15);
         })
     })
 
-    xdescribe('mean', ()=> {
+    describe('mean', ()=> {
         it('basic', ()=> {
             let sut = iter([2,4,6,8,10,12]);
-            assert.equal(sut.sum(), 29);
+            assert.equal(sut.mean(), 7);
         })
         it('map', ()=> {
             let sut = iter([{ foo: 1}, {foo: 4}, {foo: 10}]);
-            assert.equal(sut.sum((e)=>e.foo), 15);
+            assert.equal(sut.mean((e)=>e.foo), 5);
         })
         it('map - prop', ()=> {
             let sut = iter([{ foo: 1}, {foo: 4}, {foo: 10}]);
@@ -715,18 +716,30 @@ describe('iter', ()=> {
     
     })
 
-    it('can cache a stream', ()=> {
-        let source = new Map([[1,2], [2,2], [3,3], [4,3], [5,3]])
+    describe('sequence caching', ()=> {
+        it('works in simple case', ()=> {
+            let source = new Map([[1,2], [2,2], [3,3], [4,3], [5,3]])
 
-        // the "values()" method returns an iterator, not an iterable. But, it also exposes [Symbol.iterator]()
-        // which returns the stateful iterator, rather than generating a new one. So iter tests first for next()
-        // and if so, treats the seqence as at iterator and caches it, allowing us to safely reuse it.
+            // the "values()" method returns an iterator, not an iterable. But, it also exposes [Symbol.iterator]()
+            // which returns the stateful iterator, rather than generating a new one. So iter tests first for next()
+            // and if so, treats the seqence as at iterator and caches it, allowing us to safely reuse it.
 
-        let sut = iter(source.values()).unique();
-        assert.equal(sut.count(), 2)
-        assert.deepEqual(sut.unique().toArray(), [2,3])
-    
+            let sut = iter(source.values()).unique();
+            assert.equal(sut.count(), 2)
+            assert.deepEqual(sut.unique().toArray(), [2,3])
+        })
+        it('stop mid-stream', ()=> {
+            let source = [1,2,3,4,5]
+            let sut = iter(source[Symbol.iterator]());
+
+            let seq = sut.skip(1).take(2).toArray();            
+            assert.deepEqual(seq, [2,3]);
+
+            seq = sut.toArray();
+            assert.deepEqual(seq, [1,2,3,4,5]);
+
+            seq = sut.skip(2).toArray(); 
+            assert.deepEqual(seq, [3,4,5]);
+        })
     })
-
-
 })

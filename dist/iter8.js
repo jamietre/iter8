@@ -51,15 +51,18 @@ function Iter(source, generator, root, args) {
         return new Iter(source, generator);
     }
 
-    var iterator = source && source[_iterator];
+
+    var iterable = source && (
+        typeof source.next === 'function' ? 
+            iteratorToGenerator(source) : 
+            typeof source === 'function' ? 
+                source : source[_iterator]
+        );
 
     // it's allowed to construct with nothing,  but you can't construct with a non-iterable entity.
-    if (!iterator && !(source == null)) {
-        if (source && typeof source !== 'function') {
-            return Iter.fromObjectOwn(source);
-        }
-        throw new Error('iter can only be sourced with an Iterable object or a regular Javascript object.');
-    } 
+    if (!iterable && !(source == null)) {
+        throw new Error('iter can only be constructed with an iterable, iterator or generator. Use "fromObject" of your intent is to enumerate object properties.');
+    }
 
     // experimental: default iterator for Arrays seems much slower than making our own in some
     // circumstances. May substitute this if can figure out when it's better
@@ -81,7 +84,39 @@ function Iter(source, generator, root, args) {
     //     return;
     // }
 
-    this[_iterator]=iterator ? iterator.bind(source) : emptyGenerator;
+    this[_iterator]=iterable ? iterable.bind(source) : emptyGenerator;
+}
+
+/**
+ * Given an iterator (e.g. something with a "next()" function) convert it to a function that returns
+ * same iterator reproducibly by caching the value from each invocation, and returning the cached value
+ * if the iterator is recreated.
+ * 
+ * This allows basically recreating a generator from an iterator, and creating a reproducible sequence
+ * from the iterator. 
+ */
+function iteratorToGenerator(iterator) {
+    var arr = [];
+    var cur = {};
+   
+    return function() {
+        var index = 0;
+        return { 
+            next: function() {
+                if (!cur.done && index === arr.length) {
+                    cur = iterator.next();
+                    if (cur.done) return doneIter();
+                    arr[index]=cur.value;
+                }
+
+                return index < arr.length ? {
+                    value: arr[index++],
+                    done: false
+                } : doneIter();
+            }
+        }
+    }
+    
 }
 
 Object.assign(Iter, {
@@ -125,6 +160,7 @@ Object.assign(Iter, {
      * @returns {Iter} an iter object
      */
     generate: function(object, times) {
+        var gen = typeof object === 'function' ? object : function() { return object }
         return new Iter(_iterator, function() {
             var index = -1;
             times = times || 1;
@@ -133,8 +169,7 @@ Object.assign(Iter, {
                     index++;
                     return {
                         done: index >= times, 
-                        value: index < times && 
-                            typeof object === 'function' ? object(index) : object
+                        value: index < times && gen(index) 
                     }
                 }
             } 
@@ -216,8 +251,8 @@ Iter[_p] = {
      * @returns {boolean} `true` if equal, `false` if not
      */
     sequenceEqual: function(sequence, keyLeft, keyRight) {
-        var iter = this[_iterator]();
-        var otherIter = sequence[_iterator]();
+        var iter = getIterator(this);
+        var otherIter = getIterator(sequence);
         var mapLeftFn = getValueMapper(keyLeft)
         var mapRightFn = getValueMapper(keyRight)
         var cur;
@@ -376,7 +411,7 @@ Iter[_p] = {
         var args = arguments;
         return new Iter(_iterator, function() {
             var arr = that.toArray(); 
-            return arrProto[method].apply(arr,args)[_iterator]();
+            return getIterator(arrProto[method].apply(arr,args));
         });
     }
 })
@@ -418,14 +453,23 @@ function makeAggregator(setup, aggregator, teardown, getkey) {
     var loop = (getkey ? 'if (a) ' + iterMethod + ' {' + 
         aggregator.replace(/\{v\}/g, 'a(' + valueAccessor +')') +  
     ';} else ' : '') +
+
     iterMethod + '{' + 
         aggregator.replace(/\{v\}/g, valueAccessor) +  
     ';};';
 
-    return new Function('a', 'b', 'c', 
-        'var _i=this[Symbol.iterator]();var _c;' + setup + ';' +
+    var fn = new Function('a', 'b', 'c', 'g', 
+        'var _i=g(this);var _c;' + setup + ';' +
         loop +  
         (teardown || 'return r'));
+    
+    return function(a,b,c) {
+        return fn.call(this,a,b,c, getIterator)
+    }
+}
+
+function makeIterator(setup, agregator, teardown) {
+    return 
 }
 
 /**
@@ -509,7 +553,7 @@ function makeLeftJoinIterator(sequence, mergeFn, mapLeft, mapRight) {
         var rightKeyMapper = getValueMapper(useKvps ? 0 : mapRight)
         var rightValueMapper = getValueMapper(useKvps ?  1 : null)
          
-        var iterator = that[_iterator]();
+        var iterator = getIterator(that);
         var other = new Map(mapRight ? new Iter(sequence).groupBy(rightKeyMapper) : sequence)
         var matches;
         var leftValue;
@@ -533,7 +577,7 @@ function makeLeftJoinIterator(sequence, mergeFn, mapLeft, mapRight) {
                                 value: mergeFn(leftValue, match, id) 
                             }
                         }
-                        matches = match[_iterator]() 
+                        matches = getIterator(match) 
                     } 
 
                     // being here means the right is iterable
@@ -556,10 +600,10 @@ function makeLeftJoinIterator(sequence, mergeFn, mapLeft, mapRight) {
 function skipIterable(n) {
     var that = this;
     return function() {
-        var iterator = that[_iterator]()
+        var iterator = getIterator(that)
         while (n-- > 0 && !iterator.next().done) ;
         return iterator;
-    } 
+    }
 }
 
 function takeIterable(n) {
@@ -884,8 +928,9 @@ function reflect(obj, recurse, filter) {
     var props = getAllProps(obj, recurse);
     if (filter) {
         verifyCb(filter)
-        props = props.filter(function(e) { return filter(e[0]) });
+        props = props.filter(function(e, i) { return filter(e[0], i) });
     }
+
     return props.map(function(d) {
         var e = Object.getOwnPropertyDescriptor(d[1], d[0])
         var hasValue = e.hasOwnProperty('value') 
@@ -902,6 +947,17 @@ function reflect(obj, recurse, filter) {
             depth: d[2]
         }];
     })
+}
+
+function getIterator(that) {
+    if (typeof that[_iterator] !== 'function') {
+        throw new Error('The entity was not a valid iterable. It must implement [Symbol.iterator]')        
+    }
+    var iterator = that[_iterator]();
+    if (typeof iterator.next !== 'function') {
+        throw new Error('The iterable did not return a valid iterator.')
+    }
+    return iterator;
 }
 
 var Kvp=function(arr, value) {

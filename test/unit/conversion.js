@@ -80,18 +80,26 @@ describe('iter - conversion', ()=> {
         assert.deepEqual(sut.toArray(), [['fizz','buzz']])
     })
 
-    // it('fromObject - property gets - own', ()=> {
-        
-    // })
-
     it('can use generators', ()=> {
         function* gen() {
             yield 1;
             yield 2;
             yield 3;
         }
-        assert.deepEqual(iter.fromGenerator(gen).toArray(), [1,2,3]);
+        assert.deepEqual(iter(gen).toArray(), [1,2,3]);
     });
+
+    it('can use generators 2', ()=> {
+       let map = new Map([[1,'foo'],[2,'bar'],[3,'baz']])
+       let sut = iter(map.values.bind(map))
+        assert.deepEqual(sut.toArray(), ['foo','bar','baz']);
+
+        assert.equal(sut.count(), 3, 'seqeunce can be re-iterated')
+        
+        map.delete(2);
+        assert.equal(sut.count(), 2, 'generator is invoked again for 2nd enumeration (not cached)')
+    });
+  
 
     describe('generate', ()=> {
         it('object', ()=> {

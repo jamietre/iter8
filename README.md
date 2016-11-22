@@ -2,6 +2,16 @@
 
 iter8 is a small (3k gzipped) data transformation library that works with JavaScript iterables. It provides the familiar `Array` API plus a full complement of sequence and set operations like `intersect`, `union`, `except`, and `leftJoin`.
 
+## Features
+
+* Works with all iterators, iterables, and generators
+* Implements complete `Array` API, plus many additions
+* Painless interop with `Array`, `Set`, and `Map` types
+* Deferred execution of all sequence enumeration
+* Caches iterator output: automatically re-use sequences without access to the creator
+* Powerful reflection capability for iterating object properties and getters/setters
+* Includes Typescript typings for complete GUI support of its API
+
 * [Installation](#installation)
 * [Basic Usage](#usage)
 * [API Summary & Index](#api)
@@ -9,28 +19,6 @@ iter8 is a small (3k gzipped) data transformation library that works with JavaSc
 * [API Reference](#api-reference)
 * [Performance](#performance)
 * [Roadmap](#roadmap)
-
-## Why?
-
-ES6/7 offers several important language features: *itetable* objects, generators, and `Set` and `Map` types. Can we finally stop using `object` for maps and sets? Can we finally stop using mutable arrays for every sequence transformation task? Yes! But there are some probems:
-
-* `Set` and `Map` lack native support for most `Array` transformation methods like `map`, `filter`, and `reduce`, so you often have to do ugly and expensive conversions with `Array.from` for any transformation.
-* there's no native support for set operations like `except` and `intersect`, or more sophisticated operations like `groupBy` and `leftJoin`.
-* Conversion to and from object maps is still a manual tasks
-
-iter8 provides seamless interop with arrays, iteratables, generators, and other data structures. In addition to all the nation `Array` methods you are accustomed to using, iter8 provides a tool set that simplfies dealing with sequences and performing complex transformations and set operation.
-
-iter8 deals only with iterables, so no work gets done until you ask for some specific output. Every operation consumes its input as a seqeunce, and defers processing until some output requires the sequence be iterated. It doesn't do any work until it needs to, and will only consume the elements of a sequence that are actually required to perform an operation. 
-
-iter8 is small (about 10k uglified, and 3k gzipped) and has no runtime dependencies. 
-
-### immutability by design
-
-Internally, iter8 handles everything as a sequence, and defers all queries for non-value-producing operations. Sequences are immutable naturally - you only access elements during processing, and not entire sets. You can't change them by adding or removing elements, you can only create new ones by transforming them. 
-
-### interop with `Map`, `Set`, `Array`, and `immutable` data structures
-
-`Map` and `Set` can be constructed directly from an iterable sequence. iter8 lets you easily create these data structures, as every iter8 object is iterable. Same with data structures from the popular `immutable` library.
 
 ## Installation 
 
@@ -84,11 +72,11 @@ let foodSales = money.get('food');
 
 #### static methods
 
-These are used to create `Iter` instances. 
+These are used to create `Iter` instances.
+
 * [iter(obj)](#iterobj)
 * [iter.fromObject(obj, [filter])](#iterfromobjectobj-filter)
 * [iter.fromObjectOwn(obj, [filter])](#iterfromobjectownobj-filter)
-* [iter.fromGenerator(iterator)](#iterfromgeneratorgenerator)
 * [iter.generate(obj, n)](#itergenerateobj-n)
 * [iter.reflect(obj, [recurse], [filter])](#iterreflectobj-recurse-filter)
 
@@ -220,7 +208,7 @@ To resolve this, methods like `first` include an argument that allows you to pro
 
 iter8 exports a single function. This is a constructor, so it can be used for `instanceof` tests, but you can also simply invoke it rather than using `new`. To use iter8, create a new instance from an iterable object:
 
-To create a new `Iter` from any iterable or plain JavaScript object, just:
+Create a new `Iter` from an iterable object:
 
 ```Javascript
 import iter from `iter8`
@@ -233,20 +221,37 @@ let obj = iter([1,2,3]).filter(e => e<3)
 // obj.toArray() === [2,3]
 ```
 
-JavaScript objects become sequences of `[key, value]` pairs:
+Map objects become sequences of `[key, value]` pairs:
 
 ```Javascript
-let obj = iter({ foo: 'bar', fizz: 'buzz'})
+let map = new Map(['foo', 'bar'], ['fizz,'buzz'])
+let obj = iter(map)
+
 // obj.toArray() === [['foo', 'bar'], ['fizz', 'buzz]]
+// obj.toObject() === { foo: 'bar', fizz: 'buzz'}
+// obj.as(Map) === Map { 'foo' => 'bar', 'fizz' => 'buzz' }
 ```
 
-The default behavior is to enumerate own properties as well as the prototype chain. `constructor` is always ignored.
-
-Key-value pairs make for easy interop with javascript `Map` objects, too:
+You can create an `Iter` directly from a generator (a function producing an iterator):
 
 ```Javascript
-let obj = iter({ foo: 'bar', fizz: 'buzz'}).as(Map);
-// obj === Map { 'foo' => 'bar', 'fizz' => 'buzz' }
+function* gen() {
+    yield 1;
+    yield 2;
+    yield 3;
+}
+
+let obj = iter(gen);
+/// obj.toArray() === [1,2,3]
+```
+
+You can can work with iterators directly, too:
+
+```Javascript
+let map = new Map([1, 'foo'], [2,'bar'], [3, 'baz'])
+let obj = iter(map.values())
+
+// obj.toArray() === ['foo', 'bar', 'baz']
 ```
 
 ### API Reference
@@ -261,10 +266,9 @@ Create a new `Iter` instance from:
 
 See [iterator protocols](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Iteration_protocols) for details on the specific entity types.
 
-When an `iterable` and `generator` types are uses, each time the sequence for an `Iter` object is enumerated, the seqeunce will be restarted from the original source. That is, we will invoke `source[Symbol.iterator]()` for an iterable, and `generator()` for a generator, to obtain the seqeunce for a given enumeration.
+When `iterable` and `generator` types are used, each time the sequence for an `Iter` object is enumerated, the seqeunce will be restarted from the original source. That is, we will invoke `source[Symbol.iterator]()` for an iterable, and `generator()` for a generator, to obtain the seqeunce for a given enumeration.
 
-With an `iterator`, however, we only have the seqeuence itself. We can't obtain it again. In this case, iter8 will *cache the sequence* the first time it is enumerated, and re-use the cached values for any subseqeuence enumeration. For this reason any operations on an `Iter` object sourced from an iterator are guaranteed to be reproducible, whereas operations on the others are not, since the sequence could theoretically be different when requested each time. If you want to enforce reproducibility, then you should always cache a sequence at the beginning of an operation. See `execute`. 
-
+With an `iterator`, however, we only have the sequence itself. We can't obtain it again. In this case, iter8 will *cache the sequence* the first time it is enumerated, and re-use the cached values for any subseqeuent enumeration. For this reason any operations on an `Iter` object sourced from an iterator are guaranteed to be reproducible, whereas operations on the others are not, since the sequence could be different each time it is requested. If you want to enforce reproducibility, then you should always cache a sequence at the beginning of an operation. See `execute`. 
 
 ```Javascript
 import iter from 'iter8'
@@ -276,7 +280,7 @@ const val = seq
 
 // val === 5
 
-const lookup = iter({ foo: 1, bar: 2}).as(Map)
+const lookup = iter([['foo', 1], ['bar', 2]]).as(Map)
 const val = lookup.get('bar')
 
 // val === 2
@@ -288,6 +292,13 @@ Create a new `Iter` of `[key, value]` pairs by enumerating properties on `obj` a
 
 You can pass a callback `filter(prop)` to filter properties. Returning `false` from the callback will exclude the property.
 
+Example:
+
+```Javascript
+let obj = iter({ foo: 'bar', fizz: 'buzz'})
+// obj.toArray() === [['foo', 'bar'], ['fizz', 'buzz]]
+```
+
 #### iter.fromObjectOwn(obj, [filter])
 
 Create a new `Iter` of `[key, value]` pairs, ignoring the prototype chain. This accesses the same properties as `Object.keys`.  
@@ -296,23 +307,9 @@ You can pass a callback `filter(prop)` to filter properties. Returning `false` f
 
 The default object creation behavior when passing an object directly to `iter` is the same as `Iter.fromObjectOwn(obj)` with no filter.
 
-#### iter.fromGenerator(generator)
-
-You can create an `Iter` directly from a generator, or a function producing an iterator:
-
-```Javascript
-function* gen() {
-    yield 1;
-    yield 2;
-    yield 3;
-}
-let x = iter.fromGenerator(gen).toArray()
-/// x === [1,2,3]
-```
-
 #### iter.generate(obj, n) 
 
-If `obj` is a `function(n)`, invoke it with the index from 0 to 1-n, and create a seqeunce from each value returned.
+If `obj` is a `function(n)`, invoke it with the index from 0 to 1-n, and create a sequence from each value returned.
 
 If `obj` is not a function, create a sequence of `obj` repeated `n` times.
 
@@ -328,9 +325,9 @@ let x = iter.generate((i)=>i*2, 3).toArray()
 
 Generate metadata about an object and optionally it's prototype chain (if `recurse===true`). Exclude methods based on a `filter(name)` callback.
 
-`reflect` includes all regular properties as well as getters/setters. For the purpose of this method, `field` means a normal property and `property` means a getter/setter.
+`reflect` includes all regular properties as well as getters/setters. For the purposes of this documentation, a property is called a `field` if it's a regular property, and a `property` if it's a getter/setter.
 
-Returns a *key-value* seqeunce where the key is the property name, and the value is an object with properties:
+This method returns a sequence of *key-value* pairs where the key is the property name, and the value is an object with properties:
 
 * *type*: the data type for fields ('string', 'number', 'function', 'object', 'null', 'undefined'). For properties the value is `null`. (Actuall null values are the string `"null"`).
 * *field*: true for regular properties, false for getter/setter
