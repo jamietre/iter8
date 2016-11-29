@@ -312,7 +312,7 @@ Iter[_p] = {
     
     slice: function(begin, end) {
         // when end is missing, take gets NaN as an arg, and takes everything
-        return this.skip(begin).take(end-begin+1);
+        return this.skip(begin).take(end-begin);
     },
     reduce: makeAggregator('var r=b,i=0', 'r=a(r,{v},i++)'),
     reduceRight: (function() {
