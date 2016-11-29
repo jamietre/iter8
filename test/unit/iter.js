@@ -407,7 +407,7 @@ describe('iter', ()=> {
     describe('slice', ()=> {
         it('two args', ()=> {
             let sut = iter([1,2,3,4,5])
-            assert.deepEqual(sut.slice(2,3).toArray(), [3,4]);
+            assert.deepEqual(sut.slice(2,3).toArray(), [3]);
         })
 
         it('one arg', ()=> {
@@ -741,5 +741,36 @@ describe('iter', ()=> {
             seq = sut.skip(2).toArray(); 
             assert.deepEqual(seq, [3,4,5]);
         })
+    })
+
+    describe('keys', ()=> {
+        it('basic', ()=> {
+            let sut = [['foo',1], ['bar',2]]
+
+            assert.deepEqual(iter(sut).keys().toArray(), ['foo', 'bar'])
+        })
+        it('type checks', ()=> {
+            let sut = [{}, ['bar',2]]
+
+            assert.throws(()=> {
+                iter(sut).keys().toArray()
+            }, /not a key-value/)
+        })
+        
+    })
+    describe('values', ()=> {
+        it('basic', ()=> {
+            let sut = [['foo',1], ['bar',2]]
+
+            assert.deepEqual(iter(sut).values().toArray(), [1, 2])
+        })
+        it('type checks', ()=> {
+            let sut = [{}, ['bar',2]]
+
+            assert.throws(()=> {
+                iter(sut).values().toArray()
+            }, /not a key-value/)
+        })
+        
     })
 })

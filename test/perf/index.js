@@ -3,7 +3,6 @@ import iter from '../../'
 import _ from 'lodash'
 import assert from 'assert'
 
-const Kvp = iter.Kvp
 const realDescribe = describe;
 describe = function(name,fn) {
     var that = this;

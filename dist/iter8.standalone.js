@@ -87,48 +87,7 @@ function Iter(source, generator, root, args) {
     this[_iterator]=iterable ? iterable.bind(source) : emptyGenerator;
 }
 
-/**
- * Given an iterator (e.g. something with a "next()" function) convert it to a function that returns
- * same iterator reproducibly by caching the value from each invocation, and returning the cached value
- * if the iterator is recreated.
- * 
- * This allows basically recreating a generator from an iterator, and creating a reproducible sequence
- * from the iterator. 
- */
-function iteratorToGenerator(iterator) {
-    var arr = [];
-    var cur = {};
-   
-    return function() {
-        var index = 0;
-        return { 
-            next: function() {
-                if (!cur.done && index === arr.length) {
-                    cur = iterator.next();
-                    if (cur.done) return doneIter();
-                    arr[index]=cur.value;
-                }
-
-                return index < arr.length ? {
-                    value: arr[index++],
-                    done: false
-                } : doneIter();
-            }
-        }
-    }
-    
-}
-
 Object.assign(Iter, {
-    /**
-     * Produce an Iter instance from a generator
-     * 
-     * @param {generator} a function producing an iterator
-     * @returns {Iter} an Iter instance
-     */
-    fromGenerator:  function(generator) {
-        return new Iter(_iterator, generator);
-    },
     /**
      * Produce an iter instance from an object including its prototype
      * 
@@ -150,12 +109,10 @@ Object.assign(Iter, {
      */
     reflect: reflect,
 
-
-
     /**
      * Produce an iter instance using a callback to generate values, or repeating a single value.
      * 
-     * @param {any} object A function or object
+     * @param {(index: number)=>any | any} object A function or object
      * @param {number} The number
      * @returns {Iter} an iter object
      */
@@ -264,6 +221,12 @@ Iter[_p] = {
         }
 
         return iter.next().done;
+    },
+    keys: function() {
+        return this.map(checkFirstMapper(0, ensureKvp));
+    },
+    values: function() {
+        return this.map(checkFirstMapper(1, ensureKvp));
     },
     /**
      * Append each argument or each item in each argument that is a sequence to 
@@ -436,6 +399,23 @@ function newCachedIter(generator, nargs) {
     }
 }
 
+/**
+ * Create a value mapper that type checks the first element of a sequence only
+ * 
+ * @param {any} key A mapper (string, or function)
+ * @param {function} check A function that throws an error if its arg is invalid 
+ */
+function checkFirstMapper(key, check) {
+    var mapper = function(item) {
+        mapper = getValueMapper(key);
+        var val = mapper(item);
+        check(val);
+        return val;
+    }
+    return function(item) {
+       return mapper(item)
+    }
+}
 
 /**
  * Generate an aggregator function that is optimized for either doing a value transformation, or just using the value.
@@ -466,10 +446,6 @@ function makeAggregator(setup, aggregator, teardown, getkey) {
     return function(a,b,c) {
         return fn.call(this,a,b,c, getIterator)
     }
-}
-
-function makeIterator(setup, agregator, teardown) {
-    return 
 }
 
 /**
@@ -877,22 +853,6 @@ function emptyGenerator() {
 function verifyCb(cb) {
     if (typeof cb !== 'function') throw new Error('The callback argument was not a function.')
 }
-/**
- * Make a single element iterable
- * 
- * @param {any} e Any object
- * @returns {function} An iterator
-
- */
-function objectAsGenerator(e) {
-    var done = false;
-    return { 
-        next: function() {
-            return done ? doneIter() : (done=true, { done: false, value: e })
-        }
-    }
-}
-
 
 /**
  * Helper for reflect
@@ -949,41 +909,60 @@ function reflect(obj, recurse, filter) {
     })
 }
 
-function getIterator(that) {
-    if (typeof that[_iterator] !== 'function') {
+
+/**
+ * Given an iterator (e.g. something with a "next()" function) convert it to a function that returns
+ * same iterator reproducibly by caching the value from each invocation, and returning the cached value
+ * if the iterator is recreated.
+ * 
+ * This allows basically recreating a generator from an iterator, and creating a reproducible sequence
+ * from the iterator. 
+ */
+function iteratorToGenerator(iterator) {
+    var arr = [];
+    var cur = {};
+   
+    return function() {
+        var index = 0;
+        return { 
+            next: function() {
+                if (!cur.done && index === arr.length) {
+                    cur = iterator.next();
+                    if (cur.done) return doneIter();
+                    arr[index]=cur.value;
+                }
+
+                return index < arr.length ? {
+                    value: arr[index++],
+                    done: false
+                } : doneIter();
+            }
+        }
+    }
+}
+
+/**
+ * Get an iterator from an iterable, with guards
+ * 
+ * @param {any} obj
+ * @returns {Iterator} an iterator
+ */
+function getIterator(obj) {
+    if (typeof obj[_iterator] !== 'function') {
         throw new Error('The entity was not a valid iterable. It must implement [Symbol.iterator]')        
     }
-    var iterator = that[_iterator]();
+    var iterator = obj[_iterator]();
     if (typeof iterator.next !== 'function') {
         throw new Error('The iterable did not return a valid iterator.')
     }
     return iterator;
 }
 
-var Kvp=function(arr, value) {
-    if (!this instanceof Kvp) {
-        return new Kvp(arr,value);
+function ensureKvp(obj) {
+    if (!obj || (!obj.hasOwnProperty(0) && obj.hasOwnProperty(1) && obj.length === 2)) {
+        throw new Error('The object was not a key-value pair, e.g. a 2-element array')
     }
-    this[0]=value ? arr : arr[0];
-    this[1]=value || arr[1];
-};
-
-['key','value'].forEach(function(prop, i) {
-    Object.defineProperty(Kvp[_p], prop, {
-        get: new Function('return this['+i%2+']')
-    })
-})
-
-Object.assign(Kvp[_p], {
-    toString:function() {
-        return '['+this.key+','+this.value+']'
-    },
-    valueOf: function() {
-        return this.key; 
-    }
-})
-
-Iter.Kvp = Kvp;
+}
 
 module.exports = Iter
 

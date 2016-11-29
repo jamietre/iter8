@@ -94,6 +94,8 @@ Iter8 objects have two types of methods: *transformation* and *value-producing*.
 * [unique([key])](#uniquekey)
 * [groupBy([key], [map])](#groupbykey-map)
 * [cast(Type)](#casttype)
+* [keys](#keys)
+* [values](#values)
 * [map(callback, [thisArg])](#mapcallbacke-i-thisarg)*
 * [filter(callback, [thisArg])](#filtercallbacke-i-thisarg)*
 * [slice(begin, [end])](#slicebegin-end)*
@@ -437,8 +439,13 @@ Convert each element to an instance of `Type`. `Type` must be a constructor, and
 A common use case for this is dealing with `[key, value]` pairs. Imagine a class `Kvp` that takes an array with two elements as its constructor argument, and returns an object exposing `key` and `value` properties. You could do things like this:
 
 
+### keys()
 
+Assuming a sequence of `[key, value]` pairs, return a new sequence including only the keys. This is the same as `map(0)` but will perform basic type checking.
 
+### values()
+
+Assuming a sequence of `[key, value]` pairs, return a new sequence including only the keys. This is the same as `map(1)` but will perform basic type checking.
 
 #### map(callback(e, i), [thisArg])
 
