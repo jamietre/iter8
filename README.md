@@ -122,9 +122,9 @@ Iter8 objects have two types of methods: *transformation* and *value-producing*.
 *Traversal*
 
 * [skip(n)](#skipn)
-* [skipWhile(callback)](#skipcallback)
+* [skipWhile(callback)](#skipwhilecallback)
 * [take(n)](#taken)
-* [takeWhile(callback)](#takecallback)
+* [takeWhile(callback)](#takewhilecallback)
 
 *Special*
 
