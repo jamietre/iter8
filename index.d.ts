@@ -163,12 +163,26 @@ export declare class Iter implements Iterable<any> {
      */
     skip(n: number): Iter;
     /**
+     * Skip while the function evaluates to 'true' for the current value 
+     *
+     * @param {(any)=>boolean} callback The test function
+     * @returns {Iter} A sequence of all items after the skipped ones
+     */
+    skipWhile(callback: (any)=>boolean): Iter;
+    /**
      * Create a seqeunce of the next `n` items
      *
      * @param {number} n the number of items to take
      * @returns {Iter} a sequence of the taken items
      */
     take(n: number): Iter;
+    /**
+     * Create a sequence of of items that pass a test
+     *
+     * @param {(any)=>boolean} callback The test function
+     * @returns {Iter} a sequence of the taken items
+     */
+    takeWhile(callback: (any)=>boolean): Iter;
     /**
      * Convert all items in the sequence to instances of `Type` by invoking
      *      `Type` as a constructor with the sequence as an argument

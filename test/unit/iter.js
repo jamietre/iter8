@@ -90,7 +90,7 @@ describe('iter', ()=> {
     })
 
 
-    it('skip', ()=> {
+    it('skip', ()=> { 
         let obj = iter([1,2,3,4,5]);
 
         let sut1 = obj.skip(2);
@@ -98,7 +98,13 @@ describe('iter', ()=> {
 
         let sut2 = obj.skip(1);
         assert.equal(sut2.count(),4)
+    });
 
+    it('skipWhile', ()=> {
+        let sut = iter([1,2,3,4,5,6,7,8]);
+        assert.deepEqual(sut.skipWhile(e=>e<4).toArray(), [4,5,6,7,8]);
+        assert.deepEqual(sut.skipWhile(e=>e<4).take(2).toArray(), [4,5]);
+        assert.deepEqual(sut.skipWhile(e=>e<20).toArray(), []);
     });
 
     describe('first', ()=> {
@@ -450,6 +456,12 @@ describe('iter', ()=> {
         let sut = iter([1,2,3,4,5,6,7,8])
         assert.deepEqual(sut.skip(2).take(5).take(2).toArray(), [3,4]);
     })
+
+    it('take while', ()=> {
+        let sut = iter([1,2,3,4,5,6,7,8]);
+        assert.deepEqual(sut.skip(2).takeWhile(e=>e<6).toArray(), [3,4,5]);
+    });
+
     it('get', ()=> {
         let sut = iter([1,2,3,4,5,6,7,8])
         assert.equal(sut.get(3), 4);

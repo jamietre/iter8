@@ -122,7 +122,9 @@ Iter8 objects have two types of methods: *transformation* and *value-producing*.
 *Traversal*
 
 * [skip(n)](#skipn)
+* [skipWhile(callback)](#skipcallback)
 * [take(n)](#taken)
+* [takeWhile(callback)](#takecallback)
 
 *Special*
 
@@ -648,6 +650,19 @@ let x = seq.skip(2).toArray()
 // x === [3,4,5]
 ```
 
+
+#### skipWhile(callback)
+
+Skip elements in the sequence as long as the current element passes a test.
+
+Each item is passed to the `callback` function and skipped as long as the element passes the test
+
+```Javascript
+let seq = iter([1,2,3,4,5])
+let x = seq.skipWhile(e=>e < 4).first()
+// x === 4
+```
+
 #### take(n)
 
 Subset the sequence to include only the next `n` elements.
@@ -655,6 +670,19 @@ Subset the sequence to include only the next `n` elements.
 ```Javascript
 let x = iter([1,2,3,4,5]).skip(1).take(2).toArray() 
 // x === [2,3]
+```
+ 
+Since each step operates against a new sequence defined by the previous step, successive `take` operations might operate counterintunitively -- e.g. `x.take(3).take(2)` is *not* the same as `x.take(5)` -- rather it's the same as `x.take(2)`.
+
+#### takeWhile(callback)
+
+Subset the sequence to include items all items until the first item that fails a test. 
+
+Each item is passed to the `callback` function and included in the sequence until the first item fails the test.
+
+```Javascript
+let x = iter([1,2,3,4,5]).skipWhile(e=>e < 4) 
+// x === [1,2,3]
 ```
  
 Since each step operates against a new sequence defined by the previous step, successive `take` operations might operate counterintunitively -- e.g. `x.take(3).take(2)` is *not* the same as `x.take(5)` -- rather it's the same as `x.take(2)`.
@@ -858,13 +886,7 @@ validate particularly numeric args like `take`
 
 ### A few more features
 
-##### take(callback)
-
-Take elements as long as `callback(value)` is true
-
-##### skip(callback)
-
-Skip elements as long as `callback(value)` is true
+This is the only thing left to add
 
 ##### zip(other, fn)
 
