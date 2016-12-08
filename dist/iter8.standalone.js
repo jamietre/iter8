@@ -163,8 +163,19 @@ Iter[_p] = {
         return thenBy.call(this, order, true)
     },
     count: makeAggregator('var r=0', 'r++'),
-    skip: newIter(skipIterable),
-    take: newIter(takeIterable),
+    skip: newIter(function(n) {
+        return skipWhileIterable.call(this, function() {
+            return n-- !== 0;
+        })
+    }),
+    skipWhile: newIter(skipWhileIterable),
+    take: newIter(function(n) {
+        return takeWhileIterable.call(this, function() {
+            return n-- !== 0;
+
+        })
+    }),
+    takeWhile: newIter(takeWhileIterable),
     cast: function(Type) {
         return new Iter(_iterator, makeMapIterator.call(this, function(e) {
             return new Type(e);
@@ -463,7 +474,6 @@ function makeGetkeyAggregator(setup, aggregator, teardown) {
     }
 }
 
-
 function orderBy(order, desc) {
     var orders=[{ 
         fn: getValueMapper(order), 
@@ -569,40 +579,39 @@ function makeLeftJoinIterator(sequence, mergeFn, mapLeft, mapRight) {
                     }
                 }
             }
-        }        
+        }         
     }
 }
 
-function skipIterable(n) {
+function skipWhileIterable(cb) {
     var that = this;
     return function() {
         var iterator = getIterator(that)
-        while (n-- > 0 && !iterator.next().done) ;
-        return iterator;
+        var cur;
+        while (cur=iterator.next(), !cur.done && cb(cur.value));
+        return cur.done ? 
+            emptyGenerator()() :
+            // must include the value we already got so we have to make a new sequence from it + the remaining of the original sequence 
+            getIterator(new Iter([cur.value]).concat(new Iter(iterator)))
     }
 }
 
-function takeIterable(n) {
+function takeWhileIterable(cb) {
     var that = this;
     return function() {
-        var iterator = that[_iterator]()
+        var iterator = getIterator(that)
         return {
             next: function() {
-                if (n !== 0) {
-                    var cur = iterator.next();
-                    if (!cur.done) {
-                        n--;
-                        return {
-                            done: false,
-                            value: cur.value
-                        }
-                    }
+                var cur = iterator.next();
+                if (!cur.done && cb(cur.value)) {
+                    return { done: false, value: cur.value }
                 }
-                return doneIter()
+                return doneIter();
             }
         }
     } 
 }
+
 
 function makeObjectIterator(recurse, getters, obj, filter) {
     return function() {
