@@ -105,6 +105,7 @@ describe('iter', ()=> {
         assert.deepEqual(sut.skipWhile(e=>e<4).toArray(), [4,5,6,7,8]);
         assert.deepEqual(sut.skipWhile(e=>e<4).take(2).toArray(), [4,5]);
         assert.deepEqual(sut.skipWhile(e=>e<20).toArray(), []);
+        assert.deepEqual(sut.skipWhile(e=>false).toArray(), [1,2,3,4,5,6,7,8])
     });
 
     describe('first', ()=> {
@@ -460,6 +461,8 @@ describe('iter', ()=> {
     it('take while', ()=> {
         let sut = iter([1,2,3,4,5,6,7,8]);
         assert.deepEqual(sut.skip(2).takeWhile(e=>e<6).toArray(), [3,4,5]);
+        assert.deepEqual(sut.takeWhile(e=>false).toArray(), []);
+        assert.deepEqual(sut.takeWhile(e=>true).toArray(), [1,2,3,4,5,6,7,8]);
     });
 
     it('get', ()=> {
