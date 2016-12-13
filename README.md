@@ -366,7 +366,7 @@ When `recurse` is truthy, elements within each element that are also iterable, w
 Like `concat`, strings are a special case, and are not iterated over.
 
 ```Javascript
-let x = iter([[1,2], "foo", [3,4,[5]]]).toArray()
+let x = iter([[1,2], "foo", [3,4,[5]]]).flatten().toArray()
 
 // x === [1,2,"foo",3,4,[5]]
 ```
@@ -374,7 +374,7 @@ let x = iter([[1,2], "foo", [3,4,[5]]]).toArray()
 Recursive:
 
 ```Javascript
-let x = iter([[1,2], "foo", [3,4,[5]]]).toArray()
+let x = iter([[1,2], "foo", [3,4,[5]]]).flatten(true).toArray()
 // x === [1,2,"foo",3,4,5]
 ```
 
