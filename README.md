@@ -100,8 +100,8 @@ Iter8 objects have two types of methods: *transformation* and *value-producing*.
 * [unique([key])](#uniquekey)
 * [groupBy([key], [map])](#groupbykey-map)
 * [cast(Type)](#casttype)
-* [keys](#keys)
-* [values](#values)
+* [keys()](#keys)
+* [values()](#values)
 * [map(callback, [thisArg])](#mapcallbacke-i-thisarg)*
 * [filter(callback, [thisArg])](#filtercallbacke-i-thisarg)*
 * [slice(begin, [end])](#slicebegin-end)*
@@ -881,10 +881,6 @@ At the end of the day - both lodash and iter8 are *extremely fast*. iter8 can su
 
 ## Roadmap
 
-### Construct from object enhancements
-
-Right now property getters are never enumerated, need to add this option. 
-
 ### Edge cases
 
 Little arg validation is done - in some cases this produces unexpected behavior. Need to 
@@ -892,7 +888,7 @@ validate particularly numeric args like `take`
 
 ### A few more features
 
-This is the only thing left to add
+This is the only one common sequence method left to add (just haven't needed it yet..)
 
 ##### zip(other, fn)
 
@@ -900,16 +896,13 @@ Apply a function to the corresponding elements of two sequences; return the outp
 
 ### Typescript
 
-I did a basic TypeScript conversion, but it doesn't actually work, and adds about 15% to the size anyway because of some optimizations that aren't directly possible with TS and Babel. But it's good enough to generate a typings file. Might try to get it completely converted and optimized entirely in TS which would be better.
+I did a basic TypeScript conversion, but it doesn't actually work, and adds about 15% to the size anyway because of some optimizations that aren't directly possible with TS and Babel. But it's good enough to generate a typings file. 
 
-### Extensibility
-
-Add an extension point for adding methods.
-
+I am working independently on a good jsdoc-to-d.ts converter to provide typings (generally) for non-typescript projects. Right now I am manually maintaining the typings file, which is a bad idea.
 
 ### Size Optimization
 
-It's about 10K compressed/2.6k gzipped right now. There are opportunities for code reuse that I haven't taken advantage of that could further reduce the size of this library. I don't see it growing too much more, as I've arleady implemente pretty much every seqeunce operation I can think of.
+It's about 10K compressed/3k gzipped right now. There are opportunities for code reuse that I haven't taken advantage of that could further reduce the size of this library. I don't see it growing too much more, as I've arleady implemente pretty much every seqeunce operation I can think of.
 
 ## Similar Libraries
 
