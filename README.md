@@ -12,6 +12,8 @@ iter8 is a small (3k gzipped) data transformation library that works with JavaSc
 * Powerful reflection capability for iterating object properties and getters/setters
 * Includes Typescript typings for complete GUI support of its API
 
+## Contents
+
 * [Installation](#installation)
 * [Basic Usage](#usage)
 * [API Summary & Index](#api)
@@ -22,8 +24,12 @@ iter8 is a small (3k gzipped) data transformation library that works with JavaSc
 
 ## Installation 
 
+iter8 is on npm:
+
     npm install --save iter8
-    
+
+Standalone packages for use in a browser that create a global `iter` can be downloaded from github under *dist*.
+
 ## Usage
 
 Wrap any iterable object with `iter(..)` to create an `Iter` instance, and then use familiar `Array` methods for transformation. Many new transformation and traversal methods are also added, like `groupBy` and `flatten`. All evaluation is performed only when actual data is exposed via methods that return data, and it's all performed via iteration, so only elements actually used by an operation are traversed.
