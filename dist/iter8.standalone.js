@@ -6,16 +6,21 @@
  * 
  * The jsdoc in this file may not be maintained; please see `index.d.ts` for current method documentation.
  */
-  
 
-var _orders = Symbol();
-var _root = Symbol();
-var _args = Symbol();
-var _op = Symbol();
-var _open = Symbol();
-var _iterator = Symbol.iterator;
-var _get = Symbol();
-var _done = Symbol();
+'use strict'
+  
+var _s = Symbol;
+
+var _iterator = _s.iterator;
+var _orders = _s();
+var _root = _s();
+var _args = _s();
+var _op = _s();
+var _open = _s();
+var _get = _s();
+var _done = _s();
+var _withReturn = _s();
+
 var _p='prototype'
 var arrProto = Array[_p];
 
@@ -60,7 +65,7 @@ function Iter(source, generator, root, args) {
         typeof source.next === 'function' ? 
             iteratorToGenerator(source) : 
             typeof source === 'function' ? 
-                source : source[_iterator]
+                source : source[_iterator].bind(source)
         );
 
     // it's allowed to construct with nothing,  but you can't construct with a non-iterable entity.
@@ -88,7 +93,7 @@ function Iter(source, generator, root, args) {
     //     return;
     // }
 
-    this[_iterator] = iterable ? iterable.bind(source) : emptyGenerator;
+    this[_iterator] = iterable || emptyGenerator;
     this[_open] = []
 }
 
@@ -177,7 +182,6 @@ Iter[_p] = {
     take: newIter(function(n) {
         return takeWhileIterable.call(this, function() {
             return n-- !== 0;
-
         })
     }),
     takeWhile: newIter(takeWhileIterable),
@@ -278,7 +282,7 @@ Iter[_p] = {
      * @param {thisArg} object the "this" argument to apply to the callback
      * @returns {boolean} true if any elements match the condition
      */
-    some: makeAggregator('var i=0','if (a({v},b,i++)) return true','return false'),
+    some: makeAggregator('var i=0','if (a({v},b,i++)) { z([_i]); return true }','return false'),
      /**
      * test whether every element in the sequence matches the condition
      * 
@@ -286,21 +290,21 @@ Iter[_p] = {
      * @param {thisArg} object the "this" argument to apply to the callback
      * @returns {boolean} true if all elements match the condition
      */
-    every: makeAggregator('var i=0','if (!a({v},b,i++)) return false','return true'),
+    every: makeAggregator('var i=0','if (!a({v},b,i++)) {  z([_i]); return false }','return true'),
     /**
      * test whether the element appears in the sequence
      * 
      * @param {any} element the element to locate
      * @returns {boolean} true if the value is found
-     */    
-    includes: makeAggregator('var i=0', 'if ({v}===a) return true; i++', 'return false'),
+     */
+    includes: makeAggregator('var i=0', 'if ({v}===a) { z([_i]); return true } i++', 'return false'),
     /**
      * return the index of the element
      * 
      * @param {any} element The element to locate
      * @returns {number} The index or -1
      */
-    indexOf: makeAggregator('var i=0', 'if ({v}===a) return i; i++', 'return -1'),
+    indexOf: makeAggregator('var i=0', 'if ({v}===a) { z([_i]); return i } i++', 'return -1'),
     /**
      * return the last index of the element
      * 
@@ -315,7 +319,7 @@ Iter[_p] = {
      * @param {thisArg} object the "this" argument to apply to the callback
      * @returns {number} The index or -1
      */
-    findIndex: makeAggregator('var i=0','if (a.call(b,{v},i)===true) return i; i++','return -1'),
+    findIndex: makeAggregator('var i=0','if (a.call(b,{v},i)===true) { z([_i]); return i } i++','return -1'),
     /**
      * return the element identified by a callback
      * 
@@ -324,8 +328,8 @@ Iter[_p] = {
      * @param {default} object the value to return if the index isn't found (or `undefined` if omitted
      * @returns {number} The index or `undefined` 
      */
-    find: makeAggregator('var i=0','if (a.call(b,{v},i++)===true) return {v};','return c'),
-    get: makeAggregator('var i=0','if (i++===a) return {v}','return c'), 
+    find: makeAggregator('var i=0','if (a.call(b,{v},i++)===true) { z([_i]); return {v} }','return c'),
+    get: makeAggregator('var i=0','if (i++===a) { z([_i]); return {v}; }','return c'), 
     
     slice: function(begin, end) {
         // when end is missing, take gets NaN as an arg, and takes everything
@@ -392,17 +396,6 @@ Iter[_p] = {
  */
 Iter[_p][_get] = getIterator;
 
-/**
- * Return a "done" iterator value, and reset open iterators
- */
-Iter[_p][_done] = doneIter;
-
-function doneIter() {
-    if (this) this[_open] = [];
-    return {
-        done: true
-    }
-}
 
 function getIterator(obj) {
     if (typeof obj[_iterator] !== 'function') {
@@ -410,24 +403,45 @@ function getIterator(obj) {
     }
 
     var iterator = obj[_iterator]();
-    console.log(obj[_iterator].toString())
     if (this) this[_open].push(iterator);
-
     if (typeof iterator.next !== 'function') {
         throw new Error('The iterable did not return a valid iterator.')
     }
     return iterator;
 }
 
+/**
+ * Return a "done" iterator value, and reset open iterators
+ */
+Iter[_p][_done] = doneIter;
 
-function deferReturn(arr) {
-    return function() {
-        closeIter(arr)
+function doneIter(close) {
+    if (this) {
+        if (close) closeIter(this[_open])
+        else this[_open] = [];
+    }
+    return {
+        done: true
+    }
+}
+
+/**
+ * Generate an iterable response using with a return method that will close all the open iterables.
+ */
+Iter[_p][_withReturn] = withReturn;
+
+function withReturn(next) {
+    var that = this;
+    return {
+        next: next, 
+        return: function() {
+            that[_done](true)
+        }
     }
 }
 
 function closeIter(iterators) {
-    while (iterators.length > 0) {
+    while (iterators.length) {
         var e = iterators.pop();
         if (e && typeof e.return === 'function') {
             e.return();
@@ -457,8 +471,14 @@ function closeIter(iterators) {
  */
 function newIter(generator, nargs, args) {
     return function() {
-        return new Iter(_iterator, generator.apply(this, (args || [])
-            .concat(arrProto.slice.call(arguments,0,nargs || undefined))));
+        return new Iter(_iterator, 
+            generator.apply(
+                this, 
+                (args || []).concat(
+                    arrProto.slice.call(arguments,0,nargs || undefined)
+                )
+            )
+        );
     }
 }
 
@@ -507,7 +527,14 @@ function makeAggregator(setup, aggregator, teardown, getkey) {
         aggregator.replace(/\{v\}/g, valueAccessor) +  
     ';};';
 
-    var fn = new Function('a', 'b', 'c', 'g', 
+    /*
+    a = a value transform function
+    b, c = any other args
+    g = getIterator
+    z = closeIter
+    */
+
+    var fn = new Function('a', 'b', 'c', 'g', 'z', 
         'var _i=g(this);var _c;' + setup + ';' +
         loop +  
         (teardown || 'return r'));
@@ -515,8 +542,8 @@ function makeAggregator(setup, aggregator, teardown, getkey) {
     // passing getIterator in without context causes it to not cache anything as open.
     // aggregators are always iterated completely
 
-    return function(a,b,c) {
-        return fn.call(this,a,b,c, getIterator)
+    return function(a, b, c) {
+        return fn.call(this, a, b, c, getIterator, closeIter)
     }
 }
 
@@ -608,9 +635,8 @@ function makeLeftJoinIterator(sequence, mergeFn, mapLeft, mapRight) {
         var matches;
         var leftValue;
         var id;
-        var deferReturn;
 
-        return withReturn(function() {
+        return that[_withReturn](function() {
                 /*eslint no-constant-condition:0 */
             while (true) {
                 if (!matches) {
@@ -622,7 +648,7 @@ function makeLeftJoinIterator(sequence, mergeFn, mapLeft, mapRight) {
                     leftValue = leftValueMapper(left.value);
                     var match = other.get(id)
                     if (!match || !match[_iterator] || typeof match === 'string') {
-                        this[_open] = [iterator]
+                        that[_open] = [iterator]
                         return { 
                             done: false, 
                             value: mergeFn(leftValue, match, id)
@@ -635,7 +661,7 @@ function makeLeftJoinIterator(sequence, mergeFn, mapLeft, mapRight) {
                 
                 var right = matches.next();
                 if (!right.done) {
-                    this[_open] = [iterator, matches]
+                    that[_open] = [iterator, matches]
                     return { 
                         done: false, 
                         value: mergeFn(leftValue, rightValueMapper(right.value), id)
@@ -648,52 +674,17 @@ function makeLeftJoinIterator(sequence, mergeFn, mapLeft, mapRight) {
     }
 }
 
-/**
- * Generate an iterable response using either the stateful list of open iteratables, or the one passed in.
- */
-function withReturn(next) {
-    var that = this;
-    return {
-        next: next,
-        return: function() {
-            return deferReturn[that[_open]]()
-        }
-    }
-}
-
 function skipWhileIterable(cb) {
     var that = this;
     return function() {
-        var iterator =  that[_get](that)
-
-        // Explanation: on first next(), it will perform the full skip, and return the value, and replace
-        // it's own implementation with a new iterable based on the remaining sequence. "return" is handled
-        // on the initial value by exposing the "return" from the underlying iterator, and later by nature
-        // of converting the remaining iterator to a new Iter which automatically exposes it to the consumer.
-        var next = function() {
-            var cur;
+        var iterator = that[_get](that)
+        var cur
+        return that[_withReturn](function() {
+            if (cur) return iterator.next();
+            
             while (cur=iterator.next(), !cur.done && cb(cur.value));
-            if (!cur.done) {
-                // create a new iterator from the remainder so that 
-                // return() gets handled correctly
-                next = iterator.next.bind(iterator)
-                returnFn = iterator.return && iterator.return.bind(iterator)
-                return {
-                    value: cur.value,
-                    done: false
-                }
-            }
-            return that[_done]()
-        }
-
-        var returnFn
-
-        var result = {
-            next: function() { return next() },
-            return: function() { if (returnfn) return returnFn() }
-        }
-
-        return result;
+            return cur.done ? that[_done]() : cur;
+        })
     }
 }
 
@@ -701,15 +692,10 @@ function takeWhileIterable(cb) {
     var that = this;
     return function() {
         var iterator = that[_get](that)
-        return withReturn(function() {
+        return that[_withReturn](function() {
             var cur = iterator.next();
-            if (!cur.done && cb(cur.value)) {
-                return { 
-                    done: false, 
-                    value: cur.value 
-                }
-            }
-            return that[_done]()
+            if (!cur.done && cb(cur.value)) return cur;
+            return that[_done](!cur.done)
         })
     } 
 }
@@ -737,7 +723,7 @@ function makeDoIterator(cb, thisArg) {
         var index = 0;
         var sourceIter = that[_iterator]()
 
-        return withReturn(function() {
+        return that[_withReturn](function() {
             var cur = sourceIter.next();
             !cur.done && cb.call(thisArg, cur.value, index++)
             return cur.done ? that[_done]() : cur
@@ -753,7 +739,7 @@ function makeExceptIterator(other, mapLeft, mapRight) {
 
         var sourceIter = that[_get](that)
         var cur
-        return withReturn(function() {
+        return that[_withReturn](function() {
             while (cur = sourceIter.next(), 
                 !cur.done && except.has(leftMapper(cur.value)))
                     ;
@@ -770,7 +756,7 @@ function makeIntersectIterator(other, mapLeft, mapRight) {
         var intersect = new Set(orMapSequence(mapRight, other));
         var sourceIter = that[_get](that)
         var cur
-        return withReturn(function() {
+        return that[_withReturn](function() {
             while (cur = sourceIter.next(), 
                 !cur.done && !intersect.has(leftMapper(cur.value)))
                 ;
@@ -795,7 +781,7 @@ function makeUniqueIterator(getkey) {
         var iterator = that[_get](that)
         var cur;
         var mapValue = getValueMapper(getkey);
-        return withReturn(function() {
+        return that[_withReturn](function() {
             while (cur = iterator.next(), !cur.done) {
                 var value = mapValue(cur.value)
                 if (!used.has(value)) {
@@ -847,7 +833,7 @@ function makeFlattenIterator(recurse) {
         var iterators = [that[_iterator]()];
         var iterator;
         
-        return withReturn(function() {
+        return that[_withReturn](function() {
             while (iterator || iterators.length > 0) {
                 if (!iterator) iterator = iterators.pop();
                 var cur = iterator.next();
@@ -856,7 +842,7 @@ function makeFlattenIterator(recurse) {
                     iterator = cur.value[_iterator]();
                 } else {
                     if (!cur.done) {
-                        this[_open]=[iterator]
+                        that[_open]=[iterator]
                         return { 
                             done: false, 
                             value: cur.value
@@ -878,7 +864,7 @@ function makeFilterIterator(cb, thisArg) {
         var index = 0;
         var sourceIter = that[_get](that)
 
-        return withReturn(function() {
+        return that[_withReturn](function() {
    
             var cur = sourceIter.next();
             while (!cur.done && !cb.call(thisArg, cur.value, index++)) {
@@ -897,7 +883,7 @@ function makeMapIterator(key, thisArg) {
         var index = 0;
         var sourceIter = that[_get](that);
 
-        return withReturn(function() {
+        return that[_withReturn](function() {
             var cur = sourceIter.next();
             
             return cur.done ? that[_done]() : {

@@ -8,6 +8,7 @@ iter8 is a small (3k gzipped) data transformation library that works with JavaSc
 * Implements complete `Array` API, plus many additions
 * Painless interop with `Array`, `Set`, and `Map` types
 * Deferred execution of all sequence enumeration
+* Correct `return()` handling for incomplete iterators
 * Caches iterator output: automatically re-use sequences without access to the creator
 * Powerful reflection capability for iterating object properties and getters/setters
 * Includes Typescript typings for complete GUI support of its API
@@ -214,6 +215,30 @@ Some methods like `first` could have no value to return, e.g. when called on a z
 
 To resolve this, methods like `first` include an argument that allows you to provide a default value to use other than `undefined`. However, your life will probably be easier if you avoid using `undefined` in sequences, so you can test for it conclusively, and use `null` instead to represent missing data.
 
+##### note about iterator.return()
+
+In addition to a `next()` method, iterators may also implement a `return()` method: see [overview from Exploring ES6](http://exploringjs.com/es6/ch_iteration.html#sec_take_closing)
+
+When you use a value-producing method, iter8 may not completely iterate over iterable objects it consumes. For example, if `indexOf` is successful, it will only iterate until it finds the element it's looking for.
+
+The `return()` method can be implemented by iterables to allow them to clean up resources. iter8 will correctly invoke this method when needed whenever a query is executed.
+
+In one situation, iter8 will not close an iterable that it consumes. This is when you actually source iter8 from an iterable (versus an iterator). Because iter8 was not resonsible for creating the iterable, it assumes it is also not responsible for cleaning it up. That is, the programmer could intend to take some further action on it after iter8 was done. An example:
+
+```Javascript
+const set = new Set([1, 2, 3, 4, 5])
+let values = set.values();
+const obj = iter(values.take(3).toArray())   // obj === [1, 2, 3]
+
+let remainder = [];
+for (let item of values) {
+    remainder.push(item)
+}
+// remainder = [4, 5]
+```
+
+Because `Set.values()` returns an *iterator* object (rather than an iterable, from which iter8 would request a new iterator), it is considered to not be owned by iter8, and so it won't be closed after use.
+
 ## Creating Iter objects
 
 iter8 exports a single function. This is a constructor, so it can be used for `instanceof` tests, but you can also simply invoke it rather than using `new`. To use iter8, create a new instance from an iterable object:
@@ -259,10 +284,15 @@ You can can work with iterators directly, too:
 
 ```Javascript
 let map = new Map([1, 'foo'], [2,'bar'], [3, 'baz'])
+
+// map.values() returns an iterator - not an iterable!
 let obj = iter(map.values())
 
 // obj.toArray() === ['foo', 'bar', 'baz']
 ```
+
+
+
 
 ### API Reference
 
