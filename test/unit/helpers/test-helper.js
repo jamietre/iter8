@@ -17,7 +17,16 @@ function iterableFrom(obj, returnFn) {
         }
     }
 }
+ 
 
+/**
+ * Test that a sequence-producing method invokes "return" on the original iterator if the
+ * sequence isn't iterated completely, and does *not* invoke "return" if it is.
+ * 
+ * This happens by using "take(n)" to take some # of items < than the length of the sequence.
+ * 
+ * @param {any} {method, desc, arg, data=[1,2,3,4,5], take=2 }
+ */
 function testReturn({method, desc, arg, data=[1,2,3,4,5], take=2 }) {
     let text = `"${method}"`;
     if (desc) text += ' - ' + desc;
@@ -41,19 +50,35 @@ function testReturn({method, desc, arg, data=[1,2,3,4,5], take=2 }) {
     })
 }
 
-function testSimpleReturn({ method, data=[1,2,3,4,5], args1, args2, after }) {
+
+/**
+ * Test that a method doesn't invoke return when passed [args1] and does invoke return
+ * when passed [args2]. Either can be omitted if there's a case that doesn't exist.
+ * 
+ * @param {any} { method, data=[1,2,3,4,5], args1, args2, after }
+ */
+function testSimpleReturn({ 
+        method, 
+        data=[1,2,3,4,5], 
+        args1, 
+        args2, 
+        desc1="calls return when sequence not iterated completely",
+        desc2="does not call return when sequence iterated completely",
+        after 
+    }) { 
     if (args1 !== undefined) {
-        it(`"${method}" calls return when sequence not iterated completely`, ()=> {
+        it(`"${method}" ${desc1}`, ()=> {
             let rt = sinon.stub()
             let obj = iterableFrom(data, rt);
             let sut = iter(obj)
             sut = sut[method].apply(sut, args1);
             if (after) sut[after]()
+            
             assert.ok(rt.called)
         });
     }
     if (args2 !== undefined) {
-        it(`"${method}" does not call return when sequence iterated completely`, ()=> {
+        it(`"${method}" ${desc2}`, ()=> {
             let rt = sinon.stub()
             let obj = iterableFrom(data, rt);
             let sut = iter(obj)
@@ -64,4 +89,20 @@ function testSimpleReturn({ method, data=[1,2,3,4,5], args1, args2, after }) {
     }
 }
 
-export { assert, iter, sinon, iterableFrom, testReturn, testSimpleReturn }
+
+class Kvp {
+    constructor([key,value]) {
+        this[0]=key;
+        this[1]=value;
+        Object.freeze(this)
+    }
+    get key() {
+        return this[0]
+    }
+    get value() {
+        return this [1]
+    }
+}
+
+
+export { assert, iter, sinon, iterableFrom, testReturn, testSimpleReturn, Kvp }

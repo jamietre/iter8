@@ -1,7 +1,7 @@
 import assert from 'assert'
 import iter from '../../'
 import sinon from 'sinon'
-import  { iterableFrom, testReturn, testSimpleReturn } from './helpers/test-helper'
+import  { iterableFrom, testReturn, testSimpleReturn, Kvp} from './helpers/test-helper'
 
 const data2 = [
     { value: '1', key: 1 },
@@ -26,239 +26,8 @@ const data4 = [
     { value: 'x5', key: 6 }
 ]
 
-class Kvp {
-    constructor([key,value]) {
-        this[0]=key;
-        this[1]=value;
-        Object.freeze(this)
-    }
-    get key() {
-        return this[0]
-    }
-    get value() {
-        return this [1]
-    }
-}
 
-function testSimpleData(sut) {
-    assert.equal(sut.length, 2)
-
-    let el1 = sut[0];
-    assert.equal(el1.key, 'foo');
-    assert.deepEqual(el1.value.map(e=>e.b), [ 1,2,4 ]);
-
-    let el2 = sut[1];
-    assert.equal(el2.key, 'bar');
-    assert.deepEqual(el2.value.map(e=>e.b), [ 6 ]);
-}
-
-describe('iter', ()=> {
-    describe('map', ()=> {
-        it('map works', ()=> {
-            let obj = iter([1,2,3]);
-            let thisArg = {};
-
-            let sut = obj.map(function(e, i) {
-                assert.ok(this===thisArg)
-                assert.equal(i, e-1)
-                return e*2;
-            }, thisArg);
-
-            let arr = sut.toArray();
-            assert.deepEqual(arr, [2,4,6]);
-        });
-
-        testReturn({ method: 'map', arg: e=>e }) 
-    })
-
-    describe('filter', ()=> {
-        it('works', ()=>{
-            let obj = iter([1,2,3,4,5]);
-            let thisArg = {};
-
-            let sut = obj.map(function(e,i) {
-                assert.equal(i,e-1)
-                assert.ok(this === thisArg)
-                return e*2;
-            }, thisArg).filter((e)=> {
-                assert.ok(this === undefined)
-                return e>4;
-            })
-
-            let arr = sut.toArray();
-            assert.deepEqual(arr, [6,8,10]);
-        })
-        testReturn({method: 'filter', arg: e=>true })
-    })
- 
-
-    describe('skip', ()=> {
-        it('works', ()=> {
-            let obj = iter([1,2,3,4,5]);
-
-            let sut1 = obj.skip(2);
-            assert.equal(sut1.count(),3)
-
-            let sut2 = obj.skip(1);
-            assert.equal(sut2.count(),4)
-        })
-        it('skip 0', ()=> {
-            let obj = iter([1,2,3])
-            assert.deepEqual(obj.skip(0).toArray(), [1,2,3])
-        })
-        it('skip 0 take 0', ()=> {
-            let obj = iter([1,2,3])
-            assert.deepEqual(obj.skip(0).take(0).toArray(), [])
-        })
-        testReturn({method: 'skip', arg: 0, desc: 'skip(0)', take: 0 })
-        testReturn({method: 'skip', arg: 0, desc: 'skip(0)', take: 1 })
-        testReturn({method: 'skip', arg: 1, desc: 'skip(1)', take: 0 })
-        testReturn({method: 'skip', arg: 1, desc: 'skip(1)', take: 0 })
-    });
-
-    it('skipWhile', ()=> {
-        let sut = iter([1,2,3,4,5,6,7,8]);
-        assert.deepEqual(sut.skipWhile(e=>e<4).toArray(), [4,5,6,7,8]);
-        assert.deepEqual(sut.skipWhile(e=>e<4).take(2).toArray(), [4,5]);
-        assert.deepEqual(sut.skipWhile(e=>e<20).toArray(), []);
-        assert.deepEqual(sut.skipWhile(e=>false).toArray(), [1,2,3,4,5,6,7,8])
-    });
-
-    describe('first', ()=> {
-        it('basic', ()=> {
-            let obj = iter([1,2,3,4,5]);
-            assert.equal(obj.first(), 1)
-            assert.equal(obj.skip(2).first(),3)
-        });
-        
-        it('not found', ()=> {
-            let obj = iter([]);
-            assert.ok(obj.first() === undefined)
-        });
-
-        it('not found - default', ()=> {
-            let obj = iter([]);
-            assert.ok(obj.first(null) ===null)
-        });
-    })
-    describe('last', ()=> {
-        it('basic', ()=> {
-            let obj = iter([1,2,3,4,5]);
-            assert.equal(obj.last(), 5)
-            assert.equal(obj.skip(2).last(),5)
-        });
-        it('not found', ()=> {
-            let obj = iter([]);
-            assert.ok(obj.last() === undefined)
-        });
-        it('not found - default`', ()=> {
-            let obj = iter([]);
-            assert.ok(obj.last(null) === null)
-        });
-    })
-
-    describe('flatten', ()=> {
-        it('basic', ()=> {
-            let obj = iter(['foo',[1,2,3], 4, [5,['a','b']],6, [7]]);
-            let sut = iter(obj).flatten().toArray()
-            assert.deepEqual(sut, ['foo',1,2,3,4,5,['a','b'],6,7])
-        })
-        it('recurse', ()=> {
-            let obj = iter(['foo',[1,2,3],['bar', ['fizz',['buzz','baz']]]]);
-            let sut = iter(obj).flatten(true).toArray()
-            assert.deepEqual(sut, ['foo',1,2,3,'bar','fizz','buzz','baz']);
-        });
-
-        // test that return was also called on the inner object in flatten that 
-        // was partially iterated
-        
-        it('inner array', ()=> {
-            let rt = sinon.stub()
-            let obj = iterableFrom([5,6,7], rt);
-
-            assert.deepEqual(iter([[1,2], obj, [10]]).flatten().take(3).toArray(), [1,2,5], 'works with take')
-
-            let sut = testReturn({ method: 'flatten', data: [[1,2], obj, [10]], take: 3 })
-            assert.ok(rt.calledOnce, 'return was called on inner array')
-
-            rt = sinon.stub()
-            obj = iterableFrom([5,6,7], rt);
-            testReturn({ method: 'flatten', data: [[1,2], obj, [10]], take: 2 })
-            assert.ok(!rt.calledOnce, 'return was not called on inner array')
-        })
-    });
-
-    it('as', ()=> {
-        let obj = iter([1,2,3,4,5]);
-        let set = obj.skip(2).as(Set);
-        assert.ok(set instanceof Set);
-        assert.equal(set.size, 3)
-    });
-
-    it('as Array', ()=> {
-        let obj = iter([1,2,3,4,5]);
-        let arr = obj.skip(2).as(Array);
-        assert.ok(Array.isArray(arr));
-        assert.equal(arr.length, 3)
-        assert.equal(arr[2], 5)
-    })
-
-    it('cast', ()=> {
-        let obj = iter([[1,'foo'],[2,'bar']]);
-
-        let sut = iter(obj).cast(Kvp).toArray();
-        assert.equal(sut.length, 2);
-        assert.ok(sut[0] instanceof Kvp)
-        assert.equal(sut[0].key,1)
-    })
-
-    describe('groupBy', ()=> {
-        const sampleData = [
-            { a: 'foo', b: 1 },
-            { a: 'foo', b: 2 },
-            { a: 'bar', b: 6 },
-            { a: 'foo', b: 4 }
-        ];
-
-        it('groupBy string', ()=> {
-            let x = iter(sampleData);
-
-            let sut = x.groupBy('a')
-            testSimpleData(sut.cast(Kvp).toArray());
-        }); 
-
-        it('groupBy function', ()=> {
-            let x = iter(sampleData);
-
-            let sut = x.groupBy((e)=> {
-                return e.a;
-            });
-            testSimpleData(sut.cast(Kvp).toArray());
-        });
-        it('with odd keys', ()=>{
-            let symbol = Symbol()
-            let data = [
-                [undefined,'undef1'],
-                [undefined,'undef2'],
-                [null,'null'],
-                ['foo','foo1'],
-                ['foo','foo2'],
-                [symbol,'symbol1'],
-                [symbol,'symbol2']
-            ]
-            let sut = iter(data).groupBy(e=>e[0], e=>e[1])
-                .map(e=>e[1]).
-                flatten()
-
-            assert.deepEqual(sut.toArray(), 
-                ['undef1','undef2',
-                'null',
-                'foo1', 'foo2',
-                'symbol1', 'symbol2']
-            )
-        })
-    })
-    
+describe('general', ()=> {
     it('complex', ()=> {
         let items = iter([['foo', 1], ['foo',2], ['bar',3], ['bar',4], ['foo',5]])
             .cast(Kvp)
@@ -338,13 +107,6 @@ describe('iter', ()=> {
         })
     })
     
-    it('as', ()=> {
-        let sut = iter([[1,'foo'], [2, 'bar']])
-        let dict = sut.as(Map)
-        assert.ok(dict instanceof Map);
-        assert.equal(dict.size, 2)
-        assert.equal(dict.get(2), 'bar')
-    })
     describe('unique', ()=> {
         it('unique', ()=> {
             let arr=[1,2,2,3,6,12,1,2,2,9];
@@ -457,26 +219,7 @@ describe('iter', ()=> {
     })
 
 
-    describe('find', ()=> {
-        it('basic', ()=> {
-            let sut = iter([1,2,3,4,5])
-            let thisArg = {};
-            assert.equal(sut.find(function(e, i) {
-                assert.ok(this === thisArg, 'thisArg was passed')
-                assert.ok(i === e-1)
-                return e === 3
-            }, thisArg), 3);
-        })
-        it('not found', ()=> {
-            let sut = iter([])
-            assert.equal(sut.find((e)=>e === 3), undefined);
-        })
-        it('not found -- default', ()=> {
-            let sut = iter([])
-            assert.equal(sut.find((e)=>e === 3, null, -2), -2);
-        })
-    })
-    
+
     it('take', ()=> {
         let sut = iter([1,2,3,4,5,6,7,8])
         assert.deepEqual(sut.skip(2).take(3).toArray(), [3,4,5]);
@@ -488,7 +231,7 @@ describe('iter', ()=> {
         assert.deepEqual(sut.skip(2).take(5).take(2).toArray(), [3,4]);
     })
 
-    it('take while', ()=> {
+    it('takeWhile', ()=> {
         let sut = iter([1,2,3,4,5,6,7,8]);
         assert.deepEqual(sut.skip(2).takeWhile(e=>e<6).toArray(), [3,4,5]);
         assert.deepEqual(sut.takeWhile(e=>false).toArray(), []);

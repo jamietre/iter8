@@ -1,4 +1,4 @@
-import  { iter, assert, iterableFrom, testReturn, testSimpleReturn } from './helpers/test-helper'
+import  { iter, assert, iterableFrom, testSimpleReturn } from './helpers/test-helper'
 
 describe('findIndex', ()=> {
 

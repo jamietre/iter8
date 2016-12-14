@@ -867,13 +867,16 @@ let x = iter(myMap).toObject();
 
 #### as(Type)
 
-Creates an instance of `Type` using the sequence as a single constructor argument. This works well with the ES6 `Map` and `Set` types. You can also use `Array`, which is a special case, even though constructing an `Array` with an iterable doesn't work in plain JavaScript. You can use any user-defined types that can accept an iterable as a single constructor argument.
+Creates an instance of `Type` using the sequence as a single constructor argument. This works well with the ES6 `Map` and `Set` types, or any other type constructed from an iterable. 
+
+You can also use `Array` or `Object`, which are special cases. These are aliases for the `toArray()` and `toObject()` methods.
 
 ```Javascript
 // make a lookup table returning all elements of the source grouped by the
 // values of property `category`
 
 let map = iter(something).groupBy('category').as(Map)
+let arr = iter(something).as(Array)
 ```
 
 #### join([separator=","])
