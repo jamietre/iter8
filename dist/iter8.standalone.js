@@ -190,7 +190,7 @@ Iter[_p] = {
             return new Type(e);
         }));
     },
-    first: makeAggregator('var r=a','return {v}','return r'),
+    first: makeAggregator('var r=a','z([_i]); return {v}','return r'),
     last: makeAggregator('var r=a,l','r={v}'),
     flatten: newIter(makeFlattenIterator),
     /**
@@ -350,10 +350,11 @@ Iter[_p] = {
     toObject: makeAggregator('var r={}','r[{v}[0]]={v}[1]'),
     toArray: makeAggregator('var r=[]','r.push({v})'),
     as: function(Cotr) {
-        if (Cotr === Array) {
-            return this.toArray();
+        switch(Cotr) {
+            case Array: return this.toArray();
+            case Object: return this.toObject();
+            default: return new Cotr(this);
         }
-        return new Cotr(this);
     },
     /**
      * Force execution of the deferred query. Useful if you want to finalize a set of operations, but still keep the result
