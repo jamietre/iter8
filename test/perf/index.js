@@ -24,7 +24,7 @@ function runTest({name, iterations, output, tests}) {
 
     let data = [];
     for (var i=0;i<iterations;i++) {
-        iter(tests).forEach(([name, cb])=> {
+        iter.fromObject(tests).forEach(([name, cb])=> {
             let start = now();
             let result = cb();
 
