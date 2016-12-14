@@ -398,7 +398,7 @@ describe('iter', ()=> {
 
         assert.ok(done === true);
     })
-    it('indexOf', ()=> {
+    it.only('indexOf', ()=> {
         let sut = iter([1,2,3,4,5])
         assert.equal(sut.indexOf(3), 2);
         assert.equal(sut.indexOf(99), -1);
