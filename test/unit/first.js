@@ -1,8 +1,10 @@
-import  { iter, assert, iterableFrom, testSimpleReturn } from './helpers/test-helper'
+import  { iter, assert } from './helpers/test-helper'
+
+const data = [1,2,3,4,5]
 
 describe('first', ()=> {
     it('basic', ()=> {
-        let obj = iter([1,2,3,4,5]);
+        let obj = iter(data);
         assert.equal(obj.first(), 1)
         assert.equal(obj.skip(2).first(),3)
     });
@@ -17,5 +19,9 @@ describe('first', ()=> {
         assert.ok(obj.first(null) ===null)
     });
 
-    testSimpleReturn({ method: 'first', args1: [] })
+    it('calls return correctly', ()=> {
+        assert.callsReturn((iter)=> {
+            iter(data).first()
+        })
+    })
 })

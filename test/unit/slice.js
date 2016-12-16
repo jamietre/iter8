@@ -1,15 +1,26 @@
-import  { iter, assert, iterableFrom, testReturn, testSimpleReturn } from './helpers/test-helper'
+import  { iter, assert } from './helpers/test-helper'
    
+const data = [1,2,3,4,5]
+
 describe('slice', ()=> {
     it('two args', ()=> {
-        let sut = iter([1,2,3,4,5])
+        let sut = iter(data)
         assert.deepEqual(sut.slice(2,3).toArray(), [3]);
     })
 
     it('one arg', ()=> {
-        let sut = iter([1,2,3,4,5])
+        let sut = iter(data)
         assert.deepEqual(sut.slice(3).toArray(), [4,5]);
     })
 
-    testSimpleReturn({ method: 'slice', after: 'toArray', args1: [2,3], args2: [3] })
+        
+    it('calls return correctly', ()=> {
+        assert.callsReturn((iter)=> {
+            iter(data).slice(2,3).toArray()
+        })
+
+        assert.notCallsReturn((iter)=> {
+            iter(data).slice(3).toArray()
+        })
+    })
 })

@@ -1,4 +1,4 @@
-import  { iter, assert, iterableFrom, testReturn } from './helpers/test-helper'
+import  { iter, assert, iterableFrom } from './helpers/test-helper'
 
 describe('asArray', ()=> {
     it('as Array', ()=> {

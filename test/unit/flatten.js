@@ -14,19 +14,29 @@ describe('flatten', ()=> {
 
     // test that return was also called on the inner object in flatten that 
     // was partially iterated
-    
-    it('inner array', ()=> {
-        let rt = sinon.stub()
-        let obj = iterableFrom([5,6,7], rt);
+     
+    it('calls return correctly', ()=> {
 
-        assert.deepEqual(iter([[1,2], obj, [10]]).flatten().take(3).toArray(), [1,2,5], 'works with take')
+        assert.callsReturn((_iter)=> {
+            _iter([1,2,[3],4,5]).flatten().take(2).toArray();
+        }, 'not iterating entire sequence')
 
-        let sut = testReturn({ method: 'flatten', data: [[1,2], obj, [10]], take: 3 })
-        assert.ok(rt.calledOnce, 'return was called on inner array')
+        assert.callsReturn((_iter)=> {
+            _iter([1,2,[3],4,5]).flatten().take(3).toArray();
+        }, 'not iterating entire sequence - at boundary of inner sequence')
 
-        rt = sinon.stub()
-        obj = iterableFrom([5,6,7], rt);
-        testReturn({ method: 'flatten', data: [[1,2], obj, [10]], take: 2 })
-        assert.ok(!rt.calledOnce, 'return was not called on inner array')
+        assert.notCallsReturn((_iter)=> {
+            _iter([1,2,[3],4,5]).flatten().take(6).toArray();
+        }, 'iterating entire sequence')
+
+        assert.callsReturn((_iter)=> {
+            let obj = _iter([5,6,7])
+            iter([[1,2], obj, [10]]).flatten().take(3).toArray();
+        }, 'calls return on inner object partially iterated')
+        
+        assert.notCallsReturn((_iter)=> {
+            let obj = _iter([5,6,7])
+            iter([[1,2], obj, [10]]).flatten().take(6).toArray();
+        }, 'does not call return on inner object when iterated completely')
     })
 });

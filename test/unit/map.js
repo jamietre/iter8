@@ -1,8 +1,10 @@
-import  { iter, assert, iterableFrom, testReturn } from './helpers/test-helper'
+import  { iter, assert, invalidKeyArgs } from './helpers/test-helper'
+
+const data = [1,2,3,4,5]
 
 describe('map', ()=> {
-    it('map works', ()=> {
-        let obj = iter([1,2,3]);
+    it('with function arg', ()=> {
+        let obj = iter(data);
         let thisArg = {};
 
         let sut = obj.map(function(e, i) {
@@ -12,8 +14,30 @@ describe('map', ()=> {
         }, thisArg);
 
         let arr = sut.toArray();
-        assert.deepEqual(arr, [2,4,6]);
+        assert.deepEqual(arr, [2,4,6,8,10]);
     });
 
-    testReturn({ method: 'map', arg: e=>e }) 
+    it('with string arg', ()=> {
+        let sut = iter([{key: 1},{key: 2}, {key: 3}]).map('key').toArray();
+
+        assert.deepEqual(sut, [1,2,3])
+    })
+
+    it('calls return correctly', ()=> {
+        assert.callsReturn((iter)=> {
+            iter(data).map(e=>e*2).take(2).toArray()
+        })
+
+        assert.notCallsReturn((iter)=> {
+            iter(data).map(e=>e*2).toArray()
+        })
+    })
+
+    it('requires a function or string', ()=> {
+        invalidKeyArgs.forEach((arg)=> {
+            assert.throws(()=> {
+                iter(data).map(arg)
+            }, /TypeError/)
+        })
+    })
 })

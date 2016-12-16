@@ -1,8 +1,10 @@
-import  { iter, assert, iterableFrom, testSimpleReturn } from './helpers/test-helper'
+import  { iter, assert } from './helpers/test-helper'
+
+const data = [1,2,3,4,5]
 
 describe('last', ()=> {
     it('basic', ()=> {
-        let obj = iter([1,2,3,4,5]);
+        let obj = iter(data);
         assert.equal(obj.last(), 5)
         assert.equal(obj.skip(2).last(),5)
     });
@@ -18,6 +20,11 @@ describe('last', ()=> {
     });
 
     // last always iterates sequence completely
+
+    it('calls return correctly', ()=> {
+        assert.notCallsReturn((iter)=> {
+            iter(data).last()
+        })
+    })
     
-    testSimpleReturn({ method: 'last', args2: [] })
 })

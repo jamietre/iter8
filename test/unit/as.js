@@ -1,4 +1,4 @@
-import  { iter, assert, iterableFrom, testSimpleReturn } from './helpers/test-helper'
+import  { iter, assert } from './helpers/test-helper'
  
 const data = [1,2,3,4,5]
 
@@ -51,15 +51,13 @@ describe('as', ()=> {
     // really never should calls "return" because it either doesn't produce an iterator (passes iterable directly to the consumer)
     // or it iterates completely to Array
 
-    testSimpleReturn({ 
-        method: 'as',  
-        args2: [Array],
-        desc2: "doesn't call return with Array"
-    })
+    it('calls return correctly', ()=> {
+        assert.notCallsReturn((iter)=> {
+            iter(data).as(Array)
+        })
 
-    testSimpleReturn({ 
-        method: 'as',  
-        args2: [Array],
-        desc2: "doesn't call return when passing a regular constructor"
+        assert.notCallsReturn((iter)=> {
+            iter(data).as(Set)
+        })
     })
  });

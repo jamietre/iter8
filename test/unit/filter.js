@@ -1,8 +1,10 @@
-import  { iter, assert, iterableFrom, testReturn } from './helpers/test-helper'
+import  { iter, assert, iterableFrom } from './helpers/test-helper'
+
+const data = [1,2,3,4,5];
 
 describe('filter', ()=> {
     it('works', ()=>{
-        let obj = iter([1,2,3,4,5]);
+        let obj = iter(data);
         let thisArg = {};
 
         let sut = obj.map(function(e,i) {
@@ -18,5 +20,13 @@ describe('filter', ()=> {
         assert.deepEqual(arr, [6,8,10]);
     })
     
-    testReturn({method: 'filter', arg: e=>true })
+    it('calls return correctly', ()=> {
+        assert.callsReturn((iter)=> {
+            iter(data).filter(e=>true).take(2).toArray()
+        })
+
+        assert.notCallsReturn((iter)=> {
+            iter(data).filter(e=>true).take(6).toArray()
+        })
+    })
 })

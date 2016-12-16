@@ -1,7 +1,7 @@
 import assert from 'assert'
 import iter from '../../'
 import sinon from 'sinon'
-import  { iterableFrom, testReturn, testSimpleReturn, Kvp} from './helpers/test-helper'
+import  { iterableFrom, Kvp} from './helpers/test-helper'
 
 const data2 = [
     { value: '1', key: 1 },
@@ -55,94 +55,6 @@ describe('general', ()=> {
         assert.deepEqual(items3, [1,2,5,3,4]);
     })
 
-    describe('sum', ()=> {
-        it('basic', ()=> {
-            let sut = iter([1,5,3,20]);
-            assert.equal(sut.sum(), 29);
-        })
-        it('map', ()=> {
-            let sut = iter([{ foo: 1}, {foo: 4}, {foo: 10}]);
-            assert.equal(sut.sum((e)=>e.foo), 15);
-        })
-        it('map - prop', ()=> {
-            iter()
-            let sut = iter([{ foo: 1}, {foo: 4}, {foo: 10}]);
-            assert.equal(sut.sum('foo'), 15);
-        })
-    })
-
-    describe('mean', ()=> {
-        it('basic', ()=> {
-            let sut = iter([2,4,6,8,10,12]);
-            assert.equal(sut.mean(), 7);
-        })
-        it('map', ()=> {
-            let sut = iter([{ foo: 1}, {foo: 4}, {foo: 10}]);
-            assert.equal(sut.mean((e)=>e.foo), 5);
-        })
-        it('map - prop', ()=> {
-            let sut = iter([{ foo: 1}, {foo: 4}, {foo: 10}]);
-            assert.equal(sut.sum('foo'), 15);
-        })
-    })
-    
-    describe('min', ()=> {
-        it('basic', ()=> {
-            let sut = iter([2,5,3,20]);
-            assert.equal(sut.min(), 2);
-        })
-        it('map', ()=> {
-            let sut = iter([{ foo: 1}, {foo: 4}, {foo: 10}]);
-            assert.equal(sut.min((e)=>e.foo), 1);
-        })
-    })
-    describe('max', ()=> {
-        it('basic', ()=> {
-            let sut = iter([1,5,3,20]);
-            assert.equal(sut.max(), 20);
-        })
-        it('map', ()=> {
-            let sut = iter([{ foo: 1}, {foo: 4}, {foo: 10}]);
-            assert.equal(sut.max((e)=>e.foo), 10);
-        })
-    })
-    
-    describe('unique', ()=> {
-        it('unique', ()=> {
-            let arr=[1,2,2,3,6,12,1,2,2,9];
-            let sut = iter(arr);
-            assert.equal(sut.count(), arr.length)
-            assert.deepEqual(sut.unique().toArray(), [1,2,3,6,12,9])
-        })
-
-        it('unique with key', ()=> {
-            let sut = iter([ 
-                { key: 1, value: 'foo'},
-                { key: 1, value: 'foo-2'},
-                { key: 2, value: 'bar'},
-                { key: 3, value: 'fizz'},
-                { key: 3, value: 'buzz'},
-            ])
-            .unique('key')
-            .map(e=>e.value);
-            assert.deepEqual(sut.toArray(), ['foo', 'bar', 'fizz'])
-        });
-
-        testReturn({ method: 'unique' })
-    });
-        
-    it('sort', ()=> {
-        let sut = iter([5,1,2,9]);
-        assert.deepEqual(sut.sort().toArray(), [1,2,5,9])
-
-        assert.deepEqual(sut.sort((a,b)=>{ 
-            return b - a;
-        }).toArray(), [9,5,2,1])
-    })
-    it('reverse', ()=> {
-        let sut = iter([5,1,2,9]);
-        assert.deepEqual(sut.reverse().toArray(), [9,2,1,5])
-    })
     it('concat', ()=> {
         let sut = iter([1,2,3]).concat([4,5],6,"seven",[8,9,['a','b']]);
 
@@ -160,17 +72,7 @@ describe('general', ()=> {
         assert.ok(sut.every((e)=> e < 12 ));
         assert.ok(!sut.every((e)=> e < 10 ));
     })
-    describe('includes', ()=> {
-        const data = [1,2,3,5,10]
-        it('works', ()=> {
-            let sut = iter(data)
-            assert.ok(sut.includes(3));
-            assert.ok(!sut.includes(4));
-        });
-
-        testSimpleReturn({ method: 'includes', args1: [2], args2: [99] })
-
-    })
+   
 
     it('do', ()=> {
         let sut = iter([1,2,3,4,5])
@@ -216,19 +118,6 @@ describe('general', ()=> {
         },0),6)
 
         assert.ok(done === true);
-    })
-
-
-
-    it('take', ()=> {
-        let sut = iter([1,2,3,4,5,6,7,8])
-        assert.deepEqual(sut.skip(2).take(3).toArray(), [3,4,5]);
-        assert.deepEqual(sut.skip(6).take(10).toArray(), [7,8]);
-    })
-
-    it('take twice', ()=> {
-        let sut = iter([1,2,3,4,5,6,7,8])
-        assert.deepEqual(sut.skip(2).take(5).take(2).toArray(), [3,4]);
     })
 
     it('takeWhile', ()=> {
