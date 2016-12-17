@@ -1,6 +1,6 @@
 # iter8
 
-iter8 is a small (3k gzipped) data transformation library that works with JavaScript iterables. It provides the familiar `Array` API plus a full complement of sequence and set operations like `intersect`, `union`, `except`, and `leftJoin`.
+iter8 is a small (under 4k gzipped) data transformation library that works with JavaScript iterables. It provides the familiar `Array` API plus a full complement of sequence and set operations like `intersect`, `union`, `except`, and `leftJoin`.
 
 ## Features
 
@@ -11,6 +11,7 @@ iter8 is a small (3k gzipped) data transformation library that works with JavaSc
 * Correct `return()` handling for incomplete iterators
 * Caches iterator output: automatically re-use sequences without access to the creator
 * Powerful reflection capability for iterating object properties and getters/setters
+* Argument type checking
 * Includes Typescript typings for complete GUI support of its API
 
 ## Contents
@@ -935,7 +936,7 @@ I am working independently on a good jsdoc-to-d.ts converter to provide typings 
 
 ### Size Optimization
 
-It's about 10K compressed/3k gzipped right now. There are opportunities for code reuse that I haven't taken advantage of that could further reduce the size of this library. I don't see it growing too much more, as I've arleady implemente pretty much every seqeunce operation I can think of.
+It's about 10K compressed/4k gzipped right now. There are opportunities for code reuse that I haven't taken advantage of that could further reduce the size of this library. I don't see it growing too much more, as I've arleady implemente pretty much every seqeunce operation I can think of.
 
 ## Similar Libraries
 

@@ -19,15 +19,26 @@ describe('groupBy', ()=> {
         { a: 'bar', b: 6 },
         { a: 'foo', b: 4 }
     ];
+    it('no arg', ()=> {
+        const data = [1,2,3,3,2,2,4,5,5,1]
+        let sut = iter(data).groupBy();
+        assert.deepEqual(sut.toArray(), [
+            [1, [1, 1]],
+            [2, [2,2,2]],
+            [3, [3,3]],
+            [4, [4]],
+            [5, [5,5]]
+        ])
+    })
 
-    it('groupBy string', ()=> {
+    it('string', ()=> {
         let x = iter(sampleData);
 
         let sut = x.groupBy('a')
         testSimpleData(sut.cast(Kvp).toArray());
     }); 
 
-    it('groupBy function', ()=> {
+    it('function', ()=> {
         let x = iter(sampleData);
 
         let sut = x.groupBy((e)=> {

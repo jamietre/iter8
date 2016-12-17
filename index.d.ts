@@ -475,6 +475,13 @@ export declare class Iter implements Iterable<any> {
      */
     sum(key?: KeyProvider): number;
     /**
+     * Return the mean (average) of all elements in the sequence
+     *
+     * @param {KeyProvider} key An optional callback invoked on each element that returns the value to sum
+     * @returns {number} The sum of all elements in the sequence (using the + operator)
+     */
+    mean(key?: KeyProvider): number;
+    /**
      * Sort the sequence using default comparison operator. If a `callback` is provided, then
      * it will use the return value to determine priority when comparing two elements `a` and `b`:
      * -1 means a<b, 1 means b<a
@@ -489,5 +496,17 @@ export declare class Iter implements Iterable<any> {
      * @returns the reversed sequence
      */
     reverse(): Iter;
+    /**
+     * Assuming the seqeunce contains [key, value] pairs, return a sequence of the keys
+     * 
+     * @returns {Iter} the keys
+     */
+    keys(): Iter;
+    /**
+     * Assuming the seqeunce contains [key, value] pairs, return a sequence of the values
+     * 
+     * @returns {Iter} the values
+     */
+    values(): Iter;
 }
 export default iter;

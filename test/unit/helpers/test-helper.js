@@ -93,4 +93,29 @@ Object.freeze(assert)
 const invalidKeyArgs = [null, undefined, {}, 1, 0, Infinity, Symbol()]
 const invalidNumericArgs = [null, undefined, {}, Symbol(), 'foo']
 
-export { assert, iter, sinon, iterableFrom, Kvp, invalidKeyArgs, invalidNumericArgs }
+
+const data2 = [
+    { value: '1', key: 1 },
+    { value: '2-1', key: 2 },
+    { value: '2-2', key: 2 },
+    { value: '3', key: 3 },
+    { value: '4', key: 4 },
+    { value: '5', key: 5 }
+]
+
+const data3 = [
+    { value: 'x-2', key: 2 },
+    { value: 'x-3', key: 3 },
+    { value: 'x-6', key: 6 }
+]
+
+const data4 = [
+    { value: 'x2-1', key: 2 },
+    { value: 'x2-2', key: 2 },
+    { value: 'x3-1', key: 3 },
+    { value: 'x3-2', key: 3 },
+    { value: 'x5', key: 6 }
+]
+
+
+export { assert, iter, sinon, iterableFrom, Kvp, invalidKeyArgs, invalidNumericArgs, data2, data3, data4 }
