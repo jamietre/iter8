@@ -208,8 +208,8 @@ Iter[_p] = {
             
             var iterator = getIterator(that)
             while (cur = iterator.next(), !cur.done) {
-                var key = cb(cur.value);
-                (dict.get(key) || dict.set(key,[]).get(key))
+                var k = cb(cur.value);
+                (dict.get(k) || dict.set(k,[]).get(k))
                     .push(trans(cur.value))
             }
 
