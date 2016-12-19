@@ -2,6 +2,8 @@ import now from 'performance-now'
 import iter from '../../'
 import _ from 'lodash'
 import assert from 'assert'
+// de-optimze so we can compare methods of iterating arrays
+iter._no_opt = true;
 
 const realDescribe = describe;
 describe = function(name,fn) {
@@ -53,25 +55,83 @@ function runTest({name, iterations, output, tests}) {
 
 }
 
+function getIterator(source) {
+    var i=0;
+    var length = source.length;
+
+    return {
+        next: function() {
+            
+            return i < length ? {
+                done: false,
+                value: source[i++]
+            } : { done: true };
+        }
+    }            
+}
+
 describe('performance', ()=> {
+    it('eval functions vs normal code reuse', ()=> {
+        let arr = iter.generate((e)=>Math.floor(Math.random()*100),10000000).toArray();
+
+        let sum = new Function('x','var cur; var total=0; while (cur = x.next(), !cur.done) { total += cur.value }; return total;' )
+
+        let sum2 = new Function('x, xform','var cur; var total=0; while (cur = x.next(), !cur.done) { total += xform(cur.value) }; return total;' )
+
+        function valueGetter(x) {
+            return x; 
+        }
+        runTest({
+            name: "eval vs normal",
+            iterations: 5,
+            tests: {
+                'iteration-eval':()=> {
+                    return sum(arr[Symbol.iterator]());
+                },
+                'iteration-eval-with-function':()=> {
+                    return sum2(arr[Symbol.iterator](), valueGetter);
+                },
+                'iteration-eval-with-function-own-iterator':()=> {
+                    return sum2(getIterator(arr), valueGetter);
+                },
+                'iteration-eval-with-function-own-iterator-safe':()=> {
+                    return sum2(getIterator(arr.slice()), valueGetter);
+                },
+                'normal':()=> {
+                    var y = arr[Symbol.iterator]();
+                    var cur; 
+                    var total=0;
+                    while (cur = y.next(), !cur.done) { 
+                        total += cur.value 
+                    }; 
+                    return total;
+                },
+                'normal-with-function':()=> {
+                    var z =arr[Symbol.iterator](); 
+                    var cur; 
+                    var total=0;
+                    while (cur = z.next(), !cur.done) { 
+                        total +=valueGetter(cur.value);
+                    }; 
+                    return total;
+                },
+                'normal-with-function-own-iterator': ()=> {
+                    var z =getIterator(arr)
+                    var cur; 
+                    var total=0;
+                    while (cur = z.next(), !cur.done) { 
+                        total +=valueGetter(cur.value);
+                    }; 
+                    return total;
+                }
+            }
+        })
+    })
+
     it('iteration vs. index access', ()=> {
         let arr = iter.generate((e)=>Math.floor(Math.random()*100),100000).toArray();
         let forOf = new Function('arr','var total=0;for (var n of arr) total+=n; return total')
 
-        function getIterator(source) {
-            var i=0;
-            var length = source.length;
-
-            return {
-                next: function() {
-                    
-                    return  {
-                        done: i>=length,
-                        value: source[i++]
-                    }
-                }
-            }            
-        }
         runTest({
             name: "iteration vs. index access",
             iterations: 5,
@@ -99,12 +159,12 @@ describe('performance', ()=> {
                 },
                 'iteration-our-own-iterator':()=> {
                     let iter = getIterator(arr);
-                        let cur;
-                        let total=0;
-                        while (cur=iter.next(), !cur.done) 
-                            total+=cur.value
-                        return total
-                    },
+                    let cur;
+                    let total=0;
+                    while (cur=iter.next(), !cur.done) 
+                        total+=cur.value
+                    return total
+                },
                 'iteration-our-own-iterator-safe':()=> {
                     let iter = getIterator(arr.slice());
                     let cur;
@@ -161,7 +221,7 @@ describe('performance', ()=> {
                     return iter(arr).except(arr2).toArray().length
                 },
                 'iter8-own-iterator':()=> {
-                    return iter(arr,true).except(arr2).toArray().length
+                    return iter(getIterator(arr)).except(arr2).toArray().length
                 },
                 lodash:()=> {
                     return _(arr).difference(arr2).value().length
@@ -179,10 +239,13 @@ describe('performance', ()=> {
             iterations: 20,
             tests: {
                 iter8:()=> {
-                    return iter(set1).except(set2).toArray().length
+                return iter(set1).except(set2).toArray().length
                 },
                 'iter8-own-iterator':()=> {
-                    return iter(set1,true).except(set2).toArray().length
+                    return iter(getIterator(set1)).except(set2).toArray().length
+                },
+                'iter8-own-iterator-safe':()=> {
+                    return iter(getIterator(set1.slice())).except(set2).toArray().length
                 },
                 lodash:()=> {
                     return _(Array.from(set1)).difference(Array.from(set2)).value().length
@@ -203,7 +266,7 @@ describe('performance', ()=> {
                     return iter(arr).groupBy().toArray().length
                 },
                 'iter8-own-iterator':()=> {
-                    return iter(arr, true).groupBy().toArray().length
+                    return iter(getIterator(arr)).groupBy().toArray().length
                 },
                 
                 lodash:()=> {
@@ -228,7 +291,7 @@ describe('performance', ()=> {
                     return iter(arr).groupBy(e=>e[0]).toArray().length
                 },
                 'iter8-own-iterator':()=> {
-                    return iter(arr,true).groupBy(e=>e[0]).toArray().length
+                    return iter(getIterator(arr)).groupBy(e=>e[0]).toArray().length
                 },
                 lodash:()=> {
                     let obj =  _(arr).groupBy(e=>e[0]).value()
@@ -238,18 +301,21 @@ describe('performance', ()=> {
         });
     })
 
-    it('sum', ()=> {
+    it.only('sum', ()=> {
         let arr = iter.generate((e)=>Math.floor(Math.random()*100), 1000000).toArray();
 
         runTest({
             name: "sum",
             iterations: 100,
             tests: {
+                'iter8-own-iterator':()=> {
+                    return iter(getIterator(arr)).sum()
+                },
+                'iter8-own-iterator-safe':()=> {
+                    return iter(getIterator(arr.slice())).sum()
+                },
                 iter8:()=> {
                     return iter(arr).sum()
-                },
-                'iter8-own-iterator':()=> {
-                    return iter(arr,true).sum()
                 },
                 lodash:()=> {
                     return  _(arr).sum()
