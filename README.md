@@ -97,7 +97,11 @@ These are used to create `Iter` instances.
 
 These methods are available on all `Iter` instances. Methods identified with an asterisk (*) are essentially the same as their `Array` prototype equivalent, though there may be minor differences associated with dealing with sequences instead of arrays (see detail).
 
-Iter8 objects have two types of methods: *transformation* and *value-producing*. Transformation methods return another `Iter` instance and can be chained.
+Iter8 objects have two types of methods: *transformation* and *value-producing*. 
+
+*transformation methods* return another `Iter` instance and can be chained.
+
+*value-producing* methods return a value directly, and therefore are not chainable.
 
 ##### transformation methods
 
@@ -150,7 +154,7 @@ Iter8 objects have two types of methods: *transformation* and *value-producing*.
 
 * [first([default])](#firstdefault)
 * [last([default])](#lastdefault) 
-* [get(n, [default])](#user-content-getn-default)
+* [get(n, [default])](#getn-default)
 
 *Aggregation/Analysis*
 
@@ -186,8 +190,6 @@ Iter8 objects have two types of methods: *transformation* and *value-producing*.
 
 ### Usage Details
 
-*Transformation* methods return a new instance of `Iter` with a new sequence that's the result of your operation. *Value-producing* methods return a value.
-
 Execution of every query is deferred until a *value producing* method is called, which exports data outside the construct of an `Iter` object. If your query doesn't need to iterate over the entire sequence, it won't. Each value-producing methods returns something other than an `Iter` object thus ending the chain and causing execution.
 
 This is extremely powerful, but can have unitended side effects, particular when chaining queries with recursion or loops. If you use data passed by reference during a transformation, the value used will be the value *at the time the transformation happens* -- not when the query was created. You can use the `execute` method as needed to fully iterate a sequence.
@@ -199,8 +201,8 @@ In addition to its own API, `Iter` implements method for all the `Array` prototy
 For many methods that require a key for equality comparison, like `groupBy`, `leftJoin`, and set operations, there will be an parameter of type `key`. This means that the argument can be one of three things:
 
 * a `function(item)` that, given an item in a sequence, returns a key that identifies it
-* a non-null, non-undefined value, typically a string or number, which identifies a property or index on the item in the seqeunce whose value is the key. 
-* a falsy value, meaning the item itself is the key.
+* a string, which identifies a property or index on the item in the sequence whose value is the key
+* null or undefined (or, if the paramter is omitted), meaning the item itself is the key
 
 This means you can unversally use strings to refer to an object property in these situations, so the following are identical:
 
@@ -211,7 +213,7 @@ let x = item.groupBy(e => e.name)
 
 ##### Note about key-value pairs
 
- When describing an element as a *key-value pair*, this always means an array with two elements: `[key, value]`. This is the data structure used by JavaScript `Map` objects, and is also used for many other operations by `Iter` such as iterating over objects (property-value), and grouping (groupname-members).
+ When describing an element as a *key-value pair*, this always means an array with two elements: `[key, value]`. This is the data structure used by JavaScript `Map` objects, and is also used for many other operations by `Iter` such as iterating over objects [property, value], and grouping [group-key, [group-members]].
 
 ##### Note about use of undefined
 
