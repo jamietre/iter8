@@ -229,7 +229,7 @@ In one situation, iter8 will not close an iterable that it consumes. This is whe
 ```Javascript
 const set = new Set([1, 2, 3, 4, 5])
 let values = set.values();
-const obj = iter(values.take(3).toArray())   // obj === [1, 2, 3]
+const obj = iter(values).take(3).toArray()   // obj === [1, 2, 3]
 
 let remainder = [];
 for (let item of values) {
@@ -239,6 +239,24 @@ for (let item of values) {
 ```
 
 Because `Set.values()` returns an *iterator* object (rather than an iterable, from which iter8 would request a new iterator), it is considered to not be owned by iter8, and so it won't be closed after use.
+
+Consider an alternate implementation:
+
+```Javascript
+const set = new Set([1, 2, 3, 4, 5])
+let values = { 
+    [Symbol.iterator]: function() { 
+    	return set.values() 
+    }
+}
+
+// ... rest code is the same
+
+// remainder = [1, 2, 3, 4, 5]
+```
+
+In this case we created an actual `iterable` object (not an iterator) that returns the new sequence of keys. The output of "remainder" in this case will be the entire sequence. Each operation on values gets a new iterator from `set.values()` so the state is never preserved.
+
 
 ## Creating Iter objects
 
