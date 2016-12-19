@@ -40,4 +40,39 @@ describe('union', ()=> {
 
         assert.deepEqual(sut.toArray(), [2,2,3])
     })
+
+    it('calls return correctly', () => {
+        // there will be 7 total elements in the joined sequences
+
+        const seq1 = [1,2,3,4,5]
+        const seq2 = [2,3,6,7]
+        assert.callsReturn((iter) => {
+            iter(seq1).union(seq2).take(2).toArray()
+        },'when taking only from 1st sequence')
+
+        assert.notCallsReturn((iter) => {
+            iter(seq1).union(seq2).take(6).toArray()
+        },'when taking all of 1st sequence')
+
+        assert.callsReturn((_iter) => {
+            iter(seq1).union(_iter(seq2)).take(6).toArray()
+        },'calls return on 2nd sequence when taking part of 2nd sequence')
+
+        assert.notCallsNextOrReturn((_iter) => {
+            iter(seq1).union(_iter(seq2)).take(4).toArray()
+        },'2nd sequence untouched when 1st seqeunce not iterated completely')
+
+        assert.callsReturn((_iter) => {
+            iter(seq1).union(_iter(seq2)).take(6).toArray()
+        },'2nd partially iterated')
+
+        assert.callsReturn((_iter) => {
+            iter(seq1).union(_iter(seq2)).take(7).toArray()
+        },'2nd at end boundary')
+
+        assert.notCallsReturn((_iter) => {
+            iter(seq1).union(_iter(seq2)).take(8).toArray()
+        },'iterated completely')
+
+    })
 })

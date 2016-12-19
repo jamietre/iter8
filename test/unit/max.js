@@ -1,6 +1,7 @@
 import  { iter, assert } from './helpers/test-helper'
 
 const data =[1,5,3,20]
+
 describe('max', ()=> {
     it('basic', ()=> {
         let sut = iter(data);
@@ -31,4 +32,5 @@ describe('max', ()=> {
             iter(data).map({})
         }, /TypeError/)
     })
+
 })

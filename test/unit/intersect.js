@@ -41,4 +41,14 @@ describe('intersect', ()=> {
 
         assert.deepEqual(sut.toArray(), [2,2,3])
     })
+
+    it('calls return correctly', () => {
+        assert.callsReturn((iter) => {
+            iter([1,2,3,4,5]).intersect([2,3,6]).take(2).toArray()
+        })
+
+        assert.notCallsReturn((iter) => {
+            iter([1,2,3,4,5]).intersect([2,3,6]).take(6).toArray()
+        })
+    })
 })

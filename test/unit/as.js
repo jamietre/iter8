@@ -8,7 +8,6 @@ class NonConsuming {
     }
 }
 
-
 describe('as', ()=> {
      it('map', ()=> {
         let sut = iter([[1,'foo'], [2, 'bar']])
@@ -48,7 +47,7 @@ describe('as', ()=> {
 
     })
 
-    // really never should calls "return" because it either doesn't produce an iterator (passes iterable directly to the consumer)
+    // never should call "return" because it either doesn't produce an iterator (passes iterable directly to the consumer)
     // or it iterates completely to Array
 
     it('calls return correctly', ()=> {

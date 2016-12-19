@@ -33,7 +33,6 @@ describe('take', ()=> {
         assert.deepEqual(remainder, [3,4,5,6,7,8])
     })
 
-        
     it('calls return correctly', ()=> {
         assert.callsReturn((iter)=> {
             iter(data).take(4).toArray() 
@@ -48,7 +47,6 @@ describe('take', ()=> {
         }, 'does not call return when taking past end')
     })
 
-    
     it('requires a numeric arg', ()=> {
         invalidNumericArgs.forEach((arg)=> {
             assert.throws(()=> {

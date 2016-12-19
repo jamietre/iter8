@@ -64,7 +64,7 @@ function notCallsNextCallsReturn(cb, message=`"return" method was called`) {
 }
 
 function notCallsNextOrReturn(cb, message=`"return" method was called`) {
-    return callsReturnHelper(cb, true, false, message);
+    return callsReturnHelper(cb, false, false, message);
 }
 
 class Kvp {

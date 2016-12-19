@@ -16,10 +16,6 @@ describe('find', ()=> {
         let sut = iter([])
         assert.equal(sut.find((e)=>e === 3), undefined);
     })
-    it('not found -- default', ()=> {
-        let sut = iter([])
-        assert.equal(sut.find((e)=>e === 3, null, -2), -2);
-    })
     
     it('calls return correctly', ()=> {
         assert.callsReturn((iter)=> {
