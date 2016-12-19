@@ -1,5 +1,10 @@
 # iter8
 
+Use iterables, iterators and generators like it's 1999. Provides the complete Array API (plus a lot more), and works with everything you throw at it.
+
+[![NPM version](http://img.shields.io/npm/v/iter8.svg?style=flat-square)](https://www.npmjs.org/package/iter8)
+[![Travis build status](http://img.shields.io/travis/jamietre/iter8/master.svg?style=flat-square)](https://travis-ci.org/jamietre/iter8)
+
 iter8 is a small (under 4k gzipped) data transformation library that works with JavaScript iterables. It provides the familiar `Array` API plus a full complement of sequence and set operations like `intersect`, `union`, `except`, and `leftJoin`.
 
 ## Features
