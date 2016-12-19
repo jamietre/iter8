@@ -940,14 +940,9 @@ At the end of the day - both lodash and iter8 are *extremely fast*. iter8 can su
 
 ## Roadmap
 
-### Edge cases
-
-Little arg validation is done - in some cases this produces unexpected behavior. Need to 
-validate particularly numeric args like `take`
-
 ### A few more features
 
-This is the only one common sequence method left to add (just haven't needed it yet..)
+This is the only one common sequence method left to add that I can think of
 
 ##### zip(other, fn)
 
@@ -961,7 +956,7 @@ I am working independently on a good jsdoc-to-d.ts converter to provide typings 
 
 ### Size Optimization
 
-It's about 10K compressed/4k gzipped right now. There are opportunities for code reuse that I haven't taken advantage of that could further reduce the size of this library. I don't see it growing too much more, as I've arleady implemente pretty much every seqeunce operation I can think of.
+It's about 10K compressed/4k gzipped right now. Everything I see being part of it's purpose has already been implemented. There are definitely some opportunties to reduce the size a bit through better code reuse.
 
 ## Similar Libraries
 
@@ -969,10 +964,13 @@ There are a bunch of them. It was actually pretty hard to find a good npm packag
     
 I had the following needs in mind when creating this:
 
-* easy interop with `Array`, `Map`, `Set`, `immutable` library, and native Javascript objects
+* easy interop with `Array` and iterables e.g. `Map`, `Set`, `immutable` library, and native Javascript objects
 * complete support of `Array` API
-* extended API for traversal, and set and group operations 
+* common sequence/set language and set and group operations 
+* deferred execution of queries, and query re-use
 * good documentation
+* well tested
 * small
 
-All the similar packages I found missed on one or more of these points. 
+All the similar packages I found missed on one or more of these points.
+

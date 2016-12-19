@@ -301,7 +301,7 @@ describe('performance', ()=> {
         });
     })
 
-    it.only('sum', ()=> {
+    it('sum', ()=> {
         let arr = iter.generate((e)=>Math.floor(Math.random()*100), 1000000).toArray();
 
         runTest({
