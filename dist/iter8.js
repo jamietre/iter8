@@ -72,7 +72,7 @@ function Iter(source, generator, root, args) {
         throw new Error('iter can only be constructed with an iterable, iterator or generator. Use "fromObject" of your intent is to enumerate object properties.');
     }
 
-    this[_iterator] = iterable || emptyGenerator;
+    this[_iterator] = iterable || [][_iterator];
     this[_open] = []
 }
 
@@ -104,7 +104,7 @@ Object.assign(Iter, {
      * @param {object} object The object to refelect
      * @param {boolean} recurse If true, recurse prototype chain
      * @param {function} filter A callback invoked for each property name that should return true to include it, or false to exclude it
-     * @returns {Array} An array of [key, value] pairs where the key is the prop name, and the value is the prop descriptor
+     * @returns {Iter} A sequence of [key, value] pairs where the key is the prop name, and the value is the prop descriptor
      */
     reflect: checkArgs(function(obj, recurse, filter) {
         if (typeOf(recurse) === _f) {
@@ -139,17 +139,16 @@ Object.assign(Iter, {
      * @param {number} The number
      * @returns {Iter} an iter object
      */
-    generate: function(object, times) {
-        var gen = typeOf(object) === _f ? object : function() { return object }
+    generate: function(obj, times) {
+        var gen = typeOf(obj) === _f ? obj : function() { return obj }
         return new Iter(_iterator, function() {
             var index = -1;
             times = times || 1;
             return {
                 next: function() {
-                    index++;
-                    return {
-                        done: index >= times, 
-                        value: index < times && gen(index) 
+                    return ++index >= times ? doneIter() : { 
+                        done: false,
+                        value: gen(index) 
                     }
                 }
             } 
@@ -331,7 +330,7 @@ Iter[_p] = {
      *      `Type` as a constructor with the sequence as an argument
      *
      * @param {new (element: any)=>any} Type the Constructor to use
-     * @returns {Iter} The new sequence
+     * @returns {Iter<T>} The new sequence
      */    
     cast: function(Type) {
         return this.map(function(e) { return new Type(e) })
@@ -427,6 +426,8 @@ Iter[_p] = {
      */
     except: checkArgs(makeIterable(function(get, done, other, mapLeft, mapRight) {
         var leftMapper = getValueMapper(mapLeft)
+
+        // we don't have to track open state for the other seq. because it's being handled by Set
         var except = new Set(orMapSequence(mapRight, other))
 
         var sourceIter = get()
@@ -450,10 +451,10 @@ Iter[_p] = {
     intersect: checkArgs(makeIterable(function(get, done, other, mapLeft, mapRight) {
         var leftMapper = getValueMapper(mapLeft)
         var intersect = new Set(orMapSequence(mapRight, other));
-        var sourceIter = get()
+        var source = get()
         var cur
         return function() {
-            while (cur = sourceIter.next(), 
+            while (cur = source.next(), 
                 !cur.done && !intersect.has(leftMapper(cur.value)));
 
             return cur.done ? done() : cur;
@@ -715,10 +716,9 @@ Iter[_p] = {
      * 
      * @param {any} callback a function (e,i) that returns true if this is the element to match
      * @param {thisArg} object the "this" argument to apply to the callback
-     * @param {default} object the value to return if the index isn't found (or `undefined` if omitted
      * @returns {number} The index or `undefined` 
      */
-    find: makeAggregator('var i=0','if (a.call(b,{v},i++)===true) { z([_i]); return {v} }','return c'),
+    find: makeAggregator('var i=0','if (a.call(b,{v},i++)===true) { z([_i]); return {v} }','return undefined'),
     /**
      * Return the element at the specified 0-based position in the sequence, or `undefined`
      * if the sequence has fewer than
@@ -927,6 +927,26 @@ function deferredAction(fn) {
     }
 }
 
+
+/**
+ * Create a left-join iterator. Fully iterates the sequence on the right.
+ * 
+ * @param {iterable} The right side seqeunce
+ * @param {any} onMap [fn, fn] array of functions to generate keys for the join
+ * @returns {iterable} A new sequence
+ */
+
+function makeIterable(fn, multipart) {
+    return (multipart ? newMultipartIter : newIter)(function() {
+        var that = this;
+        var args = arguments;
+        return function() {
+            return that[_withReturn](fn.apply(that, [that[_get].bind(that), that[_done].bind(that)].concat(arrProto.slice.call(args))))
+        }
+    })
+}
+
+
 /**
  * Create a function that returns an Iter based on the generator.
  * `nargs` specifies the number of args from the original function
@@ -1099,24 +1119,6 @@ function makeOrderByIterator(that, orders) {
     }
 }
 
-/**
- * Create a left-join iterator. Fully iterates the sequence on the right.
- * 
- * @param {iterable} The right side seqeunce
- * @param {any} onMap [fn, fn] array of functions to generate keys for the join
- * @returns {iterable} A new sequence
- */
-
-function makeIterable(fn, multipart) {
-    return (multipart ? newMultipartIter : newIter)(function() {
-        var that = this;
-        var args = arguments;
-        return function() {
-            return that[_withReturn](fn.apply(that, [that[_get].bind(that), that[_done].bind(that)].concat(arrProto.slice.call(args))))
-        }
-    })
-}
-
 function makeObjectIterator(recurse, getters, obj, filter) {
     return function() {
         var data = Iter.reflect(
@@ -1158,20 +1160,6 @@ function getValueMapper(mapfn) {
         } 
     }
     
-}
-/**
- * An empty iterable
- * 
- * @returns {function} An iterator
- */
-function emptyGenerator() {
-    return function() {
-        return {
-            next: function() {
-                return doneIter()
-            }
-        }
-    }
 }
 
 /**

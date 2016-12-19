@@ -31,6 +31,11 @@ describe('special', ()=> {
         assert.deepEqual(items3, [1,2,5,3,4]);
     })
 
+    it('empty sequence', ()=> {
+        let sut = iter();
+        assert.equal(sut.count(), 0)
+    })
+
     describe('sequence caching', ()=> {
         it('works in simple case', ()=> {
             let source = new Map([[1,2], [2,2], [3,3], [4,3], [5,3]])
@@ -56,5 +61,6 @@ describe('special', ()=> {
             seq = sut.skip(2).toArray(); 
             assert.deepEqual(seq, [3,4,5]);
         })
+
     })
 })
