@@ -61,12 +61,7 @@ function Iter(source, generator, root, args) {
         return new Iter(source, generator);
     }
 
-    var iterable = source && (
-        typeOf(source.next) === _f ? 
-            iteratorToGenerator(source) : 
-            typeof(source) === _f ? 
-                source : source[_iterator].bind(source)
-        );
+    var iterable = anyToGenerator(source);
 
     // it's allowed to construct with nothing,  but you can't construct with a non-iterable entity.
     if (!iterable && !(source == null)) {
@@ -851,7 +846,10 @@ Iter[_p] = {
      * @param {KeyProvider} key An optional callback invoked on each element that returns the value to sum
      * @returns {number} The sum of all elements in the sequence (using the + operator)
      */
-    mean: checkArgs(makeGetkeyAggregator('var r=0,i=0', 'r+={v};i++', 'return r/i'), [_gk])
+    mean: checkArgs(makeGetkeyAggregator('var r=0,i=0', 'r+={v};i++', 'return r/i'), [_gk]),
+    toString: function() {
+        return '[' + this.take(20).join(',') + (this.count() > 20 ? ', ...' : '') + ']'
+    }
 };
 
 /**
@@ -1080,6 +1078,13 @@ function checkArgs(fn, types, n, maxArgs) {
     }
 }
 
+
+/**
+ * Return true if the entity i an iterable or an iterator
+ * 
+ * @param {any} obj
+ * @returns
+ */
 function isIterable(obj) {
     return (obj && obj[_iterator] && typeOf(obj) !== _s)  ||
         (obj && obj.next && typeOf(obj.next) === _f);
@@ -1190,6 +1195,23 @@ function getAllProps(obj, recurse, depth) {
 } 
 
 
+/**
+ * Given a generator, 
+ * 
+ * @param {any} obj
+ * @returns
+ */
+function anyToGenerator(obj) {
+    return obj && (
+        typeOf(obj.next) === _f ? 
+            iteratorToGenerator(obj) : 
+            typeof(obj) === _f ? 
+                obj : 
+                obj[_iterator] ? 
+                    obj[_iterator].bind(obj) :
+                        undefined
+    );
+}
 
 /**
  * Given an iterator (e.g. something with a "next()" function) convert it to a function that returns
@@ -1203,13 +1225,8 @@ function iteratorToGenerator(iterator) {
     var arr = [];
     var cur = {};
    
-   function returnFn() {
-        closeIter([iterator])
-    }
-    
     return function() {
         var index = 0;
-        
         return { 
             next: function() {
                 if (!cur.done && index === arr.length) {
@@ -1222,8 +1239,7 @@ function iteratorToGenerator(iterator) {
                     value: arr[index++],
                     done: false
                 } : doneIter();
-            },
-            return: returnFn
+            }
         }
     }
 }
@@ -1239,27 +1255,8 @@ function typeOf(obj) {
     return obj === null ? 'null' : typeof obj;
 }
 
-/**
- * The native array iterator is, for reasons that aren't clear to me, 
- * far slower than rolling your own. 
- */
-function arrayIterator(arr) {
-    if (Iter._no_opt) return arr[_iterator].bind(arr)
-    return function() {
-        var i = 0;
-        var len = arr.length;
-        return {
-            next: function() {
-                return i < len ? {
-                    done: false, 
-                    value: arr[i++] 
-                } : doneIter()
-            }
-        }
-    }
-}
 
-module.exports = Iter
+module.exports = Iter;
 
 
 },{}]},{},[1])(1)

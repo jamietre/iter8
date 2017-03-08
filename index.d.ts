@@ -1,3 +1,4 @@
+declare module 'iter8' {
 /**
  * Creates an instance of Iter from an iterable object, an iterator, or a generator.
  *
@@ -49,6 +50,7 @@ declare type PropDescriptor = {
     enumerable: boolean,
     depth: number
 }
+
 
 declare namespace iter {
     /**
@@ -537,4 +539,5 @@ export declare class IterKvp<K,V> extends Iter<[K, V]> {
     values(): Iter<V>;
 }
 
-export default iter;
+export = iter;
+}
