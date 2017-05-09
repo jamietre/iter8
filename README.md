@@ -891,6 +891,10 @@ let x = iter(myMap).toObject();
 //}
 ``` 
 
+#### assignTo()
+
+Assuming the sequence containst *key-value pairs* map them to the target object. Works the same as `toObject()` but assigns each kvp to an existing object rather than creating a new one. Returns the input object.
+
 #### as(Type)
 
 Creates an instance of `Type` using the sequence as a single constructor argument. This works well with the ES6 `Map` and `Set` types, or any other type constructed from an iterable. 
